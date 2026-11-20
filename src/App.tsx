@@ -12,6 +12,7 @@ import {
   Maximize2,
   Minimize2,
   Search,
+  Settings as SettingsIcon,
   ShieldCheck,
   Users,
   X,
@@ -26,6 +27,7 @@ import {OfflineIndicator} from './components/OfflineIndicator';
 import {PWAInstallButton} from './components/PWAInstallButton';
 import {QuizTab} from './components/QuizTab';
 import {StudyNotesTab} from './components/StudyNotesTab';
+import {SettingsTab} from './components/SettingsTab';
 import {UploadPdfTab} from './components/UploadPdfTab';
 import {useStudyProgress} from './hooks/useStudyProgress';
 import type {
@@ -91,6 +93,13 @@ const NAV_ITEMS: NavItem[] = [
     section: 'library',
     icon: FileUp,
   },
+  {
+    id: 'settings',
+    label: 'Settings',
+    shortLabel: 'Settings',
+    section: 'study',
+    icon: SettingsIcon,
+  },
 ];
 
 export default function App() {
@@ -103,6 +112,9 @@ export default function App() {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [headerAvatarFailed, setHeaderAvatarFailed] = useState(false);
+  const [eyeComfortMode, setEyeComfortMode] = useState<boolean>(() => {
+    try { return localStorage.getItem('smart-study-eye-comfort') === 'true'; } catch { return false; }
+  });
 
   const [focusNotePart, setFocusNotePart] = useState<number | null>(null);
   const [highlightQuery, setHighlightQuery] = useState<string>('');
@@ -119,6 +131,11 @@ export default function App() {
   useEffect(() => {
     setHeaderAvatarFailed(false);
   }, [activeUserId]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('eye-comfort-mode', eyeComfortMode);
+    try { localStorage.setItem('smart-study-eye-comfort', String(eyeComfortMode)); } catch { /* storage unavailable */ }
+  }, [eyeComfortMode]);
 
   const {
     progress,
@@ -230,6 +247,16 @@ export default function App() {
     setActiveUserId(userId);
     setActiveTab('dashboard');
     setIsAccountMenuOpen(false);
+  };
+
+  const handleAdminReset = () => {
+    // The Worker authenticates the administrator before this callback is invoked.
+    try {
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('smart_study_progress_v1_')) localStorage.removeItem(key);
+      }
+    } catch { /* storage unavailable */ }
+    window.location.reload();
   };
 
   const handleLogout = () => {
@@ -700,7 +727,9 @@ export default function App() {
               : 'max-w-xl py-6 pb-24 sm:py-7 md:pb-10'
           }`}
         >
-          {activeTab === 'dashboard' ? (
+          {activeTab === 'settings' ? (
+            <SettingsTab eyeComfortMode={eyeComfortMode} onEyeComfortChange={setEyeComfortMode} onResetComplete={handleAdminReset} />
+          ) : activeTab === 'dashboard' ? (
             <DashboardTab
               activeUser={activeUser}
               allParts={allParts}
@@ -771,7 +800,7 @@ export default function App() {
       {!isFocusMode && (
         <nav
           aria-label="Mobile study navigation"
-          className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-5 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
+          className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-6 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
         >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;

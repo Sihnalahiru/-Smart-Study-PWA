@@ -181,6 +181,7 @@ export function buildAllAcademicQuestions(
         image: visual?.src,
         imageAlt: visual?.alt,
         imageSource: visual?.source,
+        imageMeta: visual?.meta,
         isCalculation: q.isCalculation,
       });
     });
@@ -242,6 +243,7 @@ export function getAllPracticalQuestions(
       image: visual?.src,
       imageAlt: visual?.alt ?? q.imageAlt,
       imageSource: visual?.source,
+      imageMeta: visual?.meta,
     };
   });
 }

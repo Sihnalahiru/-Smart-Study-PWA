@@ -1,4 +1,9 @@
-import type {StudyPart} from '../types/study';
+import type {
+  QuestionImageCategory,
+  QuizImageField,
+  QuizQuestionImage,
+  StudyPart,
+} from '../types/study';
 
 export interface MappedPdfFigure {
   src: string;
@@ -13,8 +18,61 @@ export interface MappedPdfFigure {
 export interface ResolvedQuestionVisual {
   src: string;
   alt: string;
+  category: QuestionImageCategory;
   source: 'explicit' | 'mapped_pdf';
   matchedPartNumber: number;
+  meta: QuizQuestionImage;
+}
+
+/**
+ * Normalizes a standardized QuizImageField (either a path string or a structured
+ * QuizQuestionImage object) into a clean QuizQuestionImage object.
+ */
+export function normalizeQuizImageField(
+  field: QuizImageField | undefined,
+  fallbackAlt?: string,
+): QuizQuestionImage | null {
+  if (!field) return null;
+  if (typeof field === 'string') {
+    const trimmed = field.trim();
+    if (!trimmed) return null;
+    return {
+      path: resolveMappedAssetUrl(trimmed),
+      alt: fallbackAlt,
+    };
+  }
+  const trimmedPath = (field.path || '').trim();
+  if (!trimmedPath) return null;
+  return {
+    ...field,
+    path: resolveMappedAssetUrl(trimmedPath),
+    alt: field.alt ?? fallbackAlt,
+  };
+}
+
+/**
+ * Infers a spoiler-free visual category for distinct MCQ image framing.
+ */
+export function inferImageCategory(
+  captionOrContext: string,
+): QuestionImageCategory {
+  const plain = stripFuriganaMarkup(captionOrContext);
+  if (/ケアマーク|天地無用|横積み|水濡れ|割れ物|手かぎ|踏みつけ|直射日光|重心|パレットパターン/.test(plain)) {
+    return 'sign';
+  }
+  if (/GHS|どくろ|腐食性|爆弾|炎|感嘆符|環境|健康有害性|高圧ガス|ラベル|バーコード|JAN/.test(plain)) {
+    return 'label';
+  }
+  if (/立入禁止|トラテープ|安全柵|指差|制限速度|後進|持ち上げ|姿勢|安全ベスト|ヘルメット|危険|安全/.test(plain)) {
+    return 'hazard';
+  }
+  if (/フォークリフト|コンベア|パレット|コンテナ|パワーゲート|クランプ|ハンディ|AMR|カッター|包装機|フレコン|段ボール|ドラム|ラック|トラック/.test(plain)) {
+    return 'equipment';
+  }
+  if (/温度|階級|貼り|積み|構造|パターン|図/.test(plain)) {
+    return 'diagram';
+  }
+  return 'reference';
 }
 
 const STOP_TERMS = new Set([
@@ -189,33 +247,66 @@ export interface QuestionVisualLookupInput {
   options?: string[];
   correctIndex?: number;
   explanation?: string;
-  explicitImage?: string;
+  explicitImage?: QuizImageField;
   explicitImageAlt?: string;
 }
 
 /**
  * Dynamically resolves the best mapped PDF asset for any text or visual question.
- * - If `explicitImage` is provided, normalizes its asset URL and enriches alt text from the PDF map.
- * - Otherwise, searches mapped PDF visuals from the textbook to pair a genuinely matching
- *   illustration alongside the text question.
+ * - Accepts standardized QuizImageField (string path or structured QuizQuestionImage).
+ * - If no explicit image is present, searches mapped PDF visuals from the textbook
+ *   to pair a genuinely matching illustration alongside the text question.
  */
 export function resolveQuestionVisual(
   input: QuestionVisualLookupInput,
   figureIndex: MappedPdfFigure[],
 ): ResolvedQuestionVisual | null {
-  if (input.explicitImage) {
-    const resolvedSrc = resolveMappedAssetUrl(input.explicitImage);
+  const normalizedExplicit = normalizeQuizImageField(
+    input.explicitImage,
+    input.explicitImageAlt,
+  );
+
+  if (normalizedExplicit) {
+    const resolvedSrc = normalizedExplicit.path;
+    const rawExplicitPath =
+      typeof input.explicitImage === 'string'
+        ? input.explicitImage
+        : input.explicitImage?.path || '';
     const matchingIndexed = figureIndex.find(
-      (fig) => fig.src === resolvedSrc || fig.src.endsWith(input.explicitImage!),
+      (fig) =>
+        fig.src === resolvedSrc ||
+        (rawExplicitPath && fig.src.endsWith(rawExplicitPath)),
     );
+    const resolvedAlt =
+      normalizedExplicit.alt ||
+      matchingIndexed?.alt ||
+      'Mapped textbook diagram';
+    const resolvedCategory =
+      normalizedExplicit.category ??
+      inferImageCategory(
+        `${resolvedAlt} ${matchingIndexed?.headingContext ?? ''}`,
+      );
+    const matchedPartNumber =
+      normalizedExplicit.partNumber ??
+      matchingIndexed?.partNumber ??
+      input.partNumber;
+    const source = normalizedExplicit.source ?? 'explicit';
+
+    const meta: QuizQuestionImage = {
+      path: resolvedSrc,
+      alt: resolvedAlt,
+      category: resolvedCategory,
+      source,
+      partNumber: matchedPartNumber,
+    };
+
     return {
       src: resolvedSrc,
-      alt:
-        input.explicitImageAlt ||
-        matchingIndexed?.alt ||
-        'Mapped textbook diagram',
-      source: 'explicit',
-      matchedPartNumber: matchingIndexed?.partNumber ?? input.partNumber,
+      alt: resolvedAlt,
+      category: resolvedCategory,
+      source,
+      matchedPartNumber,
+      meta,
     };
   }
 
@@ -312,10 +403,25 @@ export function resolveQuestionVisual(
 
   if (!bestFigure) return null;
 
+  const resolvedAlt =
+    bestFigure.alt || bestFigure.plainAlt || 'Textbook illustration';
+  const resolvedCategory = inferImageCategory(
+    `${bestFigure.plainAlt} ${bestFigure.headingContext}`,
+  );
+  const meta: QuizQuestionImage = {
+    path: bestFigure.src,
+    alt: resolvedAlt,
+    category: resolvedCategory,
+    source: 'mapped_pdf',
+    partNumber: bestFigure.partNumber,
+  };
+
   return {
     src: bestFigure.src,
-    alt: bestFigure.alt || bestFigure.plainAlt || 'Textbook illustration',
+    alt: resolvedAlt,
+    category: resolvedCategory,
     source: 'mapped_pdf',
     matchedPartNumber: bestFigure.partNumber,
+    meta,
   };
 }

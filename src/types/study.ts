@@ -26,6 +26,38 @@ export type SswExamTopic =
   | 'warehouse_equipment'
   | 'safety_health';
 
+export type QuestionImageSource = 'explicit' | 'mapped_pdf';
+
+export type QuestionImageCategory =
+  | 'sign'
+  | 'label'
+  | 'equipment'
+  | 'hazard'
+  | 'diagram'
+  | 'reference';
+
+/**
+ * Standardized image attachment schema for image-based MCQs.
+ */
+export interface QuizQuestionImage {
+  /** Mapped PDF visual asset path (e.g. "/images/figures/fig-p087-obj404.jpg") */
+  path: string;
+  /** Accessible caption or textbook figure title (supports Furigana markup) */
+  alt?: string;
+  /** Semantic figure type used for visually distinct exam framing */
+  category?: QuestionImageCategory;
+  /** Origin of the asset mapping (explicitly authored vs dynamically mapped from PDF notes) */
+  source?: QuestionImageSource;
+  /** Textbook part number where the mapped PDF visual appears */
+  partNumber?: number;
+}
+
+/**
+ * Standardized MCQ image field: accepts either a direct asset path string
+ * or a full QuizQuestionImage metadata object.
+ */
+export type QuizImageField = string | QuizQuestionImage;
+
 export interface QuizQuestion {
   id?: string;
   question: string;
@@ -36,7 +68,8 @@ export interface QuizQuestion {
   module_code?: string;
   section?: CbtExamSection;
   topic?: SswExamTopic;
-  image?: string;
+  /** Optional standardized image field (path string or structured QuizQuestionImage) */
+  image?: QuizImageField;
   imageAlt?: string;
   isCalculation?: boolean;
 }
@@ -51,9 +84,12 @@ export interface CbtQuestion {
   options: string[];
   correct_index: number;
   explanation: string;
+  /** Normalized resolved image asset path when present */
   image?: string;
   imageAlt?: string;
-  imageSource?: 'explicit' | 'mapped_pdf';
+  imageSource?: QuestionImageSource;
+  /** Full standardized image metadata when the question includes an image */
+  imageMeta?: QuizQuestionImage;
   isCalculation?: boolean;
 }
 

@@ -18,6 +18,8 @@ import {
   Timer,
   X,
   XCircle,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import {FuriganaText} from './FuriganaText';
 import {PerformanceAnalyticsCard} from './PerformanceAnalyticsCard';
@@ -104,7 +106,86 @@ export const QuizTab: React.FC<QuizTabProps> = ({
   const [zoomImage, setZoomImage] = useState<{src: string; alt: string} | null>(
     null,
   );
+  const [zoomScale, setZoomScale] = useState<1 | 1.5 | 2>(1);
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+
+  const openZoomModal = (src: string, alt: string) => {
+    setZoomScale(1);
+    setZoomImage({src, alt});
+  };
+
+  useEffect(() => {
+    if (!zoomImage) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setZoomImage(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [zoomImage]);
+
+  const renderZoomLightbox = () => {
+    if (!zoomImage) return null;
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Exam Figure Viewer"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md"
+        onClick={() => setZoomImage(null)}
+      >
+        <div
+          className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-2.5">
+            <p className="truncate text-xs font-semibold text-slate-700">
+              <FuriganaText text={zoomImage.alt} showFurigana={showFurigana} />
+            </p>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() =>
+                  setZoomScale((prev) =>
+                    prev === 1 ? 1.5 : prev === 1.5 ? 2 : 1,
+                  )
+                }
+                className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                aria-label="Toggle zoom scale"
+              >
+                {zoomScale > 1 ? (
+                  <ZoomOut className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                <span className="font-mono-tabular">{zoomScale}x</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomImage(null)}
+                aria-label="Close diagram preview"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-1 items-center justify-center overflow-auto bg-slate-50 p-4">
+            <img
+              src={zoomImage.src}
+              alt={zoomImage.alt}
+              style={{
+                width: zoomScale === 1 ? 'auto' : `${zoomScale * 65}%`,
+                maxWidth: zoomScale === 1 ? '100%' : 'none',
+              }}
+              className="max-h-[75vh] rounded-xl border border-slate-200 bg-white p-2 object-contain shadow-xs transition-all duration-150"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Active CBT Timed Exam State
   const [examSession, setExamSession] = useState<ExamSessionState | null>(null);
@@ -636,11 +717,11 @@ export const QuizTab: React.FC<QuizTabProps> = ({
               </button>
             </div>
 
-            {/* Text Question Paired Alongside Dynamically Mapped PDF Visual */}
+            {/* Conditionally render visually distinct, responsive figure alongside text question */}
             <div
               className={
                 currentQ.image
-                  ? 'mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-start'
+                  ? 'mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_232px] sm:items-start'
                   : 'mt-4'
               }
             >
@@ -653,19 +734,14 @@ export const QuizTab: React.FC<QuizTabProps> = ({
 
               {currentQ.image && (
                 <QuestionFigureCard
-                  src={currentQ.image}
-                  alt={currentQ.imageAlt || 'Exam figure'}
+                  image={currentQ.imageMeta ?? currentQ.image}
+                  fallbackAlt={currentQ.imageAlt || 'Exam figure'}
                   showFurigana={showFurigana}
                   revealCaption={false}
                   variant={
                     currentQ.section === 'practical' ? 'prominent' : 'side'
                   }
-                  badgeLabel={
-                    currentQ.section === 'practical'
-                      ? 'Exam Figure'
-                      : 'PDF Figure'
-                  }
-                  onZoom={(src, alt) => setZoomImage({src, alt})}
+                  onZoom={openZoomModal}
                 />
               )}
             </div>
@@ -835,34 +911,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
           </div>
         )}
 
-        {/* Zoom Modal for Practical Diagrams */}
-        {zoomImage && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md"
-            onClick={() => setZoomImage(null)}
-          >
-            <div
-              className="relative max-w-2xl rounded-2xl bg-white p-3 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => setZoomImage(null)}
-                aria-label="Close diagram preview"
-                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900/80 text-white hover:bg-slate-900"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <img
-                src={zoomImage.src}
-                alt={zoomImage.alt}
-                className="max-h-[80vh] w-auto max-w-full rounded-lg object-contain"
-              />
-            </div>
-          </div>
-        )}
+        {renderZoomLightbox()}
       </div>
     );
   }
@@ -1121,7 +1170,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                 <div
                   className={
                     q.image
-                      ? 'mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_175px] sm:items-start'
+                      ? 'mt-3 grid grid-cols-1 gap-3.5 sm:grid-cols-[minmax(0,1fr)_205px] sm:items-start'
                       : 'mt-3'
                   }
                 >
@@ -1134,12 +1183,12 @@ export const QuizTab: React.FC<QuizTabProps> = ({
 
                   {q.image && (
                     <QuestionFigureCard
-                      src={q.image}
-                      alt={q.imageAlt || 'Exam figure'}
+                      image={q.imageMeta ?? q.image}
+                      fallbackAlt={q.imageAlt || 'Exam figure'}
                       showFurigana={showFurigana}
                       revealCaption={true}
                       variant="compact"
-                      onZoom={(src, alt) => setZoomImage({src, alt})}
+                      onZoom={openZoomModal}
                     />
                   )}
                 </div>
@@ -1184,33 +1233,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
           })}
         </section>
 
-        {zoomImage && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md"
-            onClick={() => setZoomImage(null)}
-          >
-            <div
-              className="relative max-w-2xl rounded-2xl bg-white p-3 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => setZoomImage(null)}
-                aria-label="Close diagram preview"
-                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900/80 text-white hover:bg-slate-900"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <img
-                src={zoomImage.src}
-                alt={zoomImage.alt}
-                className="max-h-[80vh] w-auto max-w-full rounded-lg object-contain"
-              />
-            </div>
-          </div>
-        )}
+        {renderZoomLightbox()}
       </div>
     );
   }
@@ -1356,7 +1379,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                 <div
                   className={
                     q.image
-                      ? 'mt-3 grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_190px] sm:items-start'
+                      ? 'mt-3 grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_224px] sm:items-start'
                       : 'mt-3'
                   }
                 >
@@ -1369,17 +1392,12 @@ export const QuizTab: React.FC<QuizTabProps> = ({
 
                   {q.image && (
                     <QuestionFigureCard
-                      src={q.image}
-                      alt={q.imageAlt || 'Exam figure'}
+                      image={q.imageMeta ?? q.image}
+                      fallbackAlt={q.imageAlt || 'Exam figure'}
                       showFurigana={showFurigana}
                       revealCaption={isAnswered}
                       variant="side"
-                      badgeLabel={
-                        q.section === 'practical'
-                          ? 'Exam Figure'
-                          : 'PDF Figure'
-                      }
-                      onZoom={(src, alt) => setZoomImage({src, alt})}
+                      onZoom={openZoomModal}
                     />
                   )}
                 </div>
@@ -1459,33 +1477,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
           })}
         </div>
 
-        {zoomImage && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md"
-            onClick={() => setZoomImage(null)}
-          >
-            <div
-              className="relative max-w-2xl rounded-2xl bg-white p-3 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => setZoomImage(null)}
-                aria-label="Close diagram"
-                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900/80 text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <img
-                src={zoomImage.src}
-                alt={zoomImage.alt}
-                className="max-h-[80vh] w-auto max-w-full rounded-lg object-contain"
-              />
-            </div>
-          </div>
-        )}
+        {renderZoomLightbox()}
       </div>
     );
   }

@@ -123,6 +123,13 @@ export default defineConfig(() => {
             return;
           }
           const distDir = path.resolve(rootDir, 'dist');
+          // Cloudflare Workers Assets rejects the legacy Pages _redirects SPA rule
+          // when Wrangler already uses not_found_handling: single-page-application.
+          // Remove any stale copy restored from Cloudflare's build-output cache.
+          const redirectsFile = path.resolve(distDir, '_redirects');
+          if (fs.existsSync(redirectsFile)) {
+            fs.rmSync(redirectsFile, {force: true});
+          }
           const srcAssets = path.resolve(rootDir, 'src/assets');
           const distAssets = path.resolve(distDir, 'src/assets');
           if (fs.existsSync(distDir) && fs.existsSync(srcAssets)) {

@@ -1,0 +1,24 @@
+{
+  "parts": [
+    {
+      "part_number": 1,
+      "source_pdf": "warehouse-logistics-exam-part1.pdf",
+      "title": "試験形式と安全・倉庫作業 (Exam Formats, Safety & Operations)",
+      "file": "part-1.json",
+      "flashcard_count": 12,
+      "quiz_count": 8,
+      "image_count": 0,
+      "processed_at": "2026-11-20T05:55:00Z"
+    },
+    {
+      "part_number": 2,
+      "source_pdf": "warehouse-logistics-exam-part2.pdf",
+      "title": "在庫管理・荷役機器・書類・KPI (Inventory, Equipment, Docs & KPIs)",
+      "file": "part-2.json",
+      "flashcard_count": 12,
+      "quiz_count": 8,
+      "image_count": 0,
+      "processed_at": "2026-11-20T05:55:00Z"
+    }
+  ]
+}

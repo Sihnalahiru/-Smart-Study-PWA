@@ -1,0 +1,6 @@
+{
+  "name": "Smart Study PWA",
+  "description": "Offline-ready study companion turning PDFs into structured Markdown notes, 3D flashcards, and interactive quizzes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="112" fill="#0F172A"/>
+  <rect x="44" y="44" width="424" height="424" rx="84" fill="#1E293B" stroke="#334155" stroke-width="4"/>
+  <!-- Open book / academic pages -->
+  <path d="M124 168C124 152.536 136.536 140 152 140H236C247.046 140 256 148.954 256 160V356C256 347.163 248.837 340 240 340H152C136.536 340 124 327.464 124 312V168Z" fill="#F8FAFC"/>
+  <path d="M388 168C388 152.536 375.464 140 360 140H276C264.954 140 256 148.954 256 160V356C256 347.163 263.163 340 272 340H360C375.464 340 388 327.464 388 312V168Z" fill="#E2E8F0"/>
+  <!-- Center spine highlight -->
+  <path d="M256 160V356" stroke="#2563EB" stroke-width="10" stroke-linecap="round"/>
+  <!-- Subtle page lines -->
+  <path d="M156 192H224M156 228H224M156 264H204" stroke="#94A3B8" stroke-width="10" stroke-linecap="round"/>
+  <path d="M288 192H356M288 228H356M288 264H336" stroke="#64748B" stroke-width="10" stroke-linecap="round"/>
+  <!-- Cobalt bookmark ribbon -->
+  <path d="M312 140H352V208L332 192L312 208V140Z" fill="#2563EB"/>
+</svg>

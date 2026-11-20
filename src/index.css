@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans JP', 'Noto Sans Sinhala', -apple-system, BlinkMacSystemFont, sans-serif;
+    color-scheme: light;
+  }
+
+  body {
+    background-color: #f8fafc;
+    color: #0f172a;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+
+  ruby {
+    ruby-align: center;
+    ruby-position: over;
+  }
+
+  rt {
+    font-size: 0.6em;
+    font-weight: 500;
+    color: #475569;
+    line-height: 1.05;
+    letter-spacing: 0.01em;
+    user-select: none;
+  }
+}
+
+@layer utilities {
+  .font-serif-prose {
+    font-family: 'Source Serif 4', 'Noto Sans JP', 'Noto Sans Sinhala', Georgia, serif;
+  }
+
+  .font-jp {
+    font-family: 'Noto Sans JP', 'Plus Jakarta Sans', sans-serif;
+  }
+
+  .font-mono-tabular {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .perspective-1200 {
+    perspective: 1200px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+}

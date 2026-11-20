@@ -154,6 +154,7 @@ export default function App() {
     markPartRead,
     markFlashcardMastered,
     recordQuizAnswer,
+    resetProgress,
   } = useStudyProgress(activeUserId);
 
   const manifest = manifestData as StudyManifest;
@@ -260,13 +261,13 @@ export default function App() {
 
   const handleAdminReset = () => {
     if (!activeUserId) return;
+    resetProgress();
     try {
-      localStorage.removeItem(`smart_study_progress_v1_${activeUserId}`);
       localStorage.removeItem(`smart_study_celebrated_v1_${activeUserId}`);
     } catch {
       // The browser may deny local storage access.
     }
-    window.location.reload();
+    setActiveTab('dashboard');
   };
 
   const handleLogout = () => {

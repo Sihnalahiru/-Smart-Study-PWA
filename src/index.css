@@ -160,3 +160,24 @@
     transform: rotateY(180deg);
   }
 }
+
+
+/* Warm, low-glare palette for Eye Comfort Mode. */
+html.eye-comfort-mode body {
+  background-color: #f5efdf;
+  background-image: none;
+  color: #352f25;
+}
+html.eye-comfort-mode .surface-nav-glass {
+  background: rgba(250, 245, 232, 0.94);
+  border-color: rgba(214, 202, 177, 0.8);
+}
+html.eye-comfort-mode .surface-card,
+html.eye-comfort-mode .surface-card-interactive {
+  background: linear-gradient(180deg, #fffaf0 0%, #f8f0df 100%);
+  border-color: rgba(214, 202, 177, 0.9);
+}
+html.eye-comfort-mode .surface-streak {
+  background: linear-gradient(135deg, #fffaf0 0%, #f7eedb 100%);
+  border-color: rgba(214, 202, 177, 0.9);
+}

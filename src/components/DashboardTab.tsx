@@ -28,8 +28,6 @@ import {
 } from '../hooks/useStudyProgress';
 import {getUnlockedMilestoneEntries} from '../utils/trophyBadges';
 import {CelebrationConfetti} from './CelebrationConfetti';
-import {StudyRoadmap} from './StudyRoadmap';
-import {TrophyCase} from './TrophyCase';
 
 interface DashboardTabProps {
   activeUser: UserProfile;
@@ -39,21 +37,6 @@ interface DashboardTabProps {
   onNavigateTab: (tab: ActiveTab) => void;
   onOpenSearch: () => void;
   onEnterFocusMode: () => void;
-}
-
-function formatRelativeTime(iso: string): string {
-  try {
-    const diffMs = Date.now() - new Date(iso).getTime();
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  } catch {
-    return '';
-  }
 }
 
 interface CelebratedSnapshot {
@@ -489,138 +472,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       </section>
 
-      {/* Curriculum Study Roadmap */}
-      <StudyRoadmap
-        allParts={allParts}
-        progress={progress}
-        onSelectPartAndTab={onSelectPartAndTab}
-      />
 
-      {/* Achievement Trophy Case */}
-      <TrophyCase
-        allParts={allParts}
-        progress={progress}
-        onSelectPartAndTab={onSelectPartAndTab}
-      />
-
-      {/* Study Library */}
-      <section className="surface-card rounded-2xl p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 pb-4">
-          <div>
-            <h2 className="text-base font-bold tracking-tight text-slate-900">
-              Study Library
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Tap any module for Notes, Flashcards, or Japanese Quiz
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onOpenSearch}
-              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:border-slate-300 hover:bg-slate-50"
-            >
-              <Search className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
-              <span>Search</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateTab('upload')}
-              className="btn-primary-premium inline-flex min-h-[38px] items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold"
-            >
-              <FileUp className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Add PDF</span>
-            </button>
-          </div>
-        </div>
-
-        {allParts.length === 0 ? (
-          <div className="py-8 text-center">
-            <p className="text-sm font-medium text-slate-700">
-              No PDF parts processed yet.
-            </p>
-            <button
-              type="button"
-              onClick={() => onNavigateTab('upload')}
-              className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:brightness-110"
-            >
-              <FileUp className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Upload First PDF</span>
-            </button>
-          </div>
-        ) : (
-          <ul className="divide-y divide-slate-200/70">
-            {allParts.map((part) => {
-              const isRead = progress.readPartNumbers.includes(
-                part.part_number,
-              );
-              return (
-                <li
-                  key={part.part_number}
-                  className="space-y-3.5 py-4 first:pt-4 last:pb-1"
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <span className="font-mono-tabular font-semibold text-blue-600">
-                        Part {part.part_number}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span className="font-mono-tabular">
-                        {part.flashcards.length} cards
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span className="font-mono-tabular">
-                        {part.quiz.length} quiz
-                      </span>
-                      {isRead && (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <span className="font-semibold text-emerald-600">
-                            Completed
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm font-semibold tracking-tight text-slate-900">
-                      {part.title}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSelectPartAndTab(part.part_number, 'notes')
-                      }
-                      className="min-h-[40px] rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/70 px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:text-slate-900"
-                    >
-                      Notes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSelectPartAndTab(part.part_number, 'flashcards')
-                      }
-                      className="min-h-[40px] rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/70 px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:text-slate-900"
-                    >
-                      Cards
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSelectPartAndTab(part.part_number, 'quiz')
-                      }
-                      className="min-h-[40px] rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:brightness-110"
-                    >
-                      Quiz (JP)
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
 
       {/* Daily Study Goals */}
       <section className="surface-card rounded-2xl p-5 sm:p-6">
@@ -709,50 +561,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </button>
       </section>
 
-      {/* XP Reward Log */}
-      <section className="surface-card rounded-2xl p-5 sm:p-6">
-        <div className="flex items-center justify-between border-b border-slate-200/70 pb-3.5">
-          <h2 className="text-base font-bold tracking-tight text-slate-900">
-            XP Reward Log
-          </h2>
-          <span className="font-mono-tabular text-xs font-medium text-slate-500">
-            {progress.activities.length} recent
-          </span>
-        </div>
 
-        {progress.activities.length === 0 ? (
-          <p className="py-6 text-center text-xs leading-relaxed text-slate-500">
-            No XP earned yet. Review a flashcard, answer a quiz question, or
-            mark a study section complete to start your streak!
-          </p>
-        ) : (
-          <ul className="divide-y divide-slate-200/70">
-            {progress.activities.slice(0, 6).map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center justify-between gap-3 py-3.5 first:pt-3.5 last:pb-1"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-slate-900">
-                    {item.action}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-slate-500">
-                    {item.detail}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <span className="font-mono-tabular text-xs font-bold text-amber-600">
-                    +{item.xp} XP
-                  </span>
-                  <p className="mt-0.5 text-[11px] text-slate-400">
-                    {formatRelativeTime(item.timestamp)}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </div>
   );
 };

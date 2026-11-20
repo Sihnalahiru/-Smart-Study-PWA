@@ -54,6 +54,8 @@ export interface StudyManifest {
 
 export type ActiveTab =
   | 'dashboard'
+  | 'library'
+  | 'settings'
   | 'notes'
   | 'flashcards'
   | 'quiz'

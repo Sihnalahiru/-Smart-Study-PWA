@@ -46,6 +46,11 @@ interface ResilientImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   onZoom?: (src: string, alt: string) => void;
 }
 
+function resolveBasePath(src: string): string {
+  if (!src.startsWith('/')) return src;
+  return `${import.meta.env.BASE_URL}${src.slice(1)}`;
+}
+
 function getPageLabelFromSrc(src: string): string {
   const match = src.match(/page-0*(\d+)\./i);
   return match ? `p.${match[1]}` : src.split('/').pop() || 'PDF Page';
@@ -265,7 +270,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
       <div className="space-y-6">
         {parts.map((part) => {
           const isCompleted = readPartNumbers.includes(part.part_number);
-          const partImages = part.images ?? [];
+          const partImages = (part.images ?? []).map(resolveBasePath);
           const isGalleryExpanded = Boolean(
             expandedGalleries[part.part_number],
           );
@@ -534,7 +539,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                     ),
                     img: ({src, alt}) => (
                       <ResilientNoteImage
-                        src={src}
+                        src={src ? resolveBasePath(src) : undefined}
                         alt={alt}
                         showFurigana={showFurigana}
                         onZoom={(resolvedSrc, resolvedAlt) =>

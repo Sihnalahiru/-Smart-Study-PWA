@@ -8,10 +8,12 @@ import {
   Flame,
   Layers,
   LayoutDashboard,
+  Library,
   LogOut,
   Maximize2,
   Minimize2,
   Search,
+  Settings as SettingsIcon,
   ShieldCheck,
   Users,
   X,
@@ -22,10 +24,12 @@ import {EmptyStudyState} from './components/EmptyStudyState';
 import {FlashcardsTab} from './components/FlashcardsTab';
 import {GlobalSearchModal} from './components/GlobalSearchModal';
 import {LoginScreen} from './components/LoginScreen';
+import {LibraryTab} from './components/LibraryTab';
 import {OfflineIndicator} from './components/OfflineIndicator';
 import {PWAInstallButton} from './components/PWAInstallButton';
 import {QuizTab} from './components/QuizTab';
 import {StudyNotesTab} from './components/StudyNotesTab';
+import {SettingsTab} from './components/SettingsTab';
 import {UploadPdfTab} from './components/UploadPdfTab';
 import {useStudyProgress} from './hooks/useStudyProgress';
 import type {
@@ -64,6 +68,13 @@ const NAV_ITEMS: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
+    id: 'library',
+    label: 'Study Library',
+    shortLabel: 'Library',
+    section: 'library',
+    icon: Library,
+  },
+  {
     id: 'notes',
     label: 'Study Notes',
     shortLabel: 'Notes',
@@ -91,6 +102,13 @@ const NAV_ITEMS: NavItem[] = [
     section: 'library',
     icon: FileUp,
   },
+  {
+    id: 'settings',
+    label: 'Settings',
+    shortLabel: 'Settings',
+    section: 'study',
+    icon: SettingsIcon,
+  },
 ];
 
 export default function App() {
@@ -103,6 +121,9 @@ export default function App() {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [headerAvatarFailed, setHeaderAvatarFailed] = useState(false);
+  const [eyeComfortMode, setEyeComfortMode] = useState<boolean>(() => {
+    try { return localStorage.getItem('smart-study-eye-comfort') === 'true'; } catch { return false; }
+  });
 
   const [focusNotePart, setFocusNotePart] = useState<number | null>(null);
   const [highlightQuery, setHighlightQuery] = useState<string>('');
@@ -120,6 +141,11 @@ export default function App() {
     setHeaderAvatarFailed(false);
   }, [activeUserId]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('eye-comfort-mode', eyeComfortMode);
+    try { localStorage.setItem('smart-study-eye-comfort', String(eyeComfortMode)); } catch { /* storage unavailable */ }
+  }, [eyeComfortMode]);
+
   const {
     progress,
     levelInfo,
@@ -128,6 +154,7 @@ export default function App() {
     markPartRead,
     markFlashcardMastered,
     recordQuizAnswer,
+    resetProgress,
   } = useStudyProgress(activeUserId);
 
   const manifest = manifestData as StudyManifest;
@@ -232,6 +259,17 @@ export default function App() {
     setIsAccountMenuOpen(false);
   };
 
+  const handleAdminReset = () => {
+    if (!activeUserId) return;
+    resetProgress();
+    try {
+      localStorage.removeItem(`smart_study_celebrated_v1_${activeUserId}`);
+    } catch {
+      // The browser may deny local storage access.
+    }
+    setActiveTab('dashboard');
+  };
+
   const handleLogout = () => {
     if (isFocusMode) {
       exitFocusMode();
@@ -292,7 +330,7 @@ export default function App() {
         <aside className="surface-nav-glass hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-slate-200/80">
           <div className="flex h-16 items-center gap-3 border-b border-slate-200/70 px-5">
             <img
-              src="/icon.svg"
+              src={`${import.meta.env.BASE_URL}icon.svg`}
               alt=""
               className="h-8 w-8 shrink-0 rounded-xl shadow-xs"
             />
@@ -343,7 +381,7 @@ export default function App() {
 
             <div>
               <p className="px-3 text-[11px] font-semibold tracking-[0.04em] text-slate-400">
-                PDF Library
+                Study Library
               </p>
               <ul className="mt-2 space-y-1">
                 {libraryNavItems.map((item) => {
@@ -546,7 +584,7 @@ export default function App() {
               <>
                 {/* Mobile Brand */}
                 <a
-                  href="/"
+                  href={import.meta.env.BASE_URL}
                   onClick={(e) => {
                     e.preventDefault();
                     setActiveTab('dashboard');
@@ -554,7 +592,7 @@ export default function App() {
                   className="flex shrink-0 items-center gap-2 text-sm font-bold tracking-tight text-slate-900 whitespace-nowrap lg:hidden"
                 >
                   <img
-                    src="/icon.svg"
+                    src={`${import.meta.env.BASE_URL}icon.svg`}
                     alt=""
                     className="h-7 w-7 shrink-0 rounded-lg shadow-xs"
                   />
@@ -700,7 +738,16 @@ export default function App() {
               : 'max-w-xl py-6 pb-24 sm:py-7 md:pb-10'
           }`}
         >
-          {activeTab === 'dashboard' ? (
+          {activeTab === 'settings' ? (
+            <SettingsTab eyeComfortMode={eyeComfortMode} onEyeComfortChange={setEyeComfortMode} onResetComplete={handleAdminReset} />
+          ) : activeTab === 'library' ? (
+            <LibraryTab
+              parts={allParts}
+              onOpenSearch={() => setIsSearchOpen(true)}
+              onSelectPartAndTab={handleSelectPartAndTab}
+              onUploadPdf={() => setActiveTab('upload')}
+            />
+          ) : activeTab === 'dashboard' ? (
             <DashboardTab
               activeUser={activeUser}
               allParts={allParts}
@@ -771,7 +818,7 @@ export default function App() {
       {!isFocusMode && (
         <nav
           aria-label="Mobile study navigation"
-          className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-5 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
+          className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-7 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
         >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;

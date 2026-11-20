@@ -25,7 +25,7 @@ export default defineConfig(() => {
           'pwa-maskable-512x512.png',
         ],
         manifest: {
-          id: '/',
+          id: base,
           name: 'Smart Study PWA',
           short_name: 'SmartStudy',
           description:

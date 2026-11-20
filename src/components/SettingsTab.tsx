@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Eye, EyeOff, ShieldCheck, Sun, Trash2} from 'lucide-react';
+import {Eye, ShieldCheck, Sun, Trash2} from 'lucide-react';
 
 interface SettingsTabProps {
   eyeComfortMode: boolean;

@@ -662,6 +662,24 @@ export default function App() {
                     <span>Focus Mode</span>
                   </button>
 
+                  {/* Quick Settings Access — visible on mobile and desktop headers */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFocusCard(null);
+                      setActiveTab('settings');
+                    }}
+                    aria-label="Open Settings"
+                    title="Settings"
+                    className={`inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl border shadow-xs transition-colors ${
+                      activeTab === 'settings'
+                        ? 'border-blue-200 bg-blue-50 text-blue-700'
+                        : 'border-slate-200/90 bg-white/85 text-slate-600 hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-700'
+                    }`}
+                  >
+                    <SettingsIcon className="h-4 w-4" aria-hidden="true" />
+                  </button>
+
                   {/* Active Profile Avatar / Switcher Trigger */}
                   <button
                     type="button"

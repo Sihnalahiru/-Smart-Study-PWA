@@ -40,6 +40,9 @@ jobs:
           path: dist
 
   deploy:
+    # GitHub Pages environment currently permits the protected main branch only.
+    # Feature branches still run the full build but must not attempt deployment.
+    if: github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

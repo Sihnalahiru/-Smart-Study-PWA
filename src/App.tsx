@@ -736,6 +736,8 @@ export default function App() {
               parts={visibleParts}
               allParts={allParts}
               correctQuizIds={progress.correctQuizIds}
+              attemptedQuizIds={progress.attemptedQuizIds}
+              quizQuestionStats={progress.quizQuestionStats}
               onRecordQuizAnswer={recordQuizAnswer}
             />
           )}

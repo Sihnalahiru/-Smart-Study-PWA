@@ -1,5 +1,10 @@
 import {useCallback, useEffect, useState} from 'react';
-import type {StudyProgressState, UserId, XpActivity} from '../types/study';
+import type {
+  QuizQuestionStat,
+  StudyProgressState,
+  UserId,
+  XpActivity,
+} from '../types/study';
 
 const STORAGE_KEY_PREFIX = 'smart_study_progress_v1_';
 
@@ -110,6 +115,7 @@ export function createInitialProgressState(): StudyProgressState {
     correctQuizIds: [],
     attemptedQuizIds: [],
     completedQuizParts: [],
+    quizQuestionStats: {},
     activities: [],
     daily: {
       date: today,
@@ -169,6 +175,48 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
             xpEarnedToday: 0,
           };
 
+    const sanitizedAttempted = Array.isArray(parsed.attemptedQuizIds)
+      ? parsed.attemptedQuizIds
+      : [];
+    const sanitizedCorrect = Array.isArray(parsed.correctQuizIds)
+      ? parsed.correctQuizIds
+      : [];
+
+    const hydratedStats: Record<string, QuizQuestionStat> = {};
+    if (
+      parsed.quizQuestionStats &&
+      typeof parsed.quizQuestionStats === 'object' &&
+      !Array.isArray(parsed.quizQuestionStats)
+    ) {
+      for (const [qId, stat] of Object.entries(parsed.quizQuestionStats)) {
+        if (
+          stat &&
+          typeof stat.attempts === 'number' &&
+          typeof stat.correct === 'number'
+        ) {
+          hydratedStats[qId] = {
+            attempts: Math.max(0, Math.floor(stat.attempts)),
+            correct: Math.max(
+              0,
+              Math.min(Math.floor(stat.attempts), Math.floor(stat.correct)),
+            ),
+          };
+        }
+      }
+    } else {
+      for (const qId of sanitizedAttempted) {
+        hydratedStats[qId] = {
+          attempts: 1,
+          correct: sanitizedCorrect.includes(qId) ? 1 : 0,
+        };
+      }
+      for (const qId of sanitizedCorrect) {
+        if (!hydratedStats[qId]) {
+          hydratedStats[qId] = {attempts: 1, correct: 1};
+        }
+      }
+    }
+
     return {
       ...fallback,
       ...parsed,
@@ -186,15 +234,12 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
       readPartNumbers: Array.isArray(parsed.readPartNumbers)
         ? parsed.readPartNumbers
         : [],
-      correctQuizIds: Array.isArray(parsed.correctQuizIds)
-        ? parsed.correctQuizIds
-        : [],
-      attemptedQuizIds: Array.isArray(parsed.attemptedQuizIds)
-        ? parsed.attemptedQuizIds
-        : [],
+      correctQuizIds: sanitizedCorrect,
+      attemptedQuizIds: sanitizedAttempted,
       completedQuizParts: Array.isArray(parsed.completedQuizParts)
         ? parsed.completedQuizParts
         : [],
+      quizQuestionStats: hydratedStats,
       activities: Array.isArray(parsed.activities) ? parsed.activities : [],
     };
   } catch {
@@ -509,6 +554,19 @@ export function useStudyProgress(userId: UserId | null) {
           );
         }
 
+        const prevStats = prev.quizQuestionStats ?? {};
+        const prevEntry = prevStats[questionId] ?? {
+          attempts: alreadyAttempted ? 1 : 0,
+          correct: alreadyCorrect ? 1 : 0,
+        };
+        const nextStats: Record<string, QuizQuestionStat> = {
+          ...prevStats,
+          [questionId]: {
+            attempts: prevEntry.attempts + 1,
+            correct: prevEntry.correct + (isCorrect ? 1 : 0),
+          },
+        };
+
         return {
           ...prev,
           xp: prev.xp + earned,
@@ -527,6 +585,7 @@ export function useStudyProgress(userId: UserId | null) {
             partFinished && !alreadyCompletedPart
               ? [...prev.completedQuizParts, partNumber]
               : prev.completedQuizParts,
+          quizQuestionStats: nextStats,
           daily: {
             ...nextDaily,
             quizAnswered: nextDaily.quizAnswered + 1,

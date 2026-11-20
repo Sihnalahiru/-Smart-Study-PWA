@@ -75,6 +75,11 @@ export interface DailyProgress {
   xpEarnedToday: number;
 }
 
+export interface QuizQuestionStat {
+  attempts: number;
+  correct: number;
+}
+
 export interface StudyProgressState {
   xp: number;
   streakDays: number;
@@ -86,6 +91,7 @@ export interface StudyProgressState {
   correctQuizIds: string[];
   attemptedQuizIds: string[];
   completedQuizParts: number[];
+  quizQuestionStats?: Record<string, QuizQuestionStat>;
   activities: XpActivity[];
   daily: DailyProgress;
 }

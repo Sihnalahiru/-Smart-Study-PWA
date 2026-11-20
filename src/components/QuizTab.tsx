@@ -10,7 +10,9 @@ import {
   XCircle,
 } from 'lucide-react';
 import {FuriganaText} from './FuriganaText';
-import type {StudyPart} from '../types/study';
+import {PerformanceAnalyticsCard} from './PerformanceAnalyticsCard';
+import type {QuizQuestionStat, StudyPart} from '../types/study';
+import type {CoreModuleCode} from '../utils/quizAnalytics';
 import {
   buildFullExamQuizBank,
   shuffleQuizQuestions,
@@ -22,6 +24,8 @@ interface QuizTabProps {
   parts: StudyPart[];
   allParts: StudyPart[];
   correctQuizIds: string[];
+  attemptedQuizIds?: string[];
+  quizQuestionStats?: Record<string, QuizQuestionStat>;
   onRecordQuizAnswer: (
     questionId: string,
     isCorrect: boolean,
@@ -39,6 +43,8 @@ export const QuizTab: React.FC<QuizTabProps> = ({
   parts,
   allParts,
   correctQuizIds,
+  attemptedQuizIds = [],
+  quizQuestionStats,
   onRecordQuizAnswer,
 }) => {
   const [showFurigana, setShowFurigana] = useState(true);
@@ -198,6 +204,14 @@ export const QuizTab: React.FC<QuizTabProps> = ({
     setPracticeAllModules(enableAll);
     setModuleFilter('ALL');
     setShuffledIds(null);
+  };
+
+  const handleSelectModuleFromAnalytics = (code: CoreModuleCode) => {
+    if (isHeaderSubset && !practiceAllModules) {
+      setPracticeAllModules(true);
+    }
+    setModuleFilter(code);
+    setFilter('all');
   };
 
   const handleRetake = () => {
@@ -471,6 +485,18 @@ export const QuizTab: React.FC<QuizTabProps> = ({
           </div>
         )}
       </section>
+
+      {/* Performance Analytics Spider Chart Across Syllabus Modules */}
+      <PerformanceAnalyticsCard
+        allParts={allParts}
+        correctQuizIds={correctQuizIds}
+        attemptedQuizIds={attemptedQuizIds}
+        quizQuestionStats={quizQuestionStats}
+        sessionAnswers={answers}
+        activeModuleFilter={moduleFilter}
+        showFurigana={showFurigana}
+        onSelectModulePractice={handleSelectModuleFromAnalytics}
+      />
 
       {allAnswered && (
         <div className="rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/70 p-5 shadow-xs">

@@ -1,0 +1,53 @@
+name: Deploy Smart Study PWA to Cloudflare Workers
+
+on:
+  push:
+    branches: [fix/github-pages-preview-compact-home]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-worker-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production assets
+        run: npm run build
+
+      - name: Install Wrangler
+        run: npm install --global wrangler@4
+
+      - name: Configure administrator reset secret
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ADMIN_RESET_PASSWORD: ${{ secrets.ADMIN_RESET_PASSWORD }}
+        run: |
+          if [ -z "$ADMIN_RESET_PASSWORD" ]; then
+            echo "ADMIN_RESET_PASSWORD GitHub Actions secret is missing."
+            exit 1
+          fi
+          printf '%s' "$ADMIN_RESET_PASSWORD" | wrangler secret put ADMIN_RESET_PASSWORD --config wrangler.jsonc
+
+      - name: Deploy Worker and static assets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler deploy --config wrangler.jsonc

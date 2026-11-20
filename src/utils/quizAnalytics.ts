@@ -1,14 +1,18 @@
-import type {QuizQuestionStat, StudyPart} from '../types/study';
-import {buildFullExamQuizBank, type QuizModuleCode} from './quizCoverage';
+import type {
+  CbtExamAttempt,
+  QuizQuestionStat,
+  SswExamTopic,
+  StudyPart,
+} from '../types/study';
+import {getAllCbtQuestions, SSW_EXAM_RULES, SSW_TOPICS} from './cbtExam';
 
-export type CoreModuleCode = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+export type CoreTopicId = SswExamTopic;
 
-export interface ModuleAnalyticsAxis {
-  code: CoreModuleCode;
-  axisShortLabel: string;
+export interface TopicAnalyticsAxis {
+  id: CoreTopicId;
+  shortLabel: string;
   englishLabel: string;
-  japaneseLabel: string;
-  partNumber: number;
+  description: string;
   totalQuestions: number;
   attemptedQuestions: number;
   masteredQuestions: number;
@@ -16,95 +20,34 @@ export interface ModuleAnalyticsAxis {
   totalCorrect: number;
   accuracyPercent: number;
   masteryPercent: number;
-  sessionAnswered: number;
-  sessionCorrect: number;
-  sessionAccuracyPercent: number | null;
+}
+
+export interface SectionAnalyticsBreakdown {
+  totalQuestions: number;
+  attemptedQuestions: number;
+  masteredQuestions: number;
+  totalAttempts: number;
+  totalCorrect: number;
+  accuracyPercent: number;
+  passTargetPercent: number;
 }
 
 export interface QuizAnalyticsSummary {
-  axes: ModuleAnalyticsAxis[];
+  axes: TopicAnalyticsAxis[];
+  academic: SectionAnalyticsBreakdown;
+  practical: SectionAnalyticsBreakdown;
   totalQuestions: number;
   totalMastered: number;
   totalAttempts: number;
   totalCorrect: number;
   overallAccuracyPercent: number;
   overallMasteryPercent: number;
-  strongestModule: ModuleAnalyticsAxis | null;
-  focusModule: ModuleAnalyticsAxis | null;
+  strongestTopic: TopicAnalyticsAxis | null;
+  focusTopic: TopicAnalyticsAxis | null;
   hasAnyAttempts: boolean;
-}
-
-const CORE_AXIS_DEFS: {
-  code: CoreModuleCode;
-  axisShortLabel: string;
-  englishLabel: string;
-  japaneseLabel: string;
-  partNumber: number;
-}[] = [
-  {
-    code: 'A',
-    axisShortLabel: 'A. 設備',
-    englishLabel: 'Facilities & Gear',
-    japaneseLabel: 'A. {倉庫|そうこ}・{設備|せつび}',
-    partNumber: 1,
-  },
-  {
-    code: 'B',
-    axisShortLabel: 'B. 業務品質',
-    englishLabel: 'Operations & Quality',
-    japaneseLabel: 'B. {業務|ぎょうむ}・{品質|ひんしつ}',
-    partNumber: 2,
-  },
-  {
-    code: 'C',
-    axisShortLabel: 'C. 単位・助数詞',
-    englishLabel: 'Docs, Units & Counters',
-    japaneseLabel: 'C. {帳票|ちょうひょう}・{単位|たんい}',
-    partNumber: 3,
-  },
-  {
-    code: 'D',
-    axisShortLabel: 'D. 在庫・入出庫',
-    englishLabel: 'Inventory & Packing',
-    japaneseLabel: 'D. {入出庫|にゅうしゅっこ}・{加工|かこう}',
-    partNumber: 4,
-  },
-  {
-    code: 'E',
-    axisShortLabel: 'E. 安全衛生',
-    englishLabel: 'Health & Safety',
-    japaneseLabel: 'E. {安全|あんぜん}{衛生|えいせい}・KYT',
-    partNumber: 5,
-  },
-  {
-    code: 'F',
-    axisShortLabel: 'F. リフト',
-    englishLabel: 'Forklift Standards',
-    japaneseLabel: 'F. フォークリフト',
-    partNumber: 6,
-  },
-];
-
-function resolveCoreCode(moduleCode: QuizModuleCode, partNumber: number): CoreModuleCode {
-  if (
-    moduleCode === 'A' ||
-    moduleCode === 'B' ||
-    moduleCode === 'C' ||
-    moduleCode === 'D' ||
-    moduleCode === 'E' ||
-    moduleCode === 'F'
-  ) {
-    return moduleCode;
-  }
-  const mapByPart: Record<number, CoreModuleCode> = {
-    1: 'A',
-    2: 'B',
-    3: 'C',
-    4: 'D',
-    5: 'E',
-    6: 'F',
-  };
-  return mapByPart[partNumber] ?? 'A';
+  totalExamsCompleted: number;
+  totalExamsPassed: number;
+  latestExam: CbtExamAttempt | null;
 }
 
 export function computeQuizAnalytics(
@@ -112,44 +55,58 @@ export function computeQuizAnalytics(
   correctQuizIds: string[],
   attemptedQuizIds: string[],
   quizQuestionStats: Record<string, QuizQuestionStat> | undefined,
-  sessionAnswers: Record<string, number>,
+  cbtExamHistory: CbtExamAttempt[] = [],
 ): QuizAnalyticsSummary {
-  const bank = buildFullExamQuizBank(allParts, allParts);
+  const allQuestions = getAllCbtQuestions(allParts);
   const correctSet = new Set(correctQuizIds);
   const attemptedSet = new Set(attemptedQuizIds);
   const statsMap = quizQuestionStats ?? {};
 
   const buckets = new Map<
-    CoreModuleCode,
+    CoreTopicId,
     {
       totalQuestions: number;
       attemptedQuestions: number;
       masteredQuestions: number;
       totalAttempts: number;
       totalCorrect: number;
-      sessionAnswered: number;
-      sessionCorrect: number;
     }
   >();
 
-  for (const def of CORE_AXIS_DEFS) {
-    buckets.set(def.code, {
+  for (const topic of SSW_TOPICS) {
+    buckets.set(topic.id, {
       totalQuestions: 0,
       attemptedQuestions: 0,
       masteredQuestions: 0,
       totalAttempts: 0,
       totalCorrect: 0,
-      sessionAnswered: 0,
-      sessionCorrect: 0,
     });
   }
 
-  for (const q of bank.questions) {
-    const code = resolveCoreCode(q.moduleCode, q.partNumber);
-    const bucket = buckets.get(code);
-    if (!bucket) continue;
+  const secBuckets = {
+    academic: {
+      totalQuestions: 0,
+      attemptedQuestions: 0,
+      masteredQuestions: 0,
+      totalAttempts: 0,
+      totalCorrect: 0,
+    },
+    practical: {
+      totalQuestions: 0,
+      attemptedQuestions: 0,
+      masteredQuestions: 0,
+      totalAttempts: 0,
+      totalCorrect: 0,
+    },
+  };
 
-    bucket.totalQuestions += 1;
+  for (const q of allQuestions) {
+    const topicBucket = buckets.get(q.topic);
+    const secBucket = secBuckets[q.section];
+    if (!topicBucket) continue;
+
+    topicBucket.totalQuestions += 1;
+    secBucket.totalQuestions += 1;
 
     const isMastered = correctSet.has(q.id);
     const stat = statsMap[q.id];
@@ -157,31 +114,27 @@ export function computeQuizAnalytics(
       attemptedSet.has(q.id) || isMastered || (stat?.attempts ?? 0) > 0;
 
     if (hasAttempted) {
-      bucket.attemptedQuestions += 1;
+      topicBucket.attemptedQuestions += 1;
+      secBucket.attemptedQuestions += 1;
     }
     if (isMastered) {
-      bucket.masteredQuestions += 1;
+      topicBucket.masteredQuestions += 1;
+      secBucket.masteredQuestions += 1;
     }
 
-    if (stat && stat.attempts > 0) {
-      bucket.totalAttempts += stat.attempts;
-      bucket.totalCorrect += stat.correct;
-    } else if (hasAttempted) {
-      bucket.totalAttempts += 1;
-      bucket.totalCorrect += isMastered ? 1 : 0;
-    }
+    const attempts =
+      stat && stat.attempts > 0 ? stat.attempts : hasAttempted ? 1 : 0;
+    const correct =
+      stat && stat.attempts > 0 ? stat.correct : isMastered ? 1 : 0;
 
-    const sessionPick = sessionAnswers[q.id];
-    if (sessionPick !== undefined) {
-      bucket.sessionAnswered += 1;
-      if (sessionPick === q.correct_index) {
-        bucket.sessionCorrect += 1;
-      }
-    }
+    topicBucket.totalAttempts += attempts;
+    topicBucket.totalCorrect += correct;
+    secBucket.totalAttempts += attempts;
+    secBucket.totalCorrect += correct;
   }
 
-  const axes: ModuleAnalyticsAxis[] = CORE_AXIS_DEFS.map((def) => {
-    const b = buckets.get(def.code)!;
+  const axes: TopicAnalyticsAxis[] = SSW_TOPICS.map((topic) => {
+    const b = buckets.get(topic.id)!;
     const accuracyPercent =
       b.totalAttempts > 0
         ? Math.round((b.totalCorrect / b.totalAttempts) * 100)
@@ -190,17 +143,12 @@ export function computeQuizAnalytics(
       b.totalQuestions > 0
         ? Math.round((b.masteredQuestions / b.totalQuestions) * 100)
         : 0;
-    const sessionAccuracyPercent =
-      b.sessionAnswered > 0
-        ? Math.round((b.sessionCorrect / b.sessionAnswered) * 100)
-        : null;
 
     return {
-      code: def.code,
-      axisShortLabel: def.axisShortLabel,
-      englishLabel: def.englishLabel,
-      japaneseLabel: def.japaneseLabel,
-      partNumber: def.partNumber,
+      id: topic.id,
+      shortLabel: topic.shortLabel,
+      englishLabel: topic.englishLabel,
+      description: topic.description,
       totalQuestions: b.totalQuestions,
       attemptedQuestions: b.attemptedQuestions,
       masteredQuestions: b.masteredQuestions,
@@ -208,10 +156,18 @@ export function computeQuizAnalytics(
       totalCorrect: b.totalCorrect,
       accuracyPercent,
       masteryPercent,
-      sessionAnswered: b.sessionAnswered,
-      sessionCorrect: b.sessionCorrect,
-      sessionAccuracyPercent,
     };
+  });
+
+  const makeSectionSummary = (
+    b: typeof secBuckets.academic,
+  ): SectionAnalyticsBreakdown => ({
+    ...b,
+    accuracyPercent:
+      b.totalAttempts > 0
+        ? Math.round((b.totalCorrect / b.totalAttempts) * 100)
+        : 0,
+    passTargetPercent: SSW_EXAM_RULES.passPercent,
   });
 
   const totalQuestions = axes.reduce((s, a) => s + a.totalQuestions, 0);
@@ -225,7 +181,7 @@ export function computeQuizAnalytics(
     totalQuestions > 0 ? Math.round((totalMastered / totalQuestions) * 100) : 0;
 
   const attemptedAxes = axes.filter((a) => a.totalAttempts > 0);
-  const strongestModule =
+  const strongestTopic =
     attemptedAxes.length > 0
       ? [...attemptedAxes].sort((a, b) => {
           if (b.accuracyPercent !== a.accuracyPercent) {
@@ -235,7 +191,7 @@ export function computeQuizAnalytics(
         })[0]
       : null;
 
-  const focusModule =
+  const focusTopic =
     axes.length > 0
       ? [...axes].sort((a, b) => {
           const scoreA = a.totalAttempts > 0 ? a.accuracyPercent : -1;
@@ -247,14 +203,19 @@ export function computeQuizAnalytics(
 
   return {
     axes,
+    academic: makeSectionSummary(secBuckets.academic),
+    practical: makeSectionSummary(secBuckets.practical),
     totalQuestions,
     totalMastered,
     totalAttempts,
     totalCorrect,
     overallAccuracyPercent,
     overallMasteryPercent,
-    strongestModule,
-    focusModule,
+    strongestTopic,
+    focusTopic,
     hasAnyAttempts: totalAttempts > 0,
+    totalExamsCompleted: cbtExamHistory.length,
+    totalExamsPassed: cbtExamHistory.filter((e) => e.passedOverall).length,
+    latestExam: cbtExamHistory[0] ?? null,
   };
 }

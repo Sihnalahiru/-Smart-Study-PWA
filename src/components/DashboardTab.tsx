@@ -27,7 +27,11 @@ import {
   getTodayKey,
 } from '../hooks/useStudyProgress';
 import {getUnlockedMilestoneEntries} from '../utils/trophyBadges';
+import {getAllCbtQuestions} from '../utils/cbtExam';
 import {CelebrationConfetti} from './CelebrationConfetti';
+import {PerformanceAnalyticsCard} from './PerformanceAnalyticsCard';
+import {StudyRoadmap} from './StudyRoadmap';
+import {TrophyCase} from './TrophyCase';
 
 interface DashboardTabProps {
   activeUser: UserProfile;
@@ -37,6 +41,21 @@ interface DashboardTabProps {
   onNavigateTab: (tab: ActiveTab) => void;
   onOpenSearch: () => void;
   onEnterFocusMode: () => void;
+}
+
+function formatRelativeTime(iso: string): string {
+  try {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  } catch {
+    return '';
+  }
 }
 
 interface CelebratedSnapshot {
@@ -98,6 +117,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   const streakBadge = getStreakBadge(progress.streakDays);
   const recent7Days = getRecent7Days();
   const studiedToday = progress.lastActiveDate === getTodayKey();
+  const cbtHistory = progress.cbtExamHistory ?? [];
+  const latestExam = cbtHistory[0] ?? null;
 
   const unlockedEntries = useMemo(
     () => getUnlockedMilestoneEntries(allParts, progress, streakBadge),
@@ -176,9 +197,9 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
     (sum, p) => sum + p.flashcards.length,
     0,
   );
-  const totalQuizQuestions = allParts.reduce(
-    (sum, p) => sum + p.quiz.length,
-    0,
+  const totalExamBankQuestions = useMemo(
+    () => getAllCbtQuestions(allParts).length,
+    [allParts],
   );
   const quizAccuracy =
     progress.attemptedQuizIds.length > 0
@@ -187,10 +208,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             100,
         )
       : 0;
-  const noteCoveragePct =
-    totalQuizQuestions > 0
+  const examCoveragePct =
+    totalExamBankQuestions > 0
       ? Math.round(
-          (progress.correctQuizIds.length / totalQuizQuestions) * 100,
+          (progress.correctQuizIds.length / totalExamBankQuestions) * 100,
         )
       : 0;
 
@@ -202,10 +223,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
       reward: '+50 XP potential',
     },
     {
-      label: 'Answer 3 quiz questions today',
-      current: Math.min(3, progress.daily.quizAnswered),
-      target: 3,
-      reward: '+75 XP potential',
+      label: 'Answer 10 CBT exam questions today',
+      current: Math.min(10, progress.daily.quizAnswered),
+      target: 10,
+      reward: '+100 XP potential',
     },
     {
       label: 'Complete 1 study note section',
@@ -257,7 +278,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </section>
       )}
 
-      {/* Executive XP & Level Hero Banner (Personalized for Haruto / Sakura) */}
+      {/* Executive XP & Level Hero Banner (100% English, Isolated Per User) */}
       <section className="surface-hero rounded-2xl p-5 text-white sm:p-6">
         <div className="flex flex-col gap-5">
           <div className="flex items-start justify-between gap-3">
@@ -266,9 +287,13 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                 <span className="font-mono-tabular font-semibold text-amber-400">
                   Level {levelInfo.level}
                 </span>
-                <span className="text-slate-500" aria-hidden="true">·</span>
+                <span className="text-slate-500" aria-hidden="true">
+                  ·
+                </span>
                 <span className="text-slate-200">{levelInfo.rank}</span>
-                <span className="text-slate-500" aria-hidden="true">·</span>
+                <span className="text-slate-500" aria-hidden="true">
+                  ·
+                </span>
                 <span className="font-mono-tabular text-slate-200">
                   +{progress.daily.xpEarnedToday} XP today
                 </span>
@@ -277,8 +302,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                 Welcome back, {activeUser.name}
               </h1>
               <p className="text-xs leading-relaxed text-slate-300/90 sm:text-sm">
-                {activeUser.genderLabel} · Warehouse &amp; Logistics Exam Prep ·
-                Japanese + Sinhala
+                SSW Logistics Warehousing CBT Exam Prep · Personal Profile
               </p>
             </div>
 
@@ -330,7 +354,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       </section>
 
-      {/* Dedicated Daily Streak & Streak Badge Card */}
+      {/* Dedicated Daily Streak Card */}
       <section className="surface-streak rounded-2xl p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3.5">
@@ -355,7 +379,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
               <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
                 {studiedToday
                   ? `Studied today · Best streak: ${progress.bestStreak} day${progress.bestStreak === 1 ? '' : 's'}`
-                  : `Complete a card, quiz, or note today to ${progress.streakDays > 0 ? 'extend' : 'start'} your streak`}
+                  : `Complete a card, exam, or note today to ${progress.streakDays > 0 ? 'extend' : 'start'} your streak`}
               </p>
             </div>
           </div>
@@ -406,21 +430,22 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       </section>
 
-      {/* 2x2 Portrait KPI Grid */}
+      {/* 2x2 Portrait KPI Grid (100% English) */}
       <section className="grid grid-cols-2 gap-3.5">
         <div className="surface-card rounded-2xl p-4 sm:p-4.5">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>Exam Modules</span>
+            <span>Study Modules</span>
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50/80 text-blue-600">
               <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
             </div>
           </div>
           <p className="font-mono-tabular mt-2.5 text-2xl font-bold tracking-tight text-slate-900">
-            {allParts.length}
+            {progress.readPartNumbers.length}
+            <span className="text-sm font-medium text-slate-400">
+              /{allParts.length}
+            </span>
           </p>
-          <p className="mt-1 text-xs text-slate-500">
-            {progress.readPartNumbers.length} completed
-          </p>
+          <p className="mt-1 text-xs text-slate-500">Sections completed</p>
         </div>
 
         <div className="surface-card rounded-2xl p-4 sm:p-4.5">
@@ -437,13 +462,13 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             </span>
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            {progress.daily.flashcardsReviewed} today
+            {progress.daily.flashcardsReviewed} reviewed today
           </p>
         </div>
 
         <div className="surface-card rounded-2xl p-4 sm:p-4.5">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>Quiz Accuracy</span>
+            <span>Exam Accuracy</span>
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50/80 text-emerald-600">
               <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
             </div>
@@ -452,27 +477,175 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             {progress.attemptedQuizIds.length > 0 ? `${quizAccuracy}%` : '—'}
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            {progress.correctQuizIds.length}/{totalQuizQuestions} correct
+            {progress.correctQuizIds.length}/{totalExamBankQuestions} mastered
           </p>
         </div>
 
         <div className="surface-card rounded-2xl p-4 sm:p-4.5">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>Notes Coverage</span>
+            <span>CBT Mock Status</span>
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50/80 text-amber-600">
               <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
             </div>
           </div>
           <p className="font-mono-tabular mt-2.5 text-2xl font-bold tracking-tight text-slate-900">
-            {noteCoveragePct}%
+            {latestExam
+              ? `${Math.round((latestExam.totalCorrect / Math.max(1, latestExam.totalQuestions)) * 100)}%`
+              : `${examCoveragePct}%`}
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            {progress.completedQuizParts.length}/{allParts.length} full quizzes
+            {latestExam
+              ? `Last: ${latestExam.passedOverall ? 'PASS' : 'Review'} (${latestExam.totalCorrect}/${latestExam.totalQuestions})`
+              : `${cbtHistory.length} CBT exams taken`}
           </p>
         </div>
       </section>
 
+      {/* 100% English Performance Analytics Directly on Dashboard */}
+      <PerformanceAnalyticsCard
+        allParts={allParts}
+        correctQuizIds={progress.correctQuizIds}
+        attemptedQuizIds={progress.attemptedQuizIds}
+        quizQuestionStats={progress.quizQuestionStats}
+        cbtExamHistory={cbtHistory}
+        onPracticeTopic={() => onNavigateTab('quiz')}
+      />
 
+      {/* Curriculum Study Roadmap (100% English) */}
+      <StudyRoadmap
+        allParts={allParts}
+        progress={progress}
+        onSelectPartAndTab={onSelectPartAndTab}
+      />
+
+      {/* Achievement Trophy Case (100% English) */}
+      <TrophyCase
+        allParts={allParts}
+        progress={progress}
+        onSelectPartAndTab={onSelectPartAndTab}
+      />
+
+      {/* Study Library (100% English Titles & Clean Actions) */}
+      <section className="surface-card rounded-2xl p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 pb-4">
+          <div>
+            <h2 className="text-base font-bold tracking-tight text-slate-900">
+              Study Library
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Open illustrated study notes, flashcards, or mock CBT exams
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpenSearch}
+              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:border-slate-300 hover:bg-slate-50"
+            >
+              <Search
+                className="h-3.5 w-3.5 text-slate-500"
+                aria-hidden="true"
+              />
+              <span>Search</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigateTab('upload')}
+              className="btn-primary-premium inline-flex min-h-[38px] items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold"
+            >
+              <FileUp className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Add PDF</span>
+            </button>
+          </div>
+        </div>
+
+        {allParts.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-sm font-medium text-slate-700">
+              No study modules loaded yet.
+            </p>
+            <button
+              type="button"
+              onClick={() => onNavigateTab('upload')}
+              className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:brightness-110"
+            >
+              <FileUp className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Upload First PDF</span>
+            </button>
+          </div>
+        ) : (
+          <ul className="divide-y divide-slate-200/70">
+            {allParts.map((part) => {
+              const isRead = progress.readPartNumbers.includes(
+                part.part_number,
+              );
+              return (
+                <li
+                  key={part.part_number}
+                  className="space-y-3.5 py-4 first:pt-4 last:pb-1"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <span className="font-mono-tabular font-semibold text-blue-600">
+                        Part {part.part_number}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span className="font-mono-tabular">
+                        {part.flashcards.length} cards
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span className="font-mono-tabular">
+                        {part.quiz.length} questions
+                      </span>
+                      {isRead && (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span className="font-semibold text-emerald-600">
+                            Completed
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm font-semibold tracking-tight text-slate-900">
+                      {part.english_title ?? part.title}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSelectPartAndTab(part.part_number, 'notes')
+                      }
+                      className="min-h-[40px] rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/70 px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:text-slate-900"
+                    >
+                      Notes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSelectPartAndTab(part.part_number, 'flashcards')
+                      }
+                      className="min-h-[40px] rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/70 px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:text-slate-900"
+                    >
+                      Cards
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSelectPartAndTab(part.part_number, 'quiz')
+                      }
+                      className="min-h-[40px] rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:brightness-110"
+                    >
+                      CBT Exam
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       {/* Daily Study Goals */}
       <section className="surface-card rounded-2xl p-5 sm:p-6">
@@ -519,7 +692,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       </section>
 
-      {/* Intensive Study Shortcuts */}
+      {/* Quick Study Shortcuts */}
       <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <button
           type="button"
@@ -534,10 +707,11 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-bold tracking-tight text-slate-900">
-              Focused Exam Quiz
+              Full CBT Mock Exam
             </h3>
             <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
-              Test all {totalQuizQuestions} study note topics in distraction-free Focus Mode.
+              50 mixed questions (30 Academic + 20 Practical) in 80-minute timed
+              Focus Mode.
             </p>
           </div>
         </button>
@@ -552,16 +726,60 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-bold tracking-tight text-slate-900">
-              Bilingual Study Notes
+              Illustrated Study Notes
             </h3>
             <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
-              Read Japanese with Furigana &amp; Sinhala explanations (+25 XP/part).
+              Read structured textbook notes with inline figures, signs &amp;
+              diagrams (+25 XP/part).
             </p>
           </div>
         </button>
       </section>
 
+      {/* XP Reward Log */}
+      <section className="surface-card rounded-2xl p-5 sm:p-6">
+        <div className="flex items-center justify-between border-b border-slate-200/70 pb-3.5">
+          <h2 className="text-base font-bold tracking-tight text-slate-900">
+            Activity &amp; XP Log
+          </h2>
+          <span className="font-mono-tabular text-xs font-medium text-slate-500">
+            {progress.activities.length} recent
+          </span>
+        </div>
 
+        {progress.activities.length === 0 ? (
+          <p className="py-6 text-center text-xs leading-relaxed text-slate-500">
+            No XP earned yet. Review a flashcard, take a CBT exam, or complete a
+            study note section to start your streak!
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-200/70">
+            {progress.activities.slice(0, 6).map((item) => (
+              <li
+                key={item.id}
+                className="flex items-center justify-between gap-3 py-3.5 first:pt-3.5 last:pb-1"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-slate-900">
+                    {item.action}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">
+                    {item.detail}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <span className="font-mono-tabular text-xs font-bold text-amber-600">
+                    +{item.xp} XP
+                  </span>
+                  <p className="mt-0.5 text-[11px] text-slate-400">
+                    {formatRelativeTime(item.timestamp)}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 };

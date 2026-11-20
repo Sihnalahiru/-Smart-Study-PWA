@@ -8,12 +8,10 @@ import {
   Flame,
   Layers,
   LayoutDashboard,
-  Library,
   LogOut,
   Maximize2,
   Minimize2,
   Search,
-  Settings as SettingsIcon,
   ShieldCheck,
   Users,
   X,
@@ -24,12 +22,10 @@ import {EmptyStudyState} from './components/EmptyStudyState';
 import {FlashcardsTab} from './components/FlashcardsTab';
 import {GlobalSearchModal} from './components/GlobalSearchModal';
 import {LoginScreen} from './components/LoginScreen';
-import {LibraryTab} from './components/LibraryTab';
 import {OfflineIndicator} from './components/OfflineIndicator';
 import {PWAInstallButton} from './components/PWAInstallButton';
 import {QuizTab} from './components/QuizTab';
 import {StudyNotesTab} from './components/StudyNotesTab';
-import {SettingsTab} from './components/SettingsTab';
 import {UploadPdfTab} from './components/UploadPdfTab';
 import {useStudyProgress} from './hooks/useStudyProgress';
 import type {
@@ -68,13 +64,6 @@ const NAV_ITEMS: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    id: 'library',
-    label: 'Study Library',
-    shortLabel: 'Library',
-    section: 'library',
-    icon: Library,
-  },
-  {
     id: 'notes',
     label: 'Study Notes',
     shortLabel: 'Notes',
@@ -90,8 +79,8 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     id: 'quiz',
-    label: 'Quiz (日本語)',
-    shortLabel: 'Quiz',
+    label: 'CBT Exam',
+    shortLabel: 'Exam',
     section: 'study',
     icon: CheckSquare,
   },
@@ -101,13 +90,6 @@ const NAV_ITEMS: NavItem[] = [
     shortLabel: 'Upload',
     section: 'library',
     icon: FileUp,
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    shortLabel: 'Settings',
-    section: 'study',
-    icon: SettingsIcon,
   },
 ];
 
@@ -121,9 +103,6 @@ export default function App() {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [headerAvatarFailed, setHeaderAvatarFailed] = useState(false);
-  const [eyeComfortMode, setEyeComfortMode] = useState<boolean>(() => {
-    try { return localStorage.getItem('smart-study-eye-comfort') === 'true'; } catch { return false; }
-  });
 
   const [focusNotePart, setFocusNotePart] = useState<number | null>(null);
   const [highlightQuery, setHighlightQuery] = useState<string>('');
@@ -141,11 +120,6 @@ export default function App() {
     setHeaderAvatarFailed(false);
   }, [activeUserId]);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('eye-comfort-mode', eyeComfortMode);
-    try { localStorage.setItem('smart-study-eye-comfort', String(eyeComfortMode)); } catch { /* storage unavailable */ }
-  }, [eyeComfortMode]);
-
   const {
     progress,
     levelInfo,
@@ -154,7 +128,7 @@ export default function App() {
     markPartRead,
     markFlashcardMastered,
     recordQuizAnswer,
-    resetProgress,
+    recordCbtExamAttempt,
   } = useStudyProgress(activeUserId);
 
   const manifest = manifestData as StudyManifest;
@@ -259,17 +233,6 @@ export default function App() {
     setIsAccountMenuOpen(false);
   };
 
-  const handleAdminReset = () => {
-    if (!activeUserId) return;
-    resetProgress();
-    try {
-      localStorage.removeItem(`smart_study_celebrated_v1_${activeUserId}`);
-    } catch {
-      // The browser may deny local storage access.
-    }
-    setActiveTab('dashboard');
-  };
-
   const handleLogout = () => {
     if (isFocusMode) {
       exitFocusMode();
@@ -330,7 +293,7 @@ export default function App() {
         <aside className="surface-nav-glass hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-slate-200/80">
           <div className="flex h-16 items-center gap-3 border-b border-slate-200/70 px-5">
             <img
-              src={`${import.meta.env.BASE_URL}icon.svg`}
+              src="/icon.svg"
               alt=""
               className="h-8 w-8 shrink-0 rounded-xl shadow-xs"
             />
@@ -381,7 +344,7 @@ export default function App() {
 
             <div>
               <p className="px-3 text-[11px] font-semibold tracking-[0.04em] text-slate-400">
-                Study Library
+                PDF Library
               </p>
               <ul className="mt-2 space-y-1">
                 {libraryNavItems.map((item) => {
@@ -584,7 +547,7 @@ export default function App() {
               <>
                 {/* Mobile Brand */}
                 <a
-                  href={import.meta.env.BASE_URL}
+                  href="/"
                   onClick={(e) => {
                     e.preventDefault();
                     setActiveTab('dashboard');
@@ -592,7 +555,7 @@ export default function App() {
                   className="flex shrink-0 items-center gap-2 text-sm font-bold tracking-tight text-slate-900 whitespace-nowrap lg:hidden"
                 >
                   <img
-                    src={`${import.meta.env.BASE_URL}icon.svg`}
+                    src="/icon.svg"
                     alt=""
                     className="h-7 w-7 shrink-0 rounded-lg shadow-xs"
                   />
@@ -660,24 +623,6 @@ export default function App() {
                   >
                     <Maximize2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     <span>Focus Mode</span>
-                  </button>
-
-                  {/* Quick Settings Access — visible on mobile and desktop headers */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFocusCard(null);
-                      setActiveTab('settings');
-                    }}
-                    aria-label="Open Settings"
-                    title="Settings"
-                    className={`inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl border shadow-xs transition-colors ${
-                      activeTab === 'settings'
-                        ? 'border-blue-200 bg-blue-50 text-blue-700'
-                        : 'border-slate-200/90 bg-white/85 text-slate-600 hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-700'
-                    }`}
-                  >
-                    <SettingsIcon className="h-4 w-4" aria-hidden="true" />
                   </button>
 
                   {/* Active Profile Avatar / Switcher Trigger */}
@@ -756,17 +701,9 @@ export default function App() {
               : 'max-w-xl py-6 pb-24 sm:py-7 md:pb-10'
           }`}
         >
-          {activeTab === 'settings' ? (
-            <SettingsTab eyeComfortMode={eyeComfortMode} onEyeComfortChange={setEyeComfortMode} onResetComplete={handleAdminReset} />
-          ) : activeTab === 'library' ? (
-            <LibraryTab
-              parts={allParts}
-              onOpenSearch={() => setIsSearchOpen(true)}
-              onSelectPartAndTab={handleSelectPartAndTab}
-              onUploadPdf={() => setActiveTab('upload')}
-            />
-          ) : activeTab === 'dashboard' ? (
+          {activeTab === 'dashboard' ? (
             <DashboardTab
+              key={activeUserId}
               activeUser={activeUser}
               allParts={allParts}
               progress={progress}
@@ -781,6 +718,7 @@ export default function App() {
             <EmptyStudyState onGoToUpload={() => setActiveTab('upload')} />
           ) : activeTab === 'notes' ? (
             <StudyNotesTab
+              key={activeUserId}
               parts={visibleParts}
               isCombinedView={isCombinedView}
               readPartNumbers={progress.readPartNumbers}
@@ -791,6 +729,7 @@ export default function App() {
             />
           ) : activeTab === 'flashcards' ? (
             <FlashcardsTab
+              key={activeUserId}
               parts={visibleParts}
               reviewedFlashcardIds={progress.reviewedFlashcardIds}
               onMarkFlashcardMastered={markFlashcardMastered}
@@ -798,12 +737,15 @@ export default function App() {
             />
           ) : (
             <QuizTab
+              key={activeUserId}
               parts={visibleParts}
               allParts={allParts}
               correctQuizIds={progress.correctQuizIds}
               attemptedQuizIds={progress.attemptedQuizIds}
               quizQuestionStats={progress.quizQuestionStats}
+              cbtExamHistory={progress.cbtExamHistory}
               onRecordQuizAnswer={recordQuizAnswer}
+              onRecordCbtExamAttempt={recordCbtExamAttempt}
             />
           )}
 
@@ -836,7 +778,7 @@ export default function App() {
       {!isFocusMode && (
         <nav
           aria-label="Mobile study navigation"
-          className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-7 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
+          className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-5 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
         >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;

@@ -262,14 +262,14 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
               </div>
 
               <div className="text-center text-xs font-medium text-slate-400">
-                Tap card to reveal Japanese &amp; Sinhala answer
+                Tap card to reveal answer
               </div>
             </div>
 
             {/* Back Face */}
             <div className="surface-hero backface-hidden rotate-y-180 absolute inset-0 flex flex-col justify-between rounded-2xl p-6 text-white sm:p-8">
               <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-400">
-                <span className="text-amber-300">Answer · සිංහල</span>
+                <span className="text-amber-300">Answer</span>
                 <span className="truncate">{currentCard.partTitle}</span>
               </div>
 

@@ -290,7 +290,7 @@ export const StudyRoadmap: React.FC<StudyRoadmapProps> = ({
                       </span>
                       <span aria-hidden="true">·</span>
                       <span>
-                        Quiz (JP): {node.quizDone}/{node.quizTotal}
+                        Quiz: {node.quizDone}/{node.quizTotal}
                       </span>
                     </div>
 

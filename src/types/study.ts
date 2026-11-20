@@ -17,19 +17,74 @@ export interface FlashcardItem {
   answer: string;
 }
 
+export type CbtExamSection = 'academic' | 'practical';
+
+export type SswExamTopic =
+  | 'receiving_dispatching'
+  | 'storage_inventory'
+  | 'picking_processing'
+  | 'warehouse_equipment'
+  | 'safety_health';
+
 export interface QuizQuestion {
+  id?: string;
   question: string;
   options: string[];
   correct_index: number;
   explanation: string;
   note_topic?: string;
   module_code?: string;
+  section?: CbtExamSection;
+  topic?: SswExamTopic;
+  image?: string;
+  imageAlt?: string;
+  isCalculation?: boolean;
+}
+
+export interface CbtQuestion {
+  id: string;
+  paperSet: 1 | 2 | 3;
+  section: CbtExamSection;
+  topic: SswExamTopic;
+  partNumber: number;
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation: string;
+  image?: string;
+  imageAlt?: string;
+  isCalculation?: boolean;
+}
+
+export interface CbtTopicScore {
+  topic: SswExamTopic;
+  correct: number;
+  total: number;
+}
+
+export interface CbtExamAttempt {
+  id: string;
+  mode: 'full' | 'academic' | 'practical';
+  paperSet: 1 | 2 | 3;
+  completedAt: string;
+  elapsedSeconds: number;
+  academicCorrect: number;
+  academicTotal: number;
+  practicalCorrect: number;
+  practicalTotal: number;
+  totalCorrect: number;
+  totalQuestions: number;
+  passedAcademic: boolean;
+  passedPractical: boolean;
+  passedOverall: boolean;
+  topicScores: CbtTopicScore[];
 }
 
 export interface StudyPart {
   part_number: number;
   source_pdf: string;
   title: string;
+  english_title?: string;
   notes_markdown: string;
   flashcards: FlashcardItem[];
   quiz: QuizQuestion[];
@@ -94,6 +149,7 @@ export interface StudyProgressState {
   attemptedQuizIds: string[];
   completedQuizParts: number[];
   quizQuestionStats?: Record<string, QuizQuestionStat>;
+  cbtExamHistory?: CbtExamAttempt[];
   activities: XpActivity[];
   daily: DailyProgress;
 }

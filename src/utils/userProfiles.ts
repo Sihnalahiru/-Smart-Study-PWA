@@ -1,3 +1,5 @@
+import harutoAvatar from '../assets/images/haruto_avatar_1795158656673.jpg';
+import sakuraAvatar from '../assets/images/sakura_avatar_1795158657393.jpg';
 import type {UserId, UserProfile} from '../types/study';
 
 const ACTIVE_USER_KEY = 'smart_study_active_user_v1';
@@ -9,8 +11,8 @@ export const USER_PROFILES: UserProfile[] = [
     name: 'Haruto',
     japaneseName: 'ハルト',
     genderLabel: 'Boy',
-    roleSubtitle: 'Warehouse & Logistics Candidate',
-    avatarUrl: `${import.meta.env.BASE_URL}src/assets/images/haruto_avatar_1795158656673.jpg`,
+    roleSubtitle: 'SSW Logistics Warehousing Candidate',
+    avatarUrl: harutoAvatar,
     accentGradient: 'from-blue-600 to-indigo-600',
     ringClass: 'ring-blue-500/30 border-blue-200/90',
     badgeClass: 'bg-blue-50 text-blue-700 border-blue-200/80',
@@ -20,8 +22,8 @@ export const USER_PROFILES: UserProfile[] = [
     name: 'Sakura',
     japaneseName: 'サクラ',
     genderLabel: 'Lady',
-    roleSubtitle: 'Warehouse & Logistics Candidate',
-    avatarUrl: `${import.meta.env.BASE_URL}src/assets/images/sakura_avatar_1795158657393.jpg`,
+    roleSubtitle: 'SSW Logistics Warehousing Candidate',
+    avatarUrl: sakuraAvatar,
     accentGradient: 'from-rose-500 to-pink-600',
     ringClass: 'ring-rose-500/30 border-rose-200/90',
     badgeClass: 'bg-rose-50 text-rose-700 border-rose-200/80',

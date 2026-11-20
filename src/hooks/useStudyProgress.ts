@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useState} from 'react';
 import type {
+  CbtExamAttempt,
   QuizQuestionStat,
   StudyProgressState,
   UserId,
@@ -29,7 +30,11 @@ function getYesterdayKey(): string {
   return `${y}-${m}-${d}`;
 }
 
-export function getRecent7Days(): {key: string; label: string; isToday: boolean}[] {
+export function getRecent7Days(): {
+  key: string;
+  label: string;
+  isToday: boolean;
+}[] {
   const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   const today = getTodayKey();
   const list: {key: string; label: string; isToday: boolean}[] = [];
@@ -116,6 +121,7 @@ export function createInitialProgressState(): StudyProgressState {
     attemptedQuizIds: [],
     completedQuizParts: [],
     quizQuestionStats: {},
+    cbtExamHistory: [],
     activities: [],
     daily: {
       date: today,
@@ -125,6 +131,14 @@ export function createInitialProgressState(): StudyProgressState {
       xpEarnedToday: 0,
     },
   };
+}
+
+function saveProgressForUser(userId: UserId, data: StudyProgressState): void {
+  try {
+    localStorage.setItem(getStorageKey(userId), JSON.stringify(data));
+  } catch {
+    // Ignore storage failure
+  }
 }
 
 export function loadProgressForUser(userId: UserId): StudyProgressState {
@@ -217,6 +231,12 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
       }
     }
 
+    const cbtExamHistory: CbtExamAttempt[] = Array.isArray(
+      parsed.cbtExamHistory,
+    )
+      ? parsed.cbtExamHistory
+      : [];
+
     return {
       ...fallback,
       ...parsed,
@@ -240,6 +260,7 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
         ? parsed.completedQuizParts
         : [],
       quizQuestionStats: hydratedStats,
+      cbtExamHistory,
       activities: Array.isArray(parsed.activities) ? parsed.activities : [],
     };
   } catch {
@@ -282,29 +303,28 @@ export interface XpToast {
   label: string;
 }
 
+interface ScopedProgressBundle {
+  ownerId: UserId | null;
+  data: StudyProgressState;
+}
+
 export function useStudyProgress(userId: UserId | null) {
-  const [state, setState] = useState<StudyProgressState>(() =>
-    userId ? loadProgressForUser(userId) : createInitialProgressState(),
-  );
+  const [bundle, setBundle] = useState<ScopedProgressBundle>(() => ({
+    ownerId: userId,
+    data: userId ? loadProgressForUser(userId) : createInitialProgressState(),
+  }));
   const [xpToast, setXpToast] = useState<XpToast | null>(null);
 
+  // Strict per-user isolation: whenever active user changes, synchronously
+  // load that user's own progress and NEVER write the previous user's data
+  // into the new user's storage key.
   useEffect(() => {
-    if (userId) {
-      setState(loadProgressForUser(userId));
-    } else {
-      setState(createInitialProgressState());
-    }
+    setBundle({
+      ownerId: userId,
+      data: userId ? loadProgressForUser(userId) : createInitialProgressState(),
+    });
     setXpToast(null);
   }, [userId]);
-
-  useEffect(() => {
-    if (!userId) return;
-    try {
-      localStorage.setItem(getStorageKey(userId), JSON.stringify(state));
-    } catch {
-      // Ignore storage failure
-    }
-  }, [state, userId]);
 
   const showToast = useCallback((xp: number, label: string) => {
     const id = `${Date.now()}-${Math.random()}`;
@@ -377,12 +397,31 @@ export function useStudyProgress(userId: UserId | null) {
     timestamp: new Date().toISOString(),
   });
 
+  const updateForActiveUser = useCallback(
+    (updater: (prev: StudyProgressState) => StudyProgressState | null) => {
+      if (!userId) return;
+      setBundle((current) => {
+        const baseData =
+          current.ownerId === userId
+            ? current.data
+            : loadProgressForUser(userId);
+        const nextData = updater(baseData);
+        if (!nextData) {
+          return current;
+        }
+        saveProgressForUser(userId, nextData);
+        return {ownerId: userId, data: nextData};
+      });
+    },
+    [userId],
+  );
+
   const markPartRead = useCallback(
     (partNumber: number, title: string) => {
       let earned = 0;
-      setState((prev) => {
+      updateForActiveUser((prev) => {
         if (prev.readPartNumbers.includes(partNumber)) {
-          return prev;
+          return null;
         }
         earned = 25;
         const {
@@ -430,13 +469,13 @@ export function useStudyProgress(userId: UserId | null) {
         showToast(earned, 'Study section completed');
       }
     },
-    [showToast],
+    [updateForActiveUser, showToast],
   );
 
   const markFlashcardMastered = useCallback(
     (cardId: string, label: string) => {
       let earned = 0;
-      setState((prev) => {
+      updateForActiveUser((prev) => {
         const alreadyReviewed = prev.reviewedFlashcardIds.includes(cardId);
         const baseXp = alreadyReviewed ? 2 : 10;
         const {
@@ -484,7 +523,7 @@ export function useStudyProgress(userId: UserId | null) {
         showToast(earned, 'Flashcard mastered');
       }
     },
-    [showToast],
+    [updateForActiveUser, showToast],
   );
 
   const recordQuizAnswer = useCallback(
@@ -496,7 +535,7 @@ export function useStudyProgress(userId: UserId | null) {
     ) => {
       let earned = 0;
       let toastText = '';
-      setState((prev) => {
+      updateForActiveUser((prev) => {
         const alreadyCorrect = prev.correctQuizIds.includes(questionId);
         const alreadyAttempted = prev.attemptedQuizIds.includes(questionId);
         const alreadyCompletedPart =
@@ -598,30 +637,125 @@ export function useStudyProgress(userId: UserId | null) {
         showToast(earned, toastText);
       }
     },
-    [showToast],
+    [updateForActiveUser, showToast],
   );
 
-  const resetProgress = useCallback(() => {
-    if (!userId) return;
-    const initial = createInitialProgressState();
-    try {
-      localStorage.setItem(getStorageKey(userId), JSON.stringify(initial));
-    } catch {
-      // Ignore storage failure; state still resets for this session.
-    }
-    setState(initial);
-    setXpToast(null);
-  }, [userId]);
+  const recordCbtExamAttempt = useCallback(
+    (
+      attempt: CbtExamAttempt,
+      perQuestionResults: {id: string; isCorrect: boolean}[],
+    ) => {
+      let earned = 0;
+      updateForActiveUser((prev) => {
+        const baseXp =
+          attempt.totalCorrect * 10 + (attempt.passedOverall ? 100 : 25);
+        const {
+          today,
+          nextStreak,
+          nextBestStreak,
+          nextActiveDates,
+          streakBonus,
+          nextDaily,
+        } = computeStreakAndDaily(prev, baseXp);
+        earned = baseXp + streakBonus;
+
+        const nextStats: Record<string, QuizQuestionStat> = {
+          ...(prev.quizQuestionStats ?? {}),
+        };
+        const correctSet = new Set(prev.correctQuizIds);
+        const attemptedSet = new Set(prev.attemptedQuizIds);
+
+        for (const item of perQuestionResults) {
+          attemptedSet.add(item.id);
+          if (item.isCorrect) {
+            correctSet.add(item.id);
+          }
+          const existing = nextStats[item.id] ?? {attempts: 0, correct: 0};
+          nextStats[item.id] = {
+            attempts: existing.attempts + 1,
+            correct: existing.correct + (item.isCorrect ? 1 : 0),
+          };
+        }
+
+        const modeLabel =
+          attempt.mode === 'full'
+            ? `Full CBT Exam (Paper Set ${attempt.paperSet})`
+            : attempt.mode === 'academic'
+              ? `Academic Section (Paper Set ${attempt.paperSet})`
+              : `Practical Section (Paper Set ${attempt.paperSet})`;
+
+        const statusWord = attempt.passedOverall ? 'PASS' : 'Review Needed';
+        const nextActivities = [
+          makeActivity(
+            `${modeLabel} · ${statusWord}`,
+            baseXp,
+            `Score ${attempt.totalCorrect}/${attempt.totalQuestions} (${Math.round((attempt.totalCorrect / Math.max(1, attempt.totalQuestions)) * 100)}%)`,
+          ),
+          ...prev.activities,
+        ];
+
+        if (streakBonus > 0) {
+          nextActivities.unshift(
+            makeActivity(
+              'Streak Milestone Bonus',
+              streakBonus,
+              `${nextStreak}-Day Streak Badge`,
+            ),
+          );
+        }
+
+        const nextHistory = [attempt, ...(prev.cbtExamHistory ?? [])].slice(
+          0,
+          30,
+        );
+
+        return {
+          ...prev,
+          xp: prev.xp + earned,
+          streakDays: nextStreak,
+          bestStreak: nextBestStreak,
+          lastActiveDate: today,
+          activeDates: nextActiveDates,
+          correctQuizIds: Array.from(correctSet),
+          attemptedQuizIds: Array.from(attemptedSet),
+          quizQuestionStats: nextStats,
+          cbtExamHistory: nextHistory,
+          daily: {
+            ...nextDaily,
+            quizAnswered: nextDaily.quizAnswered + perQuestionResults.length,
+          },
+          activities: nextActivities.slice(0, 30),
+        };
+      });
+
+      if (earned > 0) {
+        showToast(
+          earned,
+          attempt.passedOverall ? 'CBT Mock Exam Passed!' : 'CBT Exam Logged',
+        );
+      }
+    },
+    [updateForActiveUser, showToast],
+  );
+
+  // If userId just changed and effect hasn't run yet, read synchronously so
+  // renders NEVER briefly show the previous user's progress!
+  const effectiveProgress =
+    bundle.ownerId === userId
+      ? bundle.data
+      : userId
+        ? loadProgressForUser(userId)
+        : createInitialProgressState();
 
   return {
-    progress: state,
-    levelInfo: getLevelInfo(state.xp),
-    streakBadge: getStreakBadge(state.streakDays),
-    studiedToday: state.lastActiveDate === getTodayKey(),
+    progress: effectiveProgress,
+    levelInfo: getLevelInfo(effectiveProgress.xp),
+    streakBadge: getStreakBadge(effectiveProgress.streakDays),
+    studiedToday: effectiveProgress.lastActiveDate === getTodayKey(),
     xpToast,
     markPartRead,
     markFlashcardMastered,
     recordQuizAnswer,
-    resetProgress,
+    recordCbtExamAttempt,
   };
 }

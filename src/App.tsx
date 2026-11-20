@@ -8,6 +8,7 @@ import {
   Flame,
   Layers,
   LayoutDashboard,
+  Library,
   LogOut,
   Maximize2,
   Minimize2,
@@ -23,6 +24,7 @@ import {EmptyStudyState} from './components/EmptyStudyState';
 import {FlashcardsTab} from './components/FlashcardsTab';
 import {GlobalSearchModal} from './components/GlobalSearchModal';
 import {LoginScreen} from './components/LoginScreen';
+import {LibraryTab} from './components/LibraryTab';
 import {OfflineIndicator} from './components/OfflineIndicator';
 import {PWAInstallButton} from './components/PWAInstallButton';
 import {QuizTab} from './components/QuizTab';
@@ -64,6 +66,13 @@ const NAV_ITEMS: NavItem[] = [
     shortLabel: 'Home',
     section: 'study',
     icon: LayoutDashboard,
+  },
+  {
+    id: 'library',
+    label: 'Study Library',
+    shortLabel: 'Library',
+    section: 'library',
+    icon: Library,
   },
   {
     id: 'notes',
@@ -250,12 +259,13 @@ export default function App() {
   };
 
   const handleAdminReset = () => {
-    // The Worker authenticates the administrator before this callback is invoked.
+    if (!activeUserId) return;
     try {
-      for (const key of Object.keys(localStorage)) {
-        if (key.startsWith('smart_study_progress_v1_')) localStorage.removeItem(key);
-      }
-    } catch { /* storage unavailable */ }
+      localStorage.removeItem(`smart_study_progress_v1_${activeUserId}`);
+      localStorage.removeItem(`smart_study_celebrated_v1_${activeUserId}`);
+    } catch {
+      // The browser may deny local storage access.
+    }
     window.location.reload();
   };
 
@@ -370,7 +380,7 @@ export default function App() {
 
             <div>
               <p className="px-3 text-[11px] font-semibold tracking-[0.04em] text-slate-400">
-                PDF Library
+                Study Library
               </p>
               <ul className="mt-2 space-y-1">
                 {libraryNavItems.map((item) => {
@@ -729,6 +739,13 @@ export default function App() {
         >
           {activeTab === 'settings' ? (
             <SettingsTab eyeComfortMode={eyeComfortMode} onEyeComfortChange={setEyeComfortMode} onResetComplete={handleAdminReset} />
+          ) : activeTab === 'library' ? (
+            <LibraryTab
+              parts={allParts}
+              onOpenSearch={() => setIsSearchOpen(true)}
+              onSelectPartAndTab={handleSelectPartAndTab}
+              onUploadPdf={() => setActiveTab('upload')}
+            />
           ) : activeTab === 'dashboard' ? (
             <DashboardTab
               activeUser={activeUser}
@@ -800,7 +817,7 @@ export default function App() {
       {!isFocusMode && (
         <nav
           aria-label="Mobile study navigation"
-          className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-6 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
+          className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-7 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
         >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;

@@ -1,12 +1,11 @@
 import {useCallback, useEffect, useState} from 'react';
-import type {
-  SavedTranscript,
-  SavedVisual,
-  StudyProgressState,
-  XpActivity,
-} from '../types/study';
+import type {StudyProgressState, UserId, XpActivity} from '../types/study';
 
-const STORAGE_KEY = 'smart_study_progress_v1';
+const STORAGE_KEY_PREFIX = 'smart_study_progress_v1_';
+
+function getStorageKey(userId: UserId): string {
+  return `${STORAGE_KEY_PREFIX}${userId}`;
+}
 
 export function getTodayKey(): string {
   const now = new Date();
@@ -98,7 +97,7 @@ export function getStreakBadge(streakDays: number): StreakBadgeInfo {
   };
 }
 
-function createInitialState(): StudyProgressState {
+export function createInitialProgressState(): StudyProgressState {
   const today = getTodayKey();
   return {
     xp: 0,
@@ -116,26 +115,23 @@ function createInitialState(): StudyProgressState {
       date: today,
       flashcardsReviewed: 0,
       quizAnswered: 0,
-      audioTranscribed: 0,
-      visualsCreated: 0,
+      notesCompleted: 0,
       xpEarnedToday: 0,
     },
-    savedVisuals: [],
-    savedTranscripts: [],
   };
 }
 
-function loadState(): StudyProgressState {
-  const fallback = createInitialState();
+export function loadProgressForUser(userId: UserId): StudyProgressState {
+  const fallback = createInitialProgressState();
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey(userId));
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<StudyProgressState>;
     const today = getTodayKey();
     const yesterday = getYesterdayKey();
 
-    // Reset visible streak if user missed yesterday and hasn't studied today
-    let validStreak = typeof parsed.streakDays === 'number' ? parsed.streakDays : 0;
+    let validStreak =
+      typeof parsed.streakDays === 'number' ? parsed.streakDays : 0;
     if (
       parsed.lastActiveDate &&
       parsed.lastActiveDate !== today &&
@@ -146,19 +142,37 @@ function loadState(): StudyProgressState {
 
     const daily =
       parsed.daily && parsed.daily.date === today
-        ? parsed.daily
+        ? {
+            date: today,
+            flashcardsReviewed:
+              typeof parsed.daily.flashcardsReviewed === 'number'
+                ? parsed.daily.flashcardsReviewed
+                : 0,
+            quizAnswered:
+              typeof parsed.daily.quizAnswered === 'number'
+                ? parsed.daily.quizAnswered
+                : 0,
+            notesCompleted:
+              typeof parsed.daily.notesCompleted === 'number'
+                ? parsed.daily.notesCompleted
+                : 0,
+            xpEarnedToday:
+              typeof parsed.daily.xpEarnedToday === 'number'
+                ? parsed.daily.xpEarnedToday
+                : 0,
+          }
         : {
             date: today,
             flashcardsReviewed: 0,
             quizAnswered: 0,
-            audioTranscribed: 0,
-            visualsCreated: 0,
+            notesCompleted: 0,
             xpEarnedToday: 0,
           };
 
     return {
       ...fallback,
       ...parsed,
+      xp: typeof parsed.xp === 'number' ? parsed.xp : 0,
       streakDays: validStreak,
       bestStreak: Math.max(
         validStreak,
@@ -182,12 +196,6 @@ function loadState(): StudyProgressState {
         ? parsed.completedQuizParts
         : [],
       activities: Array.isArray(parsed.activities) ? parsed.activities : [],
-      savedVisuals: Array.isArray(parsed.savedVisuals)
-        ? parsed.savedVisuals
-        : [],
-      savedTranscripts: Array.isArray(parsed.savedTranscripts)
-        ? parsed.savedTranscripts
-        : [],
     };
   } catch {
     return fallback;
@@ -229,25 +237,29 @@ export interface XpToast {
   label: string;
 }
 
-export function useStudyProgress() {
-  const [state, setState] = useState<StudyProgressState>(loadState);
+export function useStudyProgress(userId: UserId | null) {
+  const [state, setState] = useState<StudyProgressState>(() =>
+    userId ? loadProgressForUser(userId) : createInitialProgressState(),
+  );
   const [xpToast, setXpToast] = useState<XpToast | null>(null);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      try {
-        const trimmed = {
-          ...state,
-          savedVisuals: state.savedVisuals.slice(0, 3),
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-      } catch {
-        // Ignore storage failure
-      }
+    if (userId) {
+      setState(loadProgressForUser(userId));
+    } else {
+      setState(createInitialProgressState());
     }
-  }, [state]);
+    setXpToast(null);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      localStorage.setItem(getStorageKey(userId), JSON.stringify(state));
+    } catch {
+      // Ignore storage failure
+    }
+  }, [state, userId]);
 
   const showToast = useCallback((xp: number, label: string) => {
     const id = `${Date.now()}-${Math.random()}`;
@@ -291,8 +303,7 @@ export function useStudyProgress() {
             date: today,
             flashcardsReviewed: 0,
             quizAnswered: 0,
-            audioTranscribed: 0,
-            visualsCreated: 0,
+            notesCompleted: 0,
             xpEarnedToday: 0,
           };
 
@@ -363,7 +374,10 @@ export function useStudyProgress() {
           lastActiveDate: today,
           activeDates: nextActiveDates,
           readPartNumbers: [...prev.readPartNumbers, partNumber],
-          daily: nextDaily,
+          daily: {
+            ...nextDaily,
+            notesCompleted: nextDaily.notesCompleted + 1,
+          },
           activities: activities.slice(0, 30),
         };
       });
@@ -528,110 +542,6 @@ export function useStudyProgress() {
     [showToast],
   );
 
-  const saveTranscript = useCallback(
-    (entry: Omit<SavedTranscript, 'id' | 'createdAt'>) => {
-      const baseXp = 20;
-      const newRecord: SavedTranscript = {
-        ...entry,
-        id: `tr-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-      };
-      let totalEarned = baseXp;
-      setState((prev) => {
-        const {
-          today,
-          nextStreak,
-          nextBestStreak,
-          nextActiveDates,
-          streakBonus,
-          nextDaily,
-        } = computeStreakAndDaily(prev, baseXp);
-        totalEarned = baseXp + streakBonus;
-        return {
-          ...prev,
-          xp: prev.xp + totalEarned,
-          streakDays: nextStreak,
-          bestStreak: nextBestStreak,
-          lastActiveDate: today,
-          activeDates: nextActiveDates,
-          daily: {
-            ...nextDaily,
-            audioTranscribed: nextDaily.audioTranscribed + 1,
-          },
-          savedTranscripts: [newRecord, ...prev.savedTranscripts].slice(0, 30),
-          activities: [
-            makeActivity('Audio Transcribed', baseXp, entry.title),
-            ...prev.activities,
-          ].slice(0, 30),
-        };
-      });
-      showToast(totalEarned, 'Voice note transcribed');
-      return newRecord;
-    },
-    [showToast],
-  );
-
-  const deleteTranscript = useCallback((id: string) => {
-    setState((prev) => ({
-      ...prev,
-      savedTranscripts: prev.savedTranscripts.filter((t) => t.id !== id),
-    }));
-  }, []);
-
-  const saveVisual = useCallback(
-    (entry: Omit<SavedVisual, 'id' | 'createdAt'>) => {
-      const baseXp = 20;
-      const newRecord: SavedVisual = {
-        ...entry,
-        id: `vis-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-      };
-      let totalEarned = baseXp;
-      setState((prev) => {
-        const {
-          today,
-          nextStreak,
-          nextBestStreak,
-          nextActiveDates,
-          streakBonus,
-          nextDaily,
-        } = computeStreakAndDaily(prev, baseXp);
-        totalEarned = baseXp + streakBonus;
-        return {
-          ...prev,
-          xp: prev.xp + totalEarned,
-          streakDays: nextStreak,
-          bestStreak: nextBestStreak,
-          lastActiveDate: today,
-          activeDates: nextActiveDates,
-          daily: {
-            ...nextDaily,
-            visualsCreated: nextDaily.visualsCreated + 1,
-          },
-          savedVisuals: [newRecord, ...prev.savedVisuals].slice(0, 10),
-          activities: [
-            makeActivity(
-              'Study Visual Created',
-              baseXp,
-              entry.prompt.slice(0, 48),
-            ),
-            ...prev.activities,
-          ].slice(0, 30),
-        };
-      });
-      showToast(totalEarned, 'Study visual generated');
-      return newRecord;
-    },
-    [showToast],
-  );
-
-  const deleteVisual = useCallback((id: string) => {
-    setState((prev) => ({
-      ...prev,
-      savedVisuals: prev.savedVisuals.filter((v) => v.id !== id),
-    }));
-  }, []);
-
   return {
     progress: state,
     levelInfo: getLevelInfo(state.xp),
@@ -641,9 +551,5 @@ export function useStudyProgress() {
     markPartRead,
     markFlashcardMastered,
     recordQuizAnswer,
-    saveTranscript,
-    deleteTranscript,
-    saveVisual,
-    deleteVisual,
   };
 }

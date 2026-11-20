@@ -1,32 +1,20 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {
-  ArrowUpRight,
-  BookOpen,
-  Layers,
-  Mic,
-  Search,
-  X,
-} from 'lucide-react';
+import {ArrowUpRight, BookOpen, Layers, Search, X} from 'lucide-react';
 import {extractSearchableText, stripFurigana} from './FuriganaText';
-import type {
-  SavedTranscript,
-  SearchNavigationTarget,
-  StudyPart,
-} from '../types/study';
+import type {SearchNavigationTarget, StudyPart} from '../types/study';
 
 interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   parts: StudyPart[];
-  transcripts: SavedTranscript[];
   onNavigate: (target: SearchNavigationTarget) => void;
 }
 
-type SearchFilter = 'all' | 'notes' | 'flashcards' | 'audio';
+type SearchFilter = 'all' | 'notes' | 'flashcards';
 
 interface SearchResultItem {
   id: string;
-  kind: 'notes' | 'flashcards' | 'audio';
+  kind: 'notes' | 'flashcards';
   partNumber?: number;
   cardIndex?: number;
   title: string;
@@ -85,7 +73,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   isOpen,
   onClose,
   parts,
-  transcripts,
   onNavigate,
 }) => {
   const [query, setQuery] = useState('');
@@ -126,7 +113,11 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         extractSearchableText(line).toLowerCase().includes(q),
       );
 
-      if (titleMatch || matchingRawLine || searchableNotes.toLowerCase().includes(q)) {
+      if (
+        titleMatch ||
+        matchingRawLine ||
+        searchableNotes.toLowerCase().includes(q)
+      ) {
         const cleanMatchingLine = matchingRawLine
           ? stripMarkdown(matchingRawLine)
           : cleanNotes;
@@ -161,22 +152,8 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
       });
     }
 
-    transcripts.forEach((tr) => {
-      const tMatch = tr.title.toLowerCase().includes(q);
-      const bodyMatch = tr.transcript.toLowerCase().includes(q);
-      if (tMatch || bodyMatch) {
-        matches.push({
-          id: `tr-${tr.id}`,
-          kind: 'audio',
-          title: tr.title,
-          subtitle: 'Voice Transcription Note',
-          snippet: extractSnippet(tr.transcript, query.trim()),
-        });
-      }
-    });
-
     return matches;
-  }, [parts, transcripts, query]);
+  }, [parts, query]);
 
   const filteredResults = useMemo(() => {
     if (filter === 'all') return results;
@@ -188,7 +165,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
       all: results.length,
       notes: results.filter((r) => r.kind === 'notes').length,
       flashcards: results.filter((r) => r.kind === 'flashcards').length,
-      audio: results.filter((r) => r.kind === 'audio').length,
     };
   }, [results]);
 
@@ -215,7 +191,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search Markdown notes, flashcards, and voice transcripts..."
+            placeholder="Search Markdown study notes and flashcards..."
             className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none sm:text-base"
           />
           {query && (
@@ -245,7 +221,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                 {id: 'all', label: `All (${counts.all})`},
                 {id: 'notes', label: `Study Notes (${counts.notes})`},
                 {id: 'flashcards', label: `Flashcards (${counts.flashcards})`},
-                {id: 'audio', label: `Voice Notes (${counts.audio})`},
               ] as const
             ).map((tab) => (
               <button
@@ -289,12 +264,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           ) : (
             <ul className="space-y-2">
               {filteredResults.map((item) => {
-                const Icon =
-                  item.kind === 'notes'
-                    ? BookOpen
-                    : item.kind === 'flashcards'
-                      ? Layers
-                      : Mic;
+                const Icon = item.kind === 'notes' ? BookOpen : Layers;
                 return (
                   <li key={item.id}>
                     <button

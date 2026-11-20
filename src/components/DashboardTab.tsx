@@ -1,22 +1,24 @@
-import React from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
   Award,
   BookOpen,
   CheckSquare,
   FileUp,
   Flame,
-  Image as ImageIcon,
   Layers,
-  Mic,
+  Maximize2,
   Search,
   ShieldCheck,
   Target,
   TrendingUp,
+  Trophy,
+  X,
 } from 'lucide-react';
 import type {
   ActiveTab,
   StudyPart,
   StudyProgressState,
+  UserProfile,
 } from '../types/study';
 import {
   getLevelInfo,
@@ -24,15 +26,19 @@ import {
   getStreakBadge,
   getTodayKey,
 } from '../hooks/useStudyProgress';
+import {getUnlockedMilestoneEntries} from '../utils/trophyBadges';
+import {CelebrationConfetti} from './CelebrationConfetti';
 import {StudyRoadmap} from './StudyRoadmap';
 import {TrophyCase} from './TrophyCase';
 
 interface DashboardTabProps {
+  activeUser: UserProfile;
   allParts: StudyPart[];
   progress: StudyProgressState;
   onSelectPartAndTab: (partNumber: number, tab: ActiveTab) => void;
   onNavigateTab: (tab: ActiveTab) => void;
   onOpenSearch: () => void;
+  onEnterFocusMode: () => void;
 }
 
 function formatRelativeTime(iso: string): string {
@@ -50,17 +56,138 @@ function formatRelativeTime(iso: string): string {
   }
 }
 
+interface CelebratedSnapshot {
+  level: number;
+  unlockedIds: string[];
+}
+
+interface CelebrationNotice {
+  title: string;
+  subtitle: string;
+}
+
+const CELEBRATED_STORAGE_PREFIX = 'smart_study_celebrated_v1_';
+
+function readCelebratedSnapshot(userId: string): CelebratedSnapshot | null {
+  try {
+    const raw = localStorage.getItem(`${CELEBRATED_STORAGE_PREFIX}${userId}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CelebratedSnapshot>;
+    return {
+      level: typeof parsed.level === 'number' ? parsed.level : 1,
+      unlockedIds: Array.isArray(parsed.unlockedIds) ? parsed.unlockedIds : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeCelebratedSnapshot(
+  userId: string,
+  snapshot: CelebratedSnapshot,
+): void {
+  try {
+    localStorage.setItem(
+      `${CELEBRATED_STORAGE_PREFIX}${userId}`,
+      JSON.stringify(snapshot),
+    );
+  } catch {
+    // Ignore storage write error
+  }
+}
+
 export const DashboardTab: React.FC<DashboardTabProps> = ({
+  activeUser,
   allParts,
   progress,
   onSelectPartAndTab,
   onNavigateTab,
   onOpenSearch,
+  onEnterFocusMode,
 }) => {
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const [confettiActive, setConfettiActive] = useState(false);
+  const [confettiBurstKey, setConfettiBurstKey] = useState(0);
+  const [celebrationNotice, setCelebrationNotice] =
+    useState<CelebrationNotice | null>(null);
+
   const levelInfo = getLevelInfo(progress.xp);
   const streakBadge = getStreakBadge(progress.streakDays);
   const recent7Days = getRecent7Days();
   const studiedToday = progress.lastActiveDate === getTodayKey();
+
+  const unlockedEntries = useMemo(
+    () => getUnlockedMilestoneEntries(allParts, progress, streakBadge),
+    [allParts, progress, streakBadge],
+  );
+  const unlockedSignature = useMemo(
+    () => unlockedEntries.map((entry) => entry.id).join('|'),
+    [unlockedEntries],
+  );
+
+  useEffect(() => {
+    setAvatarFailed(false);
+    setConfettiActive(false);
+    setCelebrationNotice(null);
+  }, [activeUser.id]);
+
+  useEffect(() => {
+    const currentIds = unlockedEntries.map((entry) => entry.id);
+    const seen = readCelebratedSnapshot(activeUser.id);
+
+    if (!seen) {
+      writeCelebratedSnapshot(activeUser.id, {
+        level: levelInfo.level,
+        unlockedIds: currentIds,
+      });
+      return;
+    }
+
+    const leveledUp = levelInfo.level > seen.level;
+    const newlyUnlocked = unlockedEntries.filter(
+      (entry) => !seen.unlockedIds.includes(entry.id),
+    );
+
+    if (leveledUp || newlyUnlocked.length > 0) {
+      writeCelebratedSnapshot(activeUser.id, {
+        level: Math.max(seen.level, levelInfo.level),
+        unlockedIds: Array.from(new Set([...seen.unlockedIds, ...currentIds])),
+      });
+
+      const badgeNames = newlyUnlocked.map((entry) => entry.label).join(', ');
+      let title = '';
+      let subtitle = '';
+
+      if (leveledUp && newlyUnlocked.length > 0) {
+        title = `Level ${levelInfo.level} & New Badge Unlocked`;
+        subtitle = `Reached ${levelInfo.rank} and unlocked ${badgeNames}.`;
+      } else if (leveledUp) {
+        title = `Level Up · Level ${levelInfo.level} (${levelInfo.rank})`;
+        subtitle = `${activeUser.name} reached ${progress.xp} XP in exam prep.`;
+      } else {
+        title =
+          newlyUnlocked.length === 1
+            ? `Badge Unlocked · ${newlyUnlocked[0].label}`
+            : `${newlyUnlocked.length} New Badges Unlocked`;
+        subtitle =
+          newlyUnlocked.length === 1
+            ? `${activeUser.name} earned a new milestone badge.`
+            : `Unlocked: ${badgeNames}.`;
+      }
+
+      setCelebrationNotice({title, subtitle});
+      setConfettiBurstKey((prev) => prev + 1);
+      setConfettiActive(true);
+    }
+  }, [
+    activeUser.id,
+    activeUser.name,
+    levelInfo.level,
+    levelInfo.rank,
+    progress.xp,
+    unlockedSignature,
+    unlockedEntries,
+  ]);
 
   const totalFlashcards = allParts.reduce(
     (sum, p) => sum + p.flashcards.length,
@@ -75,6 +202,12 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
       ? Math.round(
           (progress.correctQuizIds.length / progress.attemptedQuizIds.length) *
             100,
+        )
+      : 0;
+  const noteCoveragePct =
+    totalQuizQuestions > 0
+      ? Math.round(
+          (progress.correctQuizIds.length / totalQuizQuestions) * 100,
         )
       : 0;
 
@@ -92,37 +225,95 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
       reward: '+75 XP potential',
     },
     {
-      label: 'Transcribe 1 voice study note',
-      current: Math.min(1, progress.daily.audioTranscribed),
+      label: 'Complete 1 study note section',
+      current: Math.min(1, progress.daily.notesCompleted),
       target: 1,
-      reward: '+20 XP',
+      reward: '+25 XP',
     },
   ];
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      {/* Executive XP & Level Hero Banner (Mobile Portrait First) */}
+      <CelebrationConfetti
+        burstKey={confettiBurstKey}
+        active={confettiActive}
+        onComplete={() => setConfettiActive(false)}
+      />
+
+      {celebrationNotice && (
+        <section
+          role="status"
+          aria-live="polite"
+          className="flex items-start justify-between gap-3 rounded-2xl border border-amber-300/90 bg-gradient-to-r from-amber-50 via-white to-blue-50/70 p-4 shadow-sm"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-xs">
+              <Trophy className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold tracking-tight text-slate-900">
+                {celebrationNotice.title}
+              </h2>
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
+                {celebrationNotice.subtitle}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCelebrationNotice(null);
+              setConfettiActive(false);
+            }}
+            aria-label="Dismiss celebration"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </section>
+      )}
+
+      {/* Executive XP & Level Hero Banner (Personalized for Haruto / Sakura) */}
       <section className="surface-hero rounded-2xl p-5 text-white sm:p-6">
         <div className="flex flex-col gap-5">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-300">
-              <span className="font-mono-tabular font-semibold text-amber-400">
-                Level {levelInfo.level}
-              </span>
-              <span className="text-slate-500" aria-hidden="true">·</span>
-              <span className="text-slate-200">{levelInfo.rank}</span>
-              <span className="text-slate-500" aria-hidden="true">·</span>
-              <span className="font-mono-tabular text-slate-200">
-                +{progress.daily.xpEarnedToday} XP today
-              </span>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-300">
+                <span className="font-mono-tabular font-semibold text-amber-400">
+                  Level {levelInfo.level}
+                </span>
+                <span className="text-slate-500" aria-hidden="true">·</span>
+                <span className="text-slate-200">{levelInfo.rank}</span>
+                <span className="text-slate-500" aria-hidden="true">·</span>
+                <span className="font-mono-tabular text-slate-200">
+                  +{progress.daily.xpEarnedToday} XP today
+                </span>
+              </div>
+              <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
+                Welcome back, {activeUser.name}
+              </h1>
+              <p className="text-xs leading-relaxed text-slate-300/90 sm:text-sm">
+                {activeUser.genderLabel} · Warehouse &amp; Logistics Exam Prep ·
+                Japanese + Sinhala
+              </p>
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-              Study Command Center
-            </h1>
-            <p className="text-xs leading-relaxed text-slate-300/90 sm:text-sm">
-              Warehouse &amp; Logistics Exam Prep · Japanese with Furigana &amp;
-              Sinhala
-            </p>
+
+            {avatarFailed ? (
+              <div
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${activeUser.accentGradient} text-base font-bold text-white ring-2 ring-white/25`}
+              >
+                {activeUser.name.slice(0, 1)}
+              </div>
+            ) : (
+              <img
+                src={activeUser.avatarUrl}
+                alt={activeUser.name}
+                referrerPolicy="no-referrer"
+                onError={() => setAvatarFailed(true)}
+                className="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-white/25 shadow-sm"
+              />
+            )}
           </div>
 
           <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-md">
@@ -284,17 +475,16 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 
         <div className="surface-card rounded-2xl p-4 sm:p-4.5">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>Studio Assets</span>
+            <span>Notes Coverage</span>
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50/80 text-amber-600">
               <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
             </div>
           </div>
           <p className="font-mono-tabular mt-2.5 text-2xl font-bold tracking-tight text-slate-900">
-            {progress.savedTranscripts.length + progress.savedVisuals.length}
+            {noteCoveragePct}%
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            {progress.savedTranscripts.length} voice ·{' '}
-            {progress.savedVisuals.length} visuals
+            {progress.completedQuizParts.length}/{allParts.length} full quizzes
           </p>
         </div>
       </section>
@@ -365,7 +555,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                 part.part_number,
               );
               return (
-                <li key={part.part_number} className="space-y-3.5 py-4 first:pt-4 last:pb-1">
+                <li
+                  key={part.part_number}
+                  className="space-y-3.5 py-4 first:pt-4 last:pb-1"
+                >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                       <span className="font-mono-tabular font-semibold text-blue-600">
@@ -474,40 +667,43 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       </section>
 
-      {/* Quick Tools */}
+      {/* Intensive Study Shortcuts */}
       <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <button
           type="button"
-          onClick={() => onNavigateTab('audio')}
+          onClick={() => {
+            onNavigateTab('quiz');
+            onEnterFocusMode();
+          }}
           className="surface-card-interactive flex items-start gap-3.5 rounded-2xl p-4.5 text-left"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600">
-            <Mic className="h-5 w-5" aria-hidden="true" />
+            <Maximize2 className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
             <h3 className="text-sm font-bold tracking-tight text-slate-900">
-              Voice Notes (+20 XP)
+              Focused Exam Quiz
             </h3>
             <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
-              Record audio with your mic and transcribe instantly.
+              Test all {totalQuizQuestions} study note topics in distraction-free Focus Mode.
             </p>
           </div>
         </button>
 
         <button
           type="button"
-          onClick={() => onNavigateTab('studio')}
+          onClick={() => onNavigateTab('notes')}
           className="surface-card-interactive flex items-start gap-3.5 rounded-2xl p-4.5 text-left"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 text-amber-600">
-            <ImageIcon className="h-5 w-5" aria-hidden="true" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600">
+            <BookOpen className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
             <h3 className="text-sm font-bold tracking-tight text-slate-900">
-              Visual Studio (+20 XP)
+              Bilingual Study Notes
             </h3>
             <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
-              Generate or edit concept diagrams from prompts.
+              Read Japanese with Furigana &amp; Sinhala explanations (+25 XP/part).
             </p>
           </div>
         </button>

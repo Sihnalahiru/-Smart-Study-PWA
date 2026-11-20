@@ -1,18 +1,7 @@
 import React, {useMemo, useState} from 'react';
-import {
-  Award,
-  BarChart3,
-  CheckCircle2,
-  Cpu,
-  Layers,
-  Lock,
-  PackageCheck,
-  ShieldCheck,
-  Trophy,
-  Wrench,
-} from 'lucide-react';
+import {CheckCircle2, Lock, Trophy} from 'lucide-react';
 import type {ActiveTab, StudyPart, StudyProgressState} from '../types/study';
-import {computeSyllabusNodes} from '../utils/syllabusProgress';
+import {computeTrophyBadges, type TrophyBadge} from '../utils/trophyBadges';
 
 interface TrophyCaseProps {
   allParts: StudyPart[];
@@ -22,20 +11,6 @@ interface TrophyCaseProps {
 
 type TrophyFilter = 'all' | 'unlocked' | 'locked';
 
-interface TrophyBadge {
-  id: string;
-  title: string;
-  requirement: string;
-  moduleRef: string;
-  unlocked: boolean;
-  progressPercent: number;
-  targetPartNumber: number;
-  targetTab: ActiveTab;
-  accentGradient: string;
-  iconBg: string;
-  icon: React.ComponentType<{className?: string}>;
-}
-
 export const TrophyCase: React.FC<TrophyCaseProps> = ({
   allParts,
   progress,
@@ -43,195 +18,10 @@ export const TrophyCase: React.FC<TrophyCaseProps> = ({
 }) => {
   const [filter, setFilter] = useState<TrophyFilter>('all');
 
-  const badges = useMemo<TrophyBadge[]>(() => {
-    const nodes = computeSyllabusNodes(allParts, progress);
-    const byCode = new Map(nodes.map((n) => [n.code, n]));
-
-    const getRecommendedTab = (
-      partNumber: number,
-      cardsDone: number,
-      cardsTotal: number,
-    ): ActiveTab => {
-      if (!progress.readPartNumbers.includes(partNumber)) return 'notes';
-      if (cardsDone < cardsTotal) return 'flashcards';
-      return 'quiz';
-    };
-
-    const modA = byCode.get('A');
-    const modB = byCode.get('B');
-    const modC = byCode.get('C');
-    const modD = byCode.get('D');
-    const modE = byCode.get('E');
-    const modF = byCode.get('F');
-
-    const part1Notes = progress.readPartNumbers.includes(1);
-    const part1Quiz = progress.completedQuizParts.includes(1);
-    const part1Pct = (part1Notes ? 50 : 0) + (part1Quiz ? 50 : 0);
-
-    const coreNodes = [modA, modB, modC, modD, modE, modF].filter(
-      (n): n is NonNullable<typeof n> => Boolean(n),
-    );
-    const masterPct =
-      coreNodes.length > 0
-        ? Math.round(
-            coreNodes.reduce((sum, n) => sum + n.percent, 0) / coreNodes.length,
-          )
-        : 0;
-    const masterUnlocked =
-      coreNodes.length === 6 &&
-      coreNodes.every((n) => n.status === 'completed');
-
-    const firstIncompleteNode =
-      coreNodes.find((n) => n.status !== 'completed' && n.partAvailable) ??
-      coreNodes[0];
-
-    return [
-      {
-        id: 'safety-first',
-        title: 'Safety First',
-        requirement: 'Finish Health & Safety module (PPE, Hazards & LOTO)',
-        moduleRef: 'Module A · Part 1',
-        unlocked: modA?.status === 'completed',
-        progressPercent: modA?.percent ?? 0,
-        targetPartNumber: 1,
-        targetTab: getRecommendedTab(
-          1,
-          modA?.cardsDone ?? 0,
-          modA?.cardsTotal ?? 0,
-        ),
-        accentGradient:
-          'border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/60',
-        iconBg:
-          'border-emerald-200 bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs',
-        icon: ShieldCheck,
-      },
-      {
-        id: 'warehouse-pro',
-        title: 'Warehouse Pro',
-        requirement: 'Master Operations & Workflows (PO, GRN, Picking)',
-        moduleRef: 'Module B · Part 1',
-        unlocked: modB?.status === 'completed',
-        progressPercent: modB?.percent ?? 0,
-        targetPartNumber: 1,
-        targetTab: getRecommendedTab(
-          1,
-          modB?.cardsDone ?? 0,
-          modB?.cardsTotal ?? 0,
-        ),
-        accentGradient:
-          'border-blue-200/90 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/60',
-        iconBg:
-          'border-blue-200 bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-xs',
-        icon: PackageCheck,
-      },
-      {
-        id: 'stock-controller',
-        title: 'Stock Controller',
-        requirement: 'Complete Inventory Control (FIFO, FEFO & ABC)',
-        moduleRef: 'Module C · Part 2',
-        unlocked: modC?.status === 'completed',
-        progressPercent: modC?.percent ?? 0,
-        targetPartNumber: 2,
-        targetTab: getRecommendedTab(
-          2,
-          modC?.cardsDone ?? 0,
-          modC?.cardsTotal ?? 0,
-        ),
-        accentGradient:
-          'border-indigo-200/90 bg-gradient-to-br from-indigo-50/90 via-white to-blue-50/60',
-        iconBg:
-          'border-indigo-200 bg-gradient-to-br from-indigo-600 to-blue-600 text-white shadow-xs',
-        icon: Layers,
-      },
-      {
-        id: 'forklift-ace',
-        title: 'Forklift Ace',
-        requirement: 'Complete Equipment & Material Handling checks',
-        moduleRef: 'Module D · Part 2',
-        unlocked: modD?.status === 'completed',
-        progressPercent: modD?.percent ?? 0,
-        targetPartNumber: 2,
-        targetTab: getRecommendedTab(
-          2,
-          modD?.cardsDone ?? 0,
-          modD?.cardsTotal ?? 0,
-        ),
-        accentGradient:
-          'border-amber-200/90 bg-gradient-to-br from-amber-50/90 via-white to-orange-50/60',
-        iconBg:
-          'border-amber-200 bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-xs',
-        icon: Wrench,
-      },
-      {
-        id: 'wms-specialist',
-        title: 'WMS & Docs Specialist',
-        requirement: 'Finish Tech & Documentation (WMS, RFID, BOL, SDS)',
-        moduleRef: 'Module E · Part 2',
-        unlocked: modE?.status === 'completed',
-        progressPercent: modE?.percent ?? 0,
-        targetPartNumber: 2,
-        targetTab: getRecommendedTab(
-          2,
-          modE?.cardsDone ?? 0,
-          modE?.cardsTotal ?? 0,
-        ),
-        accentGradient:
-          'border-sky-200/90 bg-gradient-to-br from-sky-50/90 via-white to-blue-50/60',
-        iconBg:
-          'border-sky-200 bg-gradient-to-br from-sky-600 to-blue-600 text-white shadow-xs',
-        icon: Cpu,
-      },
-      {
-        id: 'kpi-analyst',
-        title: 'KPI Analyst',
-        requirement: 'Master Numeracy & Warehouse KPI calculations',
-        moduleRef: 'Module F · Part 2',
-        unlocked: modF?.status === 'completed',
-        progressPercent: modF?.percent ?? 0,
-        targetPartNumber: 2,
-        targetTab: getRecommendedTab(
-          2,
-          modF?.cardsDone ?? 0,
-          modF?.cardsTotal ?? 0,
-        ),
-        accentGradient:
-          'border-teal-200/90 bg-gradient-to-br from-teal-50/90 via-white to-emerald-50/60',
-        iconBg:
-          'border-teal-200 bg-gradient-to-br from-teal-600 to-emerald-600 text-white shadow-xs',
-        icon: BarChart3,
-      },
-      {
-        id: 'part-1-graduate',
-        title: 'Part 1 Graduate',
-        requirement: 'Complete Part 1 Study Notes & Japanese Quiz',
-        moduleRef: 'Part 1 Full Clear',
-        unlocked: part1Notes && part1Quiz,
-        progressPercent: part1Pct,
-        targetPartNumber: 1,
-        targetTab: !part1Notes ? 'notes' : 'quiz',
-        accentGradient:
-          'border-amber-200/90 bg-gradient-to-br from-amber-50/85 via-white to-yellow-50/60',
-        iconBg:
-          'border-amber-200 bg-gradient-to-br from-amber-500 to-yellow-600 text-white shadow-xs',
-        icon: Award,
-      },
-      {
-        id: 'certified-logistics-master',
-        title: 'Certified Master',
-        requirement: 'Unlock all 6 core warehouse exam modules (A–F)',
-        moduleRef: 'Full Curriculum',
-        unlocked: masterUnlocked,
-        progressPercent: masterPct,
-        targetPartNumber: firstIncompleteNode?.partNumber ?? 1,
-        targetTab: 'notes',
-        accentGradient:
-          'border-amber-300/90 bg-gradient-to-br from-amber-50 via-white to-orange-50/80',
-        iconBg:
-          'border-amber-300 bg-gradient-to-br from-slate-900 to-slate-800 text-amber-400 shadow-xs',
-        icon: Trophy,
-      },
-    ];
-  }, [allParts, progress]);
+  const badges = useMemo<TrophyBadge[]>(
+    () => computeTrophyBadges(allParts, progress),
+    [allParts, progress],
+  );
 
   const unlockedCount = badges.filter((b) => b.unlocked).length;
   const unlockPct = Math.round((unlockedCount / badges.length) * 100);

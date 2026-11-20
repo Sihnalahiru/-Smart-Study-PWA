@@ -2,23 +2,63 @@
   "parts": [
     {
       "part_number": 1,
-      "source_pdf": "warehouse-logistics-exam-part1.pdf",
-      "title": "試験形式と安全・倉庫作業 (Exam Formats, Safety & Operations)",
+      "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
+      "title": "第1編(前) 試験概要・倉庫の種類・設備・機器・車両 (Warehouse Types, Facilities, Equipment & Vehicles)",
       "file": "part-1.json",
-      "flashcard_count": 12,
-      "quiz_count": 8,
+      "flashcard_count": 16,
+      "quiz_count": 17,
       "image_count": 0,
-      "processed_at": "2026-11-20T05:55:00Z"
+      "processed_at": "2026-11-20T06:30:00Z"
     },
     {
       "part_number": 2,
-      "source_pdf": "warehouse-logistics-exam-part2.pdf",
-      "title": "在庫管理・荷役機器・書類・KPI (Inventory, Equipment, Docs & KPIs)",
+      "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
+      "title": "第1編(後) 倉庫業務・料金・品質管理・在庫管理・防災・パレット (Operations, Fees, Quality, Inventory, Disasters & Pallets)",
       "file": "part-2.json",
-      "flashcard_count": 12,
-      "quiz_count": 8,
+      "flashcard_count": 14,
+      "quiz_count": 16,
       "image_count": 0,
-      "processed_at": "2026-11-20T05:55:00Z"
+      "processed_at": "2026-11-20T06:30:00Z"
+    },
+    {
+      "part_number": 3,
+      "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
+      "title": "第2編(前) 作業服装・帳票・ラベル・単位換算・助数詞35種 (Work Gear, Docs, Units & 35 Counters)",
+      "file": "part-3.json",
+      "flashcard_count": 12,
+      "quiz_count": 14,
+      "image_count": 0,
+      "processed_at": "2026-11-20T06:30:00Z"
+    },
+    {
+      "part_number": 4,
+      "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
+      "title": "第2編(後) 入出庫作業・流通加工17業務・ケアマーク11種 (Inbound, Outbound, 17 Tasks & 11 Care Marks)",
+      "file": "part-4.json",
+      "flashcard_count": 13,
+      "quiz_count": 18,
+      "image_count": 0,
+      "processed_at": "2026-11-20T06:30:00Z"
+    },
+    {
+      "part_number": 5,
+      "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
+      "title": "第3編 安全衛生・労働時間・KYT・5S・GHSラベル9種 (Safety, Labor Hours, 2024 Accidents, KYT, 5S & 9 GHS)",
+      "file": "part-5.json",
+      "flashcard_count": 12,
+      "quiz_count": 14,
+      "image_count": 0,
+      "processed_at": "2026-11-20T06:30:00Z"
+    },
+    {
+      "part_number": 6,
+      "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
+      "title": "第4編 フォークリフト作業基準・コンテナ作業 (Forklift Standards & Container Rules)",
+      "file": "part-6.json",
+      "flashcard_count": 10,
+      "quiz_count": 13,
+      "image_count": 0,
+      "processed_at": "2026-11-20T06:30:00Z"
     }
   ]
 }

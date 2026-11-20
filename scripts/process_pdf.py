@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,9 +37,12 @@ class FlashcardItem(BaseModel):
 
 
 class QuizItem(BaseModel):
-    question: str = Field(description="Multiple-choice question testing comprehension.")
+    note_topic: str = Field(
+        description="The specific study note heading or topic covered by this question (in Japanese with {漢字|ふりがな})."
+    )
+    question: str = Field(description="Multiple-choice question testing comprehension in Japanese with {漢字|ふりがな}.")
     options: List[str] = Field(
-        description="Exactly 4 distinct answer choices.",
+        description="Exactly 4 distinct answer choices in Japanese with {漢字|ふりがな}.",
         min_length=4,
         max_length=4,
     )
@@ -48,7 +52,7 @@ class QuizItem(BaseModel):
         le=3,
     )
     explanation: str = Field(
-        description="Clear explanation of why the correct answer is right and others are wrong."
+        description="Clear explanation in Japanese with {漢字|ふりがな} of why the correct answer is right and others are wrong."
     )
 
 
@@ -58,8 +62,8 @@ class StudyPartOutput(BaseModel):
     )
     notes_markdown: str = Field(
         description=(
-            "Comprehensive, well-structured Markdown study notes with headings, bullet points, "
-            "key definitions, formulas, and embedded extracted images using exact Markdown image "
+            "Comprehensive, well-structured Markdown study notes in Japanese with {漢字|ふりがな} and Sinhala explanations, "
+            "using headings, bullet points, key definitions, formulas, and embedded extracted images using exact Markdown image "
             "syntax ![Diagram](/images/part-{N}/filename.ext) where relevant."
         )
     )
@@ -69,9 +73,17 @@ class StudyPartOutput(BaseModel):
         max_length=15,
     )
     quiz: List[QuizItem] = Field(
-        description="5 to 10 multiple-choice quiz questions with explanations.",
-        min_length=5,
-        max_length=10,
+        description="Comprehensive multiple-choice quiz questions covering EVERY study note section and topic in notes_markdown.",
+        min_length=8,
+        max_length=30,
+    )
+
+
+class SupplementQuizOutput(BaseModel):
+    quiz: List[QuizItem] = Field(
+        description="Additional multiple-choice quiz questions specifically covering the missing study note topics.",
+        min_length=1,
+        max_length=15,
     )
 
 
@@ -173,9 +185,9 @@ Available Extracted Images (use ONLY these exact paths if embedding images in no
 
 Instructions:
 1. Create a clear, specific `title` summarizing the main topic of this document.
-2. Write comprehensive, well-organized `notes_markdown` using Markdown headings (##, ###), bullet points, bold key terms, tables where useful, and code/formula blocks if relevant. Embed the extracted images using standard Markdown image syntax `![Descriptive Diagram Caption](/images/part-{part_number}/filename.ext)` at the exact sections where those page diagrams belong. Do NOT invent image paths that are not listed above.
-3. Generate 10 to 15 high-yield `flashcards` (concise question + thorough answer).
-4. Generate 5 to 10 challenging multiple-choice `quiz` questions, each with 4 options, `correct_index` (0-3), and a clear `explanation`.
+2. Write comprehensive, well-organized `notes_markdown` in Japanese with inline furigana using `{{漢字|ふりがな}}` syntax plus clear Sinhala explanations, using Markdown headings (##, ###), bullet points, bold key terms, tables where useful, and code/formula blocks if relevant. Embed the extracted images using standard Markdown image syntax `![Descriptive Diagram Caption](/images/part-{part_number}/filename.ext)` at the exact sections where those page diagrams belong. Do NOT invent image paths that are not listed above.
+3. Generate 10 to 15 high-yield `flashcards` (question in Japanese with `{{漢字|ふりがな}}`, answer in Japanese with `{{漢字|ふりがな}}` + Sinhala translation).
+4. Generate 8 to 20 multiple-choice `quiz` questions entirely in Japanese with `{{漢字|ふりがな}}` so that EVERY SINGLE study note heading and key concept in `notes_markdown` is covered by at least one quiz question. Include `note_topic`, 4 options, `correct_index` (0-3), and a clear `explanation`.
 
 Extracted PDF Content (page by page):
 {extracted_text}
@@ -192,10 +204,144 @@ Extracted PDF Content (page by page):
     )
 
     if response.parsed is not None:
-        return response.parsed
+        study_output = response.parsed
+    elif response.text:
+        study_output = StudyPartOutput.model_validate_json(response.text)
+    else:
+        raise RuntimeError(f"Gemini returned an empty response for {pdf_filename}")
+
+    sections = extract_note_sections(study_output.notes_markdown)
+    uncovered = find_uncovered_sections(sections, study_output.quiz)
+    if uncovered:
+        print(
+            f"Found {len(uncovered)} uncovered study note sections for {pdf_filename}; generating supplemental quiz questions..."
+        )
+        extra_questions = supplement_quiz_coverage(
+            client=client,
+            pdf_filename=pdf_filename,
+            notes_markdown=study_output.notes_markdown,
+            uncovered_sections=uncovered,
+        )
+        study_output.quiz.extend(extra_questions)
+
+    return study_output
+
+
+_FURIGANA_RE = re.compile(r"\{([^|{}]+)\|[^|{}]+\}")
+
+
+def strip_furigana(text: str) -> str:
+    return _FURIGANA_RE.sub(r"\1", text)
+
+
+def _normalize_text(text: str) -> str:
+    plain = strip_furigana(text).lower()
+    plain = re.sub(r"[*_`>#|\[\]()（）:：・、。,.!！?？/／\-—–]+", " ", plain)
+    return re.sub(r"\s+", " ", plain).strip()
+
+
+def extract_note_sections(notes_markdown: str) -> list[str]:
+    """Extract all headings and bold study note bullet topics for coverage auditing."""
+    sections: list[str] = []
+    seen: set[str] = set()
+
+    for raw_line in notes_markdown.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        heading_match = re.match(r"^#{2,3}\s+(.+)$", line)
+        if heading_match:
+            label = heading_match.group(1).strip()
+            norm = _normalize_text(label)
+            if norm and norm not in seen:
+                seen.add(norm)
+                sections.append(label)
+            continue
+
+        bullet_match = re.match(r"^-\s+\*\*(.+?)\*\*", line)
+        if bullet_match:
+            label = bullet_match.group(1).rstrip(":： ").strip()
+            plain = strip_furigana(label)
+            if not plain or "සිංහල" in plain or "sinhala" in plain.lower():
+                continue
+            norm = _normalize_text(plain)
+            if norm and norm not in seen:
+                seen.add(norm)
+                sections.append(label)
+
+    return sections
+
+
+def _tokenize_section(text: str) -> list[str]:
+    plain = strip_furigana(text)
+    tokens: list[str] = []
+    tokens.extend(re.findall(r"[a-zA-Z0-9]{2,}", plain.lower()))
+    for jp in re.findall(r"[\u4e00-\u9faf]{2,}|[\u30a1-\u30f6\u30fc]{2,}", plain):
+        tokens.append(jp)
+        if len(jp) >= 4 and re.search(r"[\u4e00-\u9faf]", jp):
+            tokens.append(jp[:2])
+            tokens.append(jp[-2:])
+    return list(dict.fromkeys(tokens))
+
+
+def find_uncovered_sections(sections: list[str], quiz_items: list[QuizItem]) -> list[str]:
+    """Return study note sections not yet represented in the quiz questions."""
+    quiz_corpus = [
+        strip_furigana(f"{item.note_topic} {item.question} {item.explanation}").lower()
+        for item in quiz_items
+    ]
+    uncovered: list[str] = []
+
+    for section in sections:
+        tokens = _tokenize_section(section)
+        if not tokens:
+            continue
+        covered = any(
+            any(tok in q_text for tok in tokens)
+            for q_text in quiz_corpus
+        )
+        if not covered:
+            uncovered.append(section)
+
+    return uncovered
+
+
+def supplement_quiz_coverage(
+    client: genai.Client,
+    pdf_filename: str,
+    notes_markdown: str,
+    uncovered_sections: list[str],
+) -> list[QuizItem]:
+    """Generate targeted follow-up quiz questions for any uncovered study note sections."""
+    bullet_list = "\n".join(f"- {s}" for s in uncovered_sections[:15])
+    prompt = f"""You are completing exam coverage for "{pdf_filename}" in Smart Study PWA.
+
+The following study note sections/topics do not yet have a dedicated multiple-choice question:
+{bullet_list}
+
+Reference study notes:
+{notes_markdown}
+
+Instructions:
+Generate at least one Japanese multiple-choice question with inline furigana `{{漢字|ふりがな}}` for EACH uncovered topic above. Every item must set `note_topic`, provide 4 distinct options in Japanese with furigana, `correct_index` (0-3), and a clear explanation in Japanese with furigana.
+"""
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=SupplementQuizOutput,
+            temperature=0.2,
+        ),
+    )
+
+    if response.parsed is not None:
+        return response.parsed.quiz
     if response.text:
-        return StudyPartOutput.model_validate_json(response.text)
-    raise RuntimeError(f"Gemini returned an empty response for {pdf_filename}")
+        return SupplementQuizOutput.model_validate_json(response.text).quiz
+    return []
 
 
 def main() -> int:

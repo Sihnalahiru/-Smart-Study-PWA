@@ -1,3 +1,17 @@
+export type UserId = 'haruto' | 'sakura';
+
+export interface UserProfile {
+  id: UserId;
+  name: string;
+  japaneseName: string;
+  genderLabel: 'Boy' | 'Lady';
+  roleSubtitle: string;
+  avatarUrl: string;
+  accentGradient: string;
+  ringClass: string;
+  badgeClass: string;
+}
+
 export interface FlashcardItem {
   question: string;
   answer: string;
@@ -8,6 +22,8 @@ export interface QuizQuestion {
   options: string[];
   correct_index: number;
   explanation: string;
+  note_topic?: string;
+  module_code?: string;
 }
 
 export interface StudyPart {
@@ -41,8 +57,6 @@ export type ActiveTab =
   | 'notes'
   | 'flashcards'
   | 'quiz'
-  | 'studio'
-  | 'audio'
   | 'upload';
 
 export interface XpActivity {
@@ -53,28 +67,11 @@ export interface XpActivity {
   timestamp: string;
 }
 
-export interface SavedVisual {
-  id: string;
-  prompt: string;
-  aspectRatio: string;
-  imageDataUrl: string;
-  createdAt: string;
-}
-
-export interface SavedTranscript {
-  id: string;
-  title: string;
-  transcript: string;
-  durationSeconds: number;
-  createdAt: string;
-}
-
 export interface DailyProgress {
   date: string;
   flashcardsReviewed: number;
   quizAnswered: number;
-  audioTranscribed: number;
-  visualsCreated: number;
+  notesCompleted: number;
   xpEarnedToday: number;
 }
 
@@ -91,12 +88,10 @@ export interface StudyProgressState {
   completedQuizParts: number[];
   activities: XpActivity[];
   daily: DailyProgress;
-  savedVisuals: SavedVisual[];
-  savedTranscripts: SavedTranscript[];
 }
 
 export interface SearchNavigationTarget {
-  tab: 'notes' | 'flashcards' | 'audio';
+  tab: 'notes' | 'flashcards';
   partNumber?: number;
   cardIndex?: number;
   query?: string;

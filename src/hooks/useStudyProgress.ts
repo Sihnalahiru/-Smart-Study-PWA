@@ -601,6 +601,18 @@ export function useStudyProgress(userId: UserId | null) {
     [showToast],
   );
 
+  const resetProgress = useCallback(() => {
+    if (!userId) return;
+    const initial = createInitialProgressState();
+    try {
+      localStorage.setItem(getStorageKey(userId), JSON.stringify(initial));
+    } catch {
+      // Ignore storage failure; state still resets for this session.
+    }
+    setState(initial);
+    setXpToast(null);
+  }, [userId]);
+
   return {
     progress: state,
     levelInfo: getLevelInfo(state.xp),
@@ -610,5 +622,6 @@ export function useStudyProgress(userId: UserId | null) {
     markPartRead,
     markFlashcardMastered,
     recordQuizAnswer,
+    resetProgress,
   };
 }

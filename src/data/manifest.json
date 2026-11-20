@@ -7,7 +7,7 @@
       "file": "part-1.json",
       "flashcard_count": 16,
       "quiz_count": 17,
-      "image_count": 0,
+      "image_count": 34,
       "processed_at": "2026-11-20T06:30:00Z"
     },
     {
@@ -17,7 +17,7 @@
       "file": "part-2.json",
       "flashcard_count": 14,
       "quiz_count": 16,
-      "image_count": 0,
+      "image_count": 19,
       "processed_at": "2026-11-20T06:30:00Z"
     },
     {
@@ -27,7 +27,7 @@
       "file": "part-3.json",
       "flashcard_count": 12,
       "quiz_count": 14,
-      "image_count": 0,
+      "image_count": 10,
       "processed_at": "2026-11-20T06:30:00Z"
     },
     {
@@ -37,7 +37,7 @@
       "file": "part-4.json",
       "flashcard_count": 13,
       "quiz_count": 18,
-      "image_count": 0,
+      "image_count": 26,
       "processed_at": "2026-11-20T06:30:00Z"
     },
     {
@@ -47,7 +47,7 @@
       "file": "part-5.json",
       "flashcard_count": 12,
       "quiz_count": 14,
-      "image_count": 0,
+      "image_count": 24,
       "processed_at": "2026-11-20T06:30:00Z"
     },
     {
@@ -57,7 +57,7 @@
       "file": "part-6.json",
       "flashcard_count": 10,
       "quiz_count": 13,
-      "image_count": 0,
+      "image_count": 10,
       "processed_at": "2026-11-20T06:30:00Z"
     }
   ]

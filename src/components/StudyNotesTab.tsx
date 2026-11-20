@@ -3,11 +3,18 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   FileText,
+  Grid,
   ImageOff,
+  Images,
   Languages,
+  Maximize2,
   Search,
   X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import {
   FuriganaText,
@@ -25,12 +32,31 @@ interface StudyNotesTabProps {
   onClearSearchHighlight?: () => void;
 }
 
+interface LightboxState {
+  src: string;
+  alt: string;
+  gallery: string[];
+  index: number;
+}
+
 interface ResilientImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src?: string;
   alt?: string;
+  showFurigana: boolean;
+  onZoom?: (src: string, alt: string) => void;
 }
 
-const ResilientNoteImage: React.FC<ResilientImageProps> = ({src, alt}) => {
+function getPageLabelFromSrc(src: string): string {
+  const match = src.match(/page-0*(\d+)\./i);
+  return match ? `p.${match[1]}` : src.split('/').pop() || 'PDF Page';
+}
+
+const ResilientNoteImage: React.FC<ResilientImageProps> = ({
+  src,
+  alt,
+  showFurigana,
+  onZoom,
+}) => {
   const [hasError, setHasError] = useState(false);
 
   if (!src || hasError) {
@@ -46,21 +72,34 @@ const ResilientNoteImage: React.FC<ResilientImageProps> = ({src, alt}) => {
     );
   }
 
+  const pageLabel = getPageLabelFromSrc(src);
+
   return (
-    <figure className="my-5 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-xs">
-      <div className="bg-gradient-to-b from-slate-50/90 to-slate-100/40 p-3">
-        <img
-          src={src}
-          alt={alt || 'Extracted PDF diagram'}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onError={() => setHasError(true)}
-          className="mx-auto max-h-[380px] w-auto max-w-full rounded-lg object-contain"
-        />
+    <figure className="group my-5 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-xs">
+      <div className="relative bg-gradient-to-b from-slate-50/90 to-slate-100/40 p-2.5 sm:p-3">
+        <button
+          type="button"
+          onClick={() => onZoom?.(src, alt || pageLabel)}
+          className="relative block w-full cursor-zoom-in overflow-hidden rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          aria-label={`Zoom ${alt || pageLabel}`}
+        >
+          <img
+            src={src}
+            alt={alt || `Original PDF ${pageLabel}`}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setHasError(true)}
+            className="mx-auto max-h-[440px] w-auto max-w-full rounded-lg border border-slate-200/70 bg-white object-contain shadow-2xs transition-transform duration-200 group-hover:scale-[1.01]"
+          />
+          <span className="font-mono-tabular absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-lg border border-slate-200/90 bg-white/90 px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-xs backdrop-blur-xs">
+            <Maximize2 className="h-3 w-3 text-blue-600" aria-hidden="true" />
+            <span>{pageLabel}</span>
+          </span>
+        </button>
       </div>
       {alt && (
-        <figcaption className="border-t border-slate-200/80 bg-white px-4 py-2.5 text-xs text-slate-600">
-          {alt}
+        <figcaption className="border-t border-slate-200/80 bg-white px-4 py-2.5 text-xs font-medium text-slate-600">
+          <FuriganaText text={alt} showFurigana={showFurigana} />
         </figcaption>
       )}
     </figure>
@@ -77,6 +116,11 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
   onClearSearchHighlight,
 }) => {
   const [showFurigana, setShowFurigana] = useState(true);
+  const [expandedGalleries, setExpandedGalleries] = useState<
+    Record<number, boolean>
+  >({});
+  const [lightbox, setLightbox] = useState<LightboxState | null>(null);
+  const [zoomScale, setZoomScale] = useState<1 | 1.5 | 2>(1);
 
   useEffect(() => {
     if (!focusPartNumber) return;
@@ -86,9 +130,72 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
     }
   }, [focusPartNumber, parts]);
 
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightbox(null);
+      } else if (e.key === 'ArrowRight' && lightbox.gallery.length > 1) {
+        setLightbox((prev) => {
+          if (!prev) return null;
+          const nextIdx = (prev.index + 1) % prev.gallery.length;
+          const nextSrc = prev.gallery[nextIdx];
+          return {
+            ...prev,
+            index: nextIdx,
+            src: nextSrc,
+            alt: `Original PDF ${getPageLabelFromSrc(nextSrc)}`,
+          };
+        });
+      } else if (e.key === 'ArrowLeft' && lightbox.gallery.length > 1) {
+        setLightbox((prev) => {
+          if (!prev) return null;
+          const nextIdx =
+            (prev.index - 1 + prev.gallery.length) % prev.gallery.length;
+          const nextSrc = prev.gallery[nextIdx];
+          return {
+            ...prev,
+            index: nextIdx,
+            src: nextSrc,
+            alt: `Original PDF ${getPageLabelFromSrc(nextSrc)}`,
+          };
+        });
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [lightbox]);
+
   if (parts.length === 0) {
     return null;
   }
+
+  const openLightbox = (src: string, alt: string, partImages: string[]) => {
+    const gallery = partImages.length > 0 ? partImages : [src];
+    const idx = Math.max(0, gallery.indexOf(src));
+    setZoomScale(1);
+    setLightbox({
+      src,
+      alt,
+      gallery,
+      index: idx,
+    });
+  };
+
+  const stepLightbox = (delta: number) => {
+    setLightbox((prev) => {
+      if (!prev || prev.gallery.length <= 1) return prev;
+      const nextIdx =
+        (prev.index + delta + prev.gallery.length) % prev.gallery.length;
+      const nextSrc = prev.gallery[nextIdx];
+      return {
+        ...prev,
+        index: nextIdx,
+        src: nextSrc,
+        alt: `Original PDF ${getPageLabelFromSrc(nextSrc)}`,
+      };
+    });
+  };
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -96,7 +203,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
       <div className="surface-glass flex flex-wrap items-center justify-between gap-2.5 rounded-2xl px-4 py-3">
         <div className="text-xs font-medium text-slate-600">
           <span className="font-semibold tracking-tight text-slate-900">
-            日本語 (ふりがな) + සිංහල
+            日本語 (ふりがな) + සිංහල + 原本PDF図解
           </span>
         </div>
 
@@ -158,6 +265,11 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
       <div className="space-y-6">
         {parts.map((part) => {
           const isCompleted = readPartNumbers.includes(part.part_number);
+          const partImages = part.images ?? [];
+          const isGalleryExpanded = Boolean(
+            expandedGalleries[part.part_number],
+          );
+
           return (
             <article
               key={part.part_number}
@@ -171,9 +283,31 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                   </span>
                   <span aria-hidden="true">·</span>
                   <span className="inline-flex items-center gap-1 truncate">
-                    <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <FileText
+                      className="h-3.5 w-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
                     <span className="truncate">{part.source_pdf}</span>
                   </span>
+                  {partImages.length > 0 && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="font-mono-tabular inline-flex items-center gap-1 font-semibold text-slate-600">
+                        <Images
+                          className="h-3.5 w-3.5 text-blue-600"
+                          aria-hidden="true"
+                        />
+                        <span>
+                          {partImages.length} Original Pages (
+                          {getPageLabelFromSrc(partImages[0])}–
+                          {getPageLabelFromSrc(
+                            partImages[partImages.length - 1],
+                          )}
+                          )
+                        </span>
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -196,6 +330,100 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                   </span>
                 </button>
               </header>
+
+              {/* Original PDF Full Visual Page Gallery for this Part */}
+              {partImages.length > 0 && (
+                <section
+                  aria-label={`Original PDF pages for Part ${part.part_number}`}
+                  className="mt-5 rounded-xl border border-slate-200/90 bg-gradient-to-b from-slate-50/90 to-white p-3.5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                        <Images className="h-3.5 w-3.5" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">
+                          <FuriganaText
+                            text="{原本|げんぽん}PDF{全|ぜん}ページ{図解|ずかい} (Original Textbook Pages)"
+                            showFurigana={showFurigana}
+                          />
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          Tap any page to zoom &amp; swipe · {partImages.length}{' '}
+                          pages ({getPageLabelFromSrc(partImages[0])}–
+                          {getPageLabelFromSrc(
+                            partImages[partImages.length - 1],
+                          )}
+                          )
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedGalleries((prev) => ({
+                          ...prev,
+                          [part.part_number]: !prev[part.part_number],
+                        }))
+                      }
+                      className="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50"
+                    >
+                      <Grid className="h-3.5 w-3.5 text-blue-600" aria-hidden="true" />
+                      <span>{isGalleryExpanded ? 'Compact Strip' : 'Show All Grid'}</span>
+                    </button>
+                  </div>
+
+                  <div
+                    className={
+                      isGalleryExpanded
+                        ? 'mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4'
+                        : 'mt-3 flex items-stretch gap-2.5 overflow-x-auto pb-1.5'
+                    }
+                  >
+                    {partImages.map((imgSrc, idx) => {
+                      const pageLabel = getPageLabelFromSrc(imgSrc);
+                      return (
+                        <button
+                          key={imgSrc}
+                          type="button"
+                          onClick={() =>
+                            openLightbox(
+                              imgSrc,
+                              `Part ${part.part_number} · Original PDF ${pageLabel}`,
+                              partImages,
+                            )
+                          }
+                          className={`group relative overflow-hidden rounded-lg border border-slate-200/90 bg-white p-1 text-left shadow-2xs transition-all hover:border-blue-400 hover:shadow-xs ${
+                            isGalleryExpanded
+                              ? 'w-full'
+                              : 'w-24 shrink-0 sm:w-28'
+                          }`}
+                          aria-label={`View original textbook ${pageLabel}`}
+                        >
+                          <div className="aspect-[3/4] w-full overflow-hidden rounded-md bg-slate-100">
+                            <img
+                              src={imgSrc}
+                              alt={`Original textbook ${pageLabel}`}
+                              loading="lazy"
+                              className="h-full w-full object-cover object-top transition-transform duration-200 group-hover:scale-105"
+                            />
+                          </div>
+                          <div className="mt-1 flex items-center justify-between px-1">
+                            <span className="font-mono-tabular text-[10px] font-bold text-slate-700">
+                              {pageLabel}
+                            </span>
+                            <span className="font-mono-tabular text-[10px] text-slate-400">
+                              #{idx + 1}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
 
               <div className="font-jp mt-6 max-w-none space-y-4 text-[15px] leading-[2.15] text-slate-800 sm:text-base">
                 <ReactMarkdown
@@ -305,7 +533,14 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                       </a>
                     ),
                     img: ({src, alt}) => (
-                      <ResilientNoteImage src={src} alt={alt} />
+                      <ResilientNoteImage
+                        src={src}
+                        alt={alt}
+                        showFurigana={showFurigana}
+                        onZoom={(resolvedSrc, resolvedAlt) =>
+                          openLightbox(resolvedSrc, resolvedAlt, partImages)
+                        }
+                      />
                     ),
                   }}
                 >
@@ -316,6 +551,110 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
           );
         })}
       </div>
+
+      {/* Interactive Fullscreen Original PDF Image Lightbox */}
+      {lightbox && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Original PDF Page Viewer"
+          className="fixed inset-0 z-50 flex flex-col bg-slate-950/90 backdrop-blur-md"
+          onClick={() => setLightbox(null)}
+        >
+          <div
+            className="flex items-center justify-between gap-2 border-b border-white/10 bg-slate-950/80 px-4 py-3 text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="font-mono-tabular text-xs font-bold text-blue-300">
+                {getPageLabelFromSrc(lightbox.src)} · ({lightbox.index + 1}/
+                {lightbox.gallery.length})
+              </p>
+              <p className="truncate text-xs text-slate-200">
+                <FuriganaText text={lightbox.alt} showFurigana={showFurigana} />
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() =>
+                  setZoomScale((prev) =>
+                    prev === 1 ? 1.5 : prev === 1.5 ? 2 : 1,
+                  )
+                }
+                className="inline-flex min-h-[38px] items-center gap-1 rounded-xl border border-white/15 bg-white/10 px-2.5 text-xs font-semibold text-white hover:bg-white/20"
+                aria-label="Toggle zoom scale"
+              >
+                {zoomScale > 1 ? (
+                  <ZoomOut className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <ZoomIn className="h-4 w-4" aria-hidden="true" />
+                )}
+                <span className="font-mono-tabular">{zoomScale}x</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLightbox(null)}
+                className="inline-flex min-h-[38px] min-w-[38px] items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white hover:bg-white/20"
+                aria-label="Close viewer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div
+            className="flex-1 overflow-auto p-3 sm:p-6"
+            onClick={() => setLightbox(null)}
+          >
+            <div
+              className="mx-auto flex min-h-full items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={lightbox.src}
+                alt={lightbox.alt}
+                style={{
+                  width: `${zoomScale * 100}%`,
+                  maxWidth: zoomScale === 1 ? '680px' : 'none',
+                }}
+                className="rounded-xl border border-white/15 bg-white shadow-2xl transition-all duration-150"
+              />
+            </div>
+          </div>
+
+          {lightbox.gallery.length > 1 && (
+            <div
+              className="flex items-center justify-between gap-3 border-t border-white/10 bg-slate-950/85 px-4 py-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => stepLightbox(-1)}
+                className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-4 text-xs font-semibold text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                <span>Prev Page</span>
+              </button>
+
+              <span className="font-mono-tabular text-xs font-semibold text-slate-300">
+                {getPageLabelFromSrc(lightbox.src)}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => stepLightbox(1)}
+                className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-4 text-xs font-semibold text-white hover:bg-white/20"
+              >
+                <span>Next Page</span>
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -12,9 +12,33 @@ export interface UserProfile {
   badgeClass: string;
 }
 
+export type PaperSetNumber =
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16;
+
 export interface FlashcardItem {
+  id?: string;
   question: string;
   answer: string;
+  topic?: SswExamTopic;
+  note_section_id?: string;
+  source_pdf_page?: number;
+  image?: string;
+  imageAlt?: string;
 }
 
 export type CbtExamSection = 'academic' | 'practical';
@@ -65,6 +89,10 @@ export interface QuizQuestion {
   correct_index: number;
   explanation: string;
   note_topic?: string;
+  note_section_id?: string;
+  source_pdf_page?: number;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  validation_status?: 'verified' | 'pending_review';
   module_code?: string;
   section?: CbtExamSection;
   topic?: SswExamTopic;
@@ -76,10 +104,14 @@ export interface QuizQuestion {
 
 export interface CbtQuestion {
   id: string;
-  paperSet: 1 | 2 | 3;
+  paperSet: PaperSetNumber;
   section: CbtExamSection;
   topic: SswExamTopic;
   partNumber: number;
+  note_section_id?: string;
+  source_pdf_page?: number;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  validation_status?: 'verified' | 'pending_review';
   question: string;
   options: string[];
   correct_index: number;
@@ -102,7 +134,7 @@ export interface CbtTopicScore {
 export interface CbtExamAttempt {
   id: string;
   mode: 'full' | 'academic' | 'practical';
-  paperSet: 1 | 2 | 3;
+  paperSet: PaperSetNumber;
   completedAt: string;
   elapsedSeconds: number;
   academicCorrect: number;

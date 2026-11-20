@@ -1,7 +1,10 @@
+import academicExpansionData from '../data/cbt-academic-expansion.json';
 import practicalData from '../data/cbt-practical-questions.json';
 import type {
   CbtExamSection,
   CbtQuestion,
+  PaperSetNumber,
+  QuizQuestion,
   SswExamTopic,
   StudyPart,
 } from '../types/study';
@@ -10,6 +13,12 @@ import {
   resolveQuestionVisual,
   type MappedPdfFigure,
 } from './pdfVisualResolver';
+
+export const TOTAL_PAPER_SETS = 16;
+
+export const PAPER_SET_NUMBERS: PaperSetNumber[] = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+];
 
 export const SSW_EXAM_RULES = {
   totalQuestions: 50,
@@ -139,15 +148,26 @@ function inferTopicForAcademicQuestion(
   }
 }
 
+interface AcademicExpansionRecord extends QuizQuestion {
+  id: string;
+  partNumber: number;
+  topic: SswExamTopic;
+}
+
 export function buildAllAcademicQuestions(
   allParts: StudyPart[],
   figureIndex?: MappedPdfFigure[],
 ): CbtQuestion[] {
   const resolvedIndex = figureIndex ?? buildPdfFigureIndex(allParts);
   const raw: Omit<CbtQuestion, 'paperSet'>[] = [];
+  const seenIds = new Set<string>();
 
   for (const part of allParts) {
     part.quiz.forEach((q, idx) => {
+      const id = q.id ?? `part-${part.part_number}-q-${idx}`;
+      if (seenIds.has(id)) return;
+      seenIds.add(id);
+
       const topic =
         q.topic ??
         inferTopicForAcademicQuestion(
@@ -170,10 +190,14 @@ export function buildAllAcademicQuestions(
       );
 
       raw.push({
-        id: q.id ?? `part-${part.part_number}-q-${idx}`,
+        id,
         section: 'academic',
         topic,
         partNumber: part.part_number,
+        note_section_id: q.note_section_id,
+        source_pdf_page: q.source_pdf_page,
+        difficulty: q.difficulty,
+        validation_status: q.validation_status,
         question: q.question,
         options: q.options,
         correct_index: q.correct_index,
@@ -187,7 +211,46 @@ export function buildAllAcademicQuestions(
     });
   }
 
-  // Group by topic so each Paper Set (1, 2, 3) gets a balanced mix of all 5 topics
+  for (const q of academicExpansionData as AcademicExpansionRecord[]) {
+    if (seenIds.has(q.id)) continue;
+    seenIds.add(q.id);
+
+    const visual = resolveQuestionVisual(
+      {
+        partNumber: q.partNumber,
+        question: q.question,
+        noteTopic: q.note_topic,
+        options: q.options,
+        correctIndex: q.correct_index,
+        explanation: q.explanation,
+        explicitImage: q.image,
+        explicitImageAlt: q.imageAlt,
+      },
+      resolvedIndex,
+    );
+
+    raw.push({
+      id: q.id,
+      section: 'academic',
+      topic: q.topic,
+      partNumber: q.partNumber,
+      note_section_id: q.note_section_id,
+      source_pdf_page: q.source_pdf_page,
+      difficulty: q.difficulty,
+      validation_status: q.validation_status,
+      question: q.question,
+      options: q.options,
+      correct_index: q.correct_index,
+      explanation: q.explanation,
+      image: visual?.src,
+      imageAlt: visual?.alt ?? q.imageAlt,
+      imageSource: visual?.source,
+      imageMeta: visual?.meta,
+      isCalculation: q.isCalculation,
+    });
+  }
+
+  // Group by topic so each of the 16 Paper Sets gets an exact 6-per-topic (30 Academic) balanced mix
   const byTopic: Record<SswExamTopic, Omit<CbtQuestion, 'paperSet'>[]> = {
     receiving_dispatching: [],
     storage_inventory: [],
@@ -199,26 +262,52 @@ export function buildAllAcademicQuestions(
     byTopic[item.topic].push(item);
   }
 
-  const interleaved: Omit<CbtQuestion, 'paperSet'>[] = [];
-  let added = true;
-  let cursor = 0;
-  while (added) {
-    added = false;
-    for (const t of SSW_TOPICS) {
-      const list = byTopic[t.id];
-      if (cursor < list.length) {
-        interleaved.push(list[cursor]);
-        added = true;
-      }
-    }
-    cursor += 1;
+  // Assign each topic's 96 questions round-robin across Paper Sets 1..16 (exact 6 per topic per set)
+  const perSetBuckets: Record<number, CbtQuestion[]> = {};
+  for (const ps of PAPER_SET_NUMBERS) {
+    perSetBuckets[ps] = [];
   }
 
-  // Distribute round-robin into Paper Sets 1, 2, 3 so every set has a full mixed spread
-  return interleaved.map((q, idx) => ({
-    ...q,
-    paperSet: ((idx % 3) + 1) as 1 | 2 | 3,
-  }));
+  for (const t of SSW_TOPICS) {
+    byTopic[t.id].forEach((q, idx) => {
+      const ps = ((idx % TOTAL_PAPER_SETS) + 1) as PaperSetNumber;
+      perSetBuckets[ps].push({
+        ...q,
+        paperSet: ps,
+      });
+    });
+  }
+
+  // Within each Paper Set, interleave the 5 topics cleanly so topics are mixed throughout the 30 Qs
+  const result: CbtQuestion[] = [];
+  for (const ps of PAPER_SET_NUMBERS) {
+    const bucket = perSetBuckets[ps];
+    const bucketByTopic: Record<SswExamTopic, CbtQuestion[]> = {
+      receiving_dispatching: [],
+      storage_inventory: [],
+      picking_processing: [],
+      warehouse_equipment: [],
+      safety_health: [],
+    };
+    for (const q of bucket) {
+      bucketByTopic[q.topic].push(q);
+    }
+    let added = true;
+    let cursor = 0;
+    while (added) {
+      added = false;
+      for (const t of SSW_TOPICS) {
+        const list = bucketByTopic[t.id];
+        if (cursor < list.length) {
+          result.push(list[cursor]);
+          added = true;
+        }
+      }
+      cursor += 1;
+    }
+  }
+
+  return result;
 }
 
 export function getAllPracticalQuestions(
@@ -257,7 +346,7 @@ export function getAllCbtQuestions(allParts: StudyPart[]): CbtQuestion[] {
 }
 
 export interface CbtPaperSetBundle {
-  paperSet: 1 | 2 | 3;
+  paperSet: PaperSetNumber;
   title: string;
   subtitle: string;
   academic: CbtQuestion[];
@@ -267,15 +356,33 @@ export interface CbtPaperSetBundle {
   calculationQuestionCount: number;
 }
 
+const PAPER_SET_SUBTITLES: Record<PaperSetNumber, string> = {
+  1: 'Mixed All 5 Topics · Care Marks, Interlock Stacking, Forklift Safety & Planning Math',
+  2: 'Mixed All 5 Topics · GHS Labels, Pallet Capacity, Equipment & Lifting Calculations',
+  3: 'Mixed All 5 Topics · Container Ops, Roll Clamps, Temperature Zones & Shift Math',
+  4: 'Mixed All 5 Topics · Wet-Cargo Docking, Drum Handling, H-Taping & Floor Load Math',
+  5: 'Mixed All 5 Topics · Flex-Bags, Pinwheel Stacking, AMR Robotics & Volume Tonnage',
+  6: 'Mixed All 5 Topics · Stack Limits, Oricon/Bales, Brick Stacking & Sorter Planning',
+  7: 'Mixed All 5 Topics · No-Cutter Ops, 40ft Containers, Overhead Cranes & Roll Cage Load',
+  8: 'Mixed All 5 Topics · No-Hooks, Roll Clamps, Split Stacking, Equipment & GHS Environment',
+  9: 'Mixed All 5 Topics · Fire-Free Storage, Overhang Defects, 3-Period Fees & Shift Hours',
+  10: 'Mixed All 5 Topics · Handle-With-Care, Pail Cans, SF4 Ultra-Cold & Clearance Math',
+  11: 'Mixed All 5 Topics · Do-Not-Step, Paper Rolls, Trailer Blind Spots & Legal Break Math',
+  12: 'Mixed All 5 Topics · Case Mark Shortages, Devanning Prep, Sorter Ops & Lifting Limits',
+  13: 'Mixed All 5 Topics · Pallet Patterns, 18L Cans, C3 Chilled & Crane Rigging Capacity',
+  14: 'Mixed All 5 Topics · Mixed Cargo Loading, Low-Temp Taping, AMR Productivity & Hydration',
+  15: 'Mixed All 5 Topics · Container Volume, 3-Tier Floor Load, Stacker Cycle & Overtime Math',
+  16: 'Mixed All 5 Topics · Full-Textbook Capstone · Vanning, Revenue Tonnage & Elevator Load',
+};
+
 export function buildPaperSet(
   allParts: StudyPart[],
-  paperSet: 1 | 2 | 3,
+  paperSet: PaperSetNumber,
 ): CbtPaperSetBundle {
   const figureIndex = buildPdfFigureIndex(allParts);
   const allAcademic = buildAllAcademicQuestions(allParts, figureIndex);
   const allPractical = getAllPracticalQuestions(figureIndex);
 
-  // Select 30 Academic questions for this paper set (prioritizing assigned set, then filling if needed)
   const primaryAcademic = allAcademic.filter((q) => q.paperSet === paperSet);
   const overflowAcademic = allAcademic.filter((q) => q.paperSet !== paperSet);
   const academic = [...primaryAcademic, ...overflowAcademic].slice(
@@ -283,7 +390,6 @@ export function buildPaperSet(
     SSW_EXAM_RULES.academicQuestions,
   );
 
-  // Select 20 Practical questions for this paper set
   const primaryPractical = allPractical.filter((q) => q.paperSet === paperSet);
   const overflowPractical = allPractical.filter((q) => q.paperSet !== paperSet);
   const practical = [...primaryPractical, ...overflowPractical].slice(
@@ -293,16 +399,10 @@ export function buildPaperSet(
 
   const allQuestions = [...academic, ...practical];
 
-  const subtitles: Record<1 | 2 | 3, string> = {
-    1: 'Mixed All 5 Topics · Care Marks, Interlock Stacking, Forklift Safety & Planning Math',
-    2: 'Mixed All 5 Topics · GHS Labels, Pallet Capacity, Equipment & Lifting Calculations',
-    3: 'Mixed All 5 Topics · Container Ops, Roll Clamps, Temperature Zones & Shift Math',
-  };
-
   return {
     paperSet,
-    title: `Mock Exam Paper ${paperSet}`,
-    subtitle: subtitles[paperSet],
+    title: `Mock Exam Paper ${String(paperSet).padStart(2, '0')}`,
+    subtitle: PAPER_SET_SUBTITLES[paperSet],
     academic,
     practical,
     allQuestions,

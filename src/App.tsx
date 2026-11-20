@@ -824,6 +824,7 @@ export default function App() {
           ) : (
             <QuizTab
               key={activeUserId}
+              userId={activeUserId}
               parts={visibleParts}
               allParts={allParts}
               correctQuizIds={progress.correctQuizIds}

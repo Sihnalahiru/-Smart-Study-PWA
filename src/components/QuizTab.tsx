@@ -27,20 +27,46 @@ import {QuestionFigureCard} from './QuestionFigureCard';
 import type {
   CbtExamAttempt,
   CbtQuestion,
+  PaperSetNumber,
   QuizQuestionStat,
   SswExamTopic,
   StudyPart,
+  UserId,
 } from '../types/study';
 import {
   buildPaperSet,
+  type CbtPaperSetBundle,
   formatMmSs,
   getAllCbtQuestions,
+  PAPER_SET_NUMBERS,
   SSW_EXAM_RULES,
   SSW_TOPIC_MAP,
   SSW_TOPICS,
+  TOTAL_PAPER_SETS,
 } from '../utils/cbtExam';
 
+const SELECTED_PAPER_KEY_PREFIX = 'smart_study_selected_paper_v1_';
+
+function readSelectedPaperForUser(userId?: UserId): PaperSetNumber {
+  if (!userId) return 1;
+  try {
+    const raw = localStorage.getItem(`${SELECTED_PAPER_KEY_PREFIX}${userId}`);
+    const parsed = Number(raw);
+    if (
+      Number.isInteger(parsed) &&
+      parsed >= 1 &&
+      parsed <= TOTAL_PAPER_SETS
+    ) {
+      return parsed as PaperSetNumber;
+    }
+  } catch {
+    // Ignore storage read errors
+  }
+  return 1;
+}
+
 interface QuizTabProps {
+  userId?: UserId;
   parts: StudyPart[];
   allParts: StudyPart[];
   correctQuizIds: string[];
@@ -69,7 +95,7 @@ const OPTION_LETTERS = ['ア', 'イ', 'ウ', 'エ'];
 
 interface ExamSessionState {
   mode: ExamSessionMode;
-  paperSet: 1 | 2 | 3;
+  paperSet: PaperSetNumber;
   stage: ActiveExamStage;
   academicQuestions: CbtQuestion[];
   practicalQuestions: CbtQuestion[];
@@ -89,6 +115,7 @@ interface ExamResultBundle {
 }
 
 export const QuizTab: React.FC<QuizTabProps> = ({
+  userId,
   allParts,
   correctQuizIds,
   attemptedQuizIds = [],
@@ -100,7 +127,9 @@ export const QuizTab: React.FC<QuizTabProps> = ({
   onRecordCbtExamAttempt,
 }) => {
   const [view, setView] = useState<QuizViewMode>('lobby');
-  const [selectedPaperSet, setSelectedPaperSet] = useState<1 | 2 | 3>(1);
+  const [selectedPaperSet, setSelectedPaperSet] = useState<PaperSetNumber>(() =>
+    readSelectedPaperForUser(userId),
+  );
   const [showFurigana, setShowFurigana] = useState(true);
   const [showNavigator, setShowNavigator] = useState(false);
   const [zoomImage, setZoomImage] = useState<{src: string; alt: string} | null>(
@@ -108,6 +137,20 @@ export const QuizTab: React.FC<QuizTabProps> = ({
   );
   const [zoomScale, setZoomScale] = useState<1 | 1.5 | 2>(1);
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+
+  useEffect(() => {
+    setSelectedPaperSet(readSelectedPaperForUser(userId));
+  }, [userId]);
+
+  const handleSelectPaperSet = (ps: PaperSetNumber) => {
+    setSelectedPaperSet(ps);
+    if (!userId) return;
+    try {
+      localStorage.setItem(`${SELECTED_PAPER_KEY_PREFIX}${userId}`, String(ps));
+    } catch {
+      // Ignore storage write errors
+    }
+  };
 
   const openZoomModal = (src: string, alt: string) => {
     setZoomScale(1);
@@ -203,18 +246,50 @@ export const QuizTab: React.FC<QuizTabProps> = ({
   >({});
   const [practiceElapsed, setPracticeElapsed] = useState(0);
 
-  const paperBundles = useMemo(
-    () => ({
-      1: buildPaperSet(allParts, 1),
-      2: buildPaperSet(allParts, 2),
-      3: buildPaperSet(allParts, 3),
-    }),
-    [allParts],
-  );
+  const paperBundles = useMemo<Record<PaperSetNumber, CbtPaperSetBundle>>(() => {
+    const map = {} as Record<PaperSetNumber, CbtPaperSetBundle>;
+    for (const ps of PAPER_SET_NUMBERS) {
+      map[ps] = buildPaperSet(allParts, ps);
+    }
+    return map;
+  }, [allParts]);
 
   const allCbtQuestions = useMemo(
     () => getAllCbtQuestions(allParts),
     [allParts],
+  );
+
+  const paperHistorySummary = useMemo(() => {
+    const map: Partial<
+      Record<
+        PaperSetNumber,
+        {attempts: number; bestPct: number; passed: boolean}
+      >
+    > = {};
+    for (const attempt of cbtExamHistory) {
+      const pct = Math.round(
+        (attempt.totalCorrect / Math.max(1, attempt.totalQuestions)) * 100,
+      );
+      const existing = map[attempt.paperSet];
+      if (!existing) {
+        map[attempt.paperSet] = {
+          attempts: 1,
+          bestPct: pct,
+          passed: attempt.passedOverall,
+        };
+      } else {
+        existing.attempts += 1;
+        existing.bestPct = Math.max(existing.bestPct, pct);
+        existing.passed = existing.passed || attempt.passedOverall;
+      }
+    }
+    return map;
+  }, [cbtExamHistory]);
+
+  const passedPaperCount = useMemo(
+    () =>
+      PAPER_SET_NUMBERS.filter((ps) => paperHistorySummary[ps]?.passed).length,
+    [paperHistorySummary],
   );
 
   const activeBundle = paperBundles[selectedPaperSet];
@@ -258,7 +333,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
     onConsumePracticeTopic?.();
   }, [initialPracticeTopic, onConsumePracticeTopic]);
 
-  const startExam = (mode: ExamSessionMode, paperSet: 1 | 2 | 3) => {
+  const startExam = (mode: ExamSessionMode, paperSet: PaperSetNumber) => {
     const bundle = paperBundles[paperSet];
     const initialStage: ActiveExamStage =
       mode === 'practical' ? 'practical' : 'academic';
@@ -1538,43 +1613,68 @@ export const QuizTab: React.FC<QuizTabProps> = ({
         </div>
       </section>
 
-      {/* Select Paper Set (3 Full 50-Question Exam Papers Covering Entire PDF) */}
+      {/* Select Paper Set (16 Independent 50-Question Exam Papers Covering Entire PDF) */}
       <section className="surface-card rounded-2xl p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-3.5">
           <div>
             <h2 className="text-base font-bold tracking-tight text-slate-900">
-              Select Exam Paper Set
+              Select Exam Paper Set ({TOTAL_PAPER_SETS} Independent Papers)
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
               Every paper mixes all 5 official topics with 30 Academic + 20
-              Practical questions
+              Practical questions · Zero overlap across sets
             </p>
           </div>
+          <span className="font-mono-tabular text-xs font-semibold text-emerald-700">
+            {passedPaperCount} / {TOTAL_PAPER_SETS} Passed
+          </span>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {([1, 2, 3] as const).map((ps) => {
+        <div className="mt-4 grid grid-cols-4 gap-2">
+          {PAPER_SET_NUMBERS.map((ps) => {
             const active = selectedPaperSet === ps;
+            const summary = paperHistorySummary[ps];
+            const label = String(ps).padStart(2, '0');
             return (
               <button
                 key={ps}
                 type="button"
-                onClick={() => setSelectedPaperSet(ps)}
-                className={`min-h-[48px] rounded-xl border px-3 py-2.5 text-left transition-all ${
+                onClick={() => handleSelectPaperSet(ps)}
+                className={`min-h-[54px] rounded-xl border px-2 py-2 text-left transition-all ${
                   active
-                    ? 'border-blue-500 bg-blue-50/80 shadow-2xs ring-2 ring-blue-500/15'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                    ? 'border-blue-500 bg-blue-50/85 shadow-2xs ring-2 ring-blue-500/15'
+                    : summary?.passed
+                      ? 'border-emerald-200 bg-emerald-50/40 hover:border-emerald-300'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
+                <div className="flex items-center justify-between gap-1">
+                  <p
+                    className={`font-mono-tabular text-xs font-bold ${
+                      active ? 'text-blue-700' : 'text-slate-900'
+                    }`}
+                  >
+                    Paper {label}
+                  </p>
+                  {summary?.passed && (
+                    <CheckCircle2
+                      className="h-3.5 w-3.5 shrink-0 text-emerald-600"
+                      aria-label="Passed"
+                    />
+                  )}
+                </div>
                 <p
-                  className={`text-xs font-bold ${
-                    active ? 'text-blue-700' : 'text-slate-900'
+                  className={`font-mono-tabular mt-0.5 text-[10px] font-semibold ${
+                    summary?.passed
+                      ? 'text-emerald-700'
+                      : summary
+                        ? 'text-amber-700'
+                        : 'text-slate-500'
                   }`}
                 >
-                  Paper Set {ps}
-                </p>
-                <p className="font-mono-tabular mt-0.5 text-[11px] text-slate-500">
-                  50 Qs · 80 min
+                  {summary
+                    ? `${summary.passed ? 'PASS' : 'BEST'} ${summary.bestPct}%`
+                    : '50 Qs · 80m'}
                 </p>
               </button>
             );
@@ -1606,7 +1706,8 @@ export const QuizTab: React.FC<QuizTabProps> = ({
             >
               <Play className="h-4 w-4 fill-current" aria-hidden="true" />
               <span>
-                Start Full CBT Exam · Paper {selectedPaperSet} (50 Qs · 80 min)
+                Start Full CBT Exam · Paper{' '}
+                {String(selectedPaperSet).padStart(2, '0')} (50 Qs · 80 min)
               </span>
             </button>
 

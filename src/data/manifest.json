@@ -5,60 +5,60 @@
       "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
       "title": "Warehouse Types, Facilities, Equipment & Vehicles",
       "file": "part-1.json",
-      "flashcard_count": 16,
+      "flashcard_count": 48,
       "quiz_count": 17,
-      "image_count": 0,
-      "processed_at": "2026-11-20T06:30:00Z"
+      "image_count": 36,
+      "processed_at": "2026-11-20T10:35:00Z"
     },
     {
       "part_number": 2,
       "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
       "title": "Warehouse Operations, Quality, Inventory & Pallets",
       "file": "part-2.json",
-      "flashcard_count": 14,
+      "flashcard_count": 38,
       "quiz_count": 16,
-      "image_count": 0,
-      "processed_at": "2026-11-20T06:30:00Z"
+      "image_count": 5,
+      "processed_at": "2026-11-20T10:35:00Z"
     },
     {
       "part_number": 3,
       "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
       "title": "Work Gear, Documents, Labels, Units & Counters",
       "file": "part-3.json",
-      "flashcard_count": 12,
+      "flashcard_count": 36,
       "quiz_count": 14,
-      "image_count": 0,
-      "processed_at": "2026-11-20T06:30:00Z"
+      "image_count": 2,
+      "processed_at": "2026-11-20T10:35:00Z"
     },
     {
       "part_number": 4,
       "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
       "title": "Inbound/Outbound, Packing, Processing & 11 Care Marks",
       "file": "part-4.json",
-      "flashcard_count": 13,
+      "flashcard_count": 50,
       "quiz_count": 18,
-      "image_count": 0,
-      "processed_at": "2026-11-20T06:30:00Z"
+      "image_count": 43,
+      "processed_at": "2026-11-20T10:35:00Z"
     },
     {
       "part_number": 5,
       "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
       "title": "Occupational Health, Safety, KYT, 5S & 9 GHS Pictograms",
       "file": "part-5.json",
-      "flashcard_count": 12,
+      "flashcard_count": 42,
       "quiz_count": 14,
-      "image_count": 0,
-      "processed_at": "2026-11-20T06:30:00Z"
+      "image_count": 15,
+      "processed_at": "2026-11-20T10:35:00Z"
     },
     {
       "part_number": 6,
       "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
       "title": "Forklift Work Standards & Container Operations",
       "file": "part-6.json",
-      "flashcard_count": 10,
+      "flashcard_count": 26,
       "quiz_count": 13,
-      "image_count": 0,
-      "processed_at": "2026-11-20T06:30:00Z"
+      "image_count": 5,
+      "processed_at": "2026-11-20T10:35:00Z"
     }
   ]
 }

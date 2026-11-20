@@ -1,0 +1,1470 @@
+{
+  "source_pdf": "specified_skilled_worker_textbook_202607_60dfce1b.pdf",
+  "total_visual_assets": 113,
+  "status_summary": {
+    "non_examinable_cover": 3,
+    "superseded_by_composite": 5,
+    "mapped": 105
+  },
+  "assets": [
+    {
+      "visual_id": "fig-p001-obj21",
+      "asset_path": "/images/figures/fig-p001-obj21.jpg",
+      "source_pdf_page": 1,
+      "source_figure_description": "Cover page decorative illustration slice 1 (top)",
+      "study_part_id": null,
+      "referenced_in_parts": [],
+      "note_section_id": null,
+      "related_sentence_or_concept": "Textbook front cover decorative artwork (non-examinable)",
+      "mapping_status": "non_examinable_cover"
+    },
+    {
+      "visual_id": "fig-p001-obj22",
+      "asset_path": "/images/figures/fig-p001-obj22.jpg",
+      "source_pdf_page": 1,
+      "source_figure_description": "Cover page decorative illustration slice 2 (middle)",
+      "study_part_id": null,
+      "referenced_in_parts": [],
+      "note_section_id": null,
+      "related_sentence_or_concept": "Textbook front cover decorative artwork (non-examinable)",
+      "mapping_status": "non_examinable_cover"
+    },
+    {
+      "visual_id": "fig-p001-obj23",
+      "asset_path": "/images/figures/fig-p001-obj23.jpg",
+      "source_pdf_page": 1,
+      "source_figure_description": "Cover page decorative illustration slice 3 (bottom)",
+      "study_part_id": null,
+      "referenced_in_parts": [],
+      "note_section_id": null,
+      "related_sentence_or_concept": "Textbook front cover decorative artwork (non-examinable)",
+      "mapping_status": "non_examinable_cover"
+    },
+    {
+      "visual_id": "fig-p011-obj94",
+      "asset_path": "/images/figures/fig-p011-obj94.jpg",
+      "source_pdf_page": 11,
+      "source_figure_description": "Upper half of Refrigerated Warehouse Temperature Grades Chart (C3–SF4) merged into composite fig-p011-temp-zones.jpg",
+      "study_part_id": 1,
+      "referenced_in_parts": [],
+      "note_section_id": "part-1-sec-2",
+      "related_sentence_or_concept": "Raw PDF slice superseded by stitched composite /images/figures/fig-p011-temp-zones.jpg",
+      "mapping_status": "superseded_by_composite",
+      "superseded_by": "/images/figures/fig-p011-temp-zones.jpg"
+    },
+    {
+      "visual_id": "fig-p011-obj95",
+      "asset_path": "/images/figures/fig-p011-obj95.jpg",
+      "source_pdf_page": 11,
+      "source_figure_description": "Lower half of Refrigerated Warehouse Temperature Grades Chart (Cooler/Freezer/Super-Freezer) merged into composite fig-p011-temp-zones.jpg",
+      "study_part_id": 1,
+      "referenced_in_parts": [],
+      "note_section_id": "part-1-sec-2",
+      "related_sentence_or_concept": "Raw PDF slice superseded by stitched composite /images/figures/fig-p011-temp-zones.jpg",
+      "mapping_status": "superseded_by_composite",
+      "superseded_by": "/images/figures/fig-p011-temp-zones.jpg"
+    },
+    {
+      "visual_id": "fig-p011-temp-zones",
+      "asset_path": "/images/figures/fig-p011-temp-zones.jpg",
+      "source_pdf_page": 11,
+      "source_figure_description": "冷蔵・冷凍・超低温 温度帯（C3〜SF4）",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-2",
+      "related_sentence_or_concept": "第1編 Ⅰ. 倉庫の種類 (Types of Warehouses · p.9–12) — 冷蔵・冷凍・超低温 温度帯（C3〜SF4）",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p019-obj126",
+      "asset_path": "/images/figures/fig-p019-obj126.jpg",
+      "source_pdf_page": 19,
+      "source_figure_description": "垂直搬送機",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — 垂直搬送機",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p019-obj127",
+      "asset_path": "/images/figures/fig-p019-obj127.jpg",
+      "source_pdf_page": 19,
+      "source_figure_description": "荷物用エレベーター",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — 荷物用エレベーター",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p020-obj131",
+      "asset_path": "/images/figures/fig-p020-obj131.jpg",
+      "source_pdf_page": 20,
+      "source_figure_description": "カウンターバランスフォークリフト",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — カウンターバランスフォークリフト",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p020-obj132",
+      "asset_path": "/images/figures/fig-p020-obj132.jpg",
+      "source_pdf_page": 20,
+      "source_figure_description": "リーチフォークリフト",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — リーチフォークリフト",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p020-obj133",
+      "asset_path": "/images/figures/fig-p020-obj133.jpg",
+      "source_pdf_page": 20,
+      "source_figure_description": "プラスチックパレット",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — プラスチックパレット",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p021-obj138",
+      "asset_path": "/images/figures/fig-p021-obj138.jpg",
+      "source_pdf_page": 21,
+      "source_figure_description": "スタッカー",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — スタッカー",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p021-obj139",
+      "asset_path": "/images/figures/fig-p021-obj139.jpg",
+      "source_pdf_page": 21,
+      "source_figure_description": "ハンドパレットトラック",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — ハンドパレットトラック",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p021-obj140",
+      "asset_path": "/images/figures/fig-p021-obj140.jpg",
+      "source_pdf_page": 21,
+      "source_figure_description": "カゴ台車・ドーリー・6輪台車",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — カゴ台車・ドーリー・6輪台車",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p022-obj145",
+      "asset_path": "/images/figures/fig-p022-obj145.jpg",
+      "source_pdf_page": 22,
+      "source_figure_description": "ハンガー台車（Zラック）",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — ハンガー台車（Zラック）",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p023-obj149",
+      "asset_path": "/images/figures/fig-p023-obj149.jpg",
+      "source_pdf_page": 23,
+      "source_figure_description": "ピッキングカート",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — ピッキングカート",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p023-obj150",
+      "asset_path": "/images/figures/fig-p023-obj150.jpg",
+      "source_pdf_page": 23,
+      "source_figure_description": "AMR自律走行搬送ロボット",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — AMR自律走行搬送ロボット",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p023-obj151",
+      "asset_path": "/images/figures/fig-p023-obj151.jpg",
+      "source_pdf_page": 23,
+      "source_figure_description": "AGV無人搬送車",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — AGV無人搬送車",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p023-obj152",
+      "asset_path": "/images/figures/fig-p023-obj152.jpg",
+      "source_pdf_page": 23,
+      "source_figure_description": "無人フォークリフト",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — 無人フォークリフト",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p023-obj153",
+      "asset_path": "/images/figures/fig-p023-obj153.jpg",
+      "source_pdf_page": 23,
+      "source_figure_description": "ソーター",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — ソーター",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p024-obj164",
+      "asset_path": "/images/figures/fig-p024-obj164.jpg",
+      "source_pdf_page": 24,
+      "source_figure_description": "自動仕分け機",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — 自動仕分け機",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p024-obj165",
+      "asset_path": "/images/figures/fig-p024-obj165.jpg",
+      "source_pdf_page": 24,
+      "source_figure_description": "天井クレーン",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-4",
+      "related_sentence_or_concept": "第1編 Ⅱ-2. 搬送設備・機器と資格要否 (Transport Equipment & Licenses · p.20–26) — 天井クレーン",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p026-obj171",
+      "asset_path": "/images/figures/fig-p026-obj171.jpg",
+      "source_pdf_page": 26,
+      "source_figure_description": "パレット材質3種",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — パレット材質3種",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p026-obj172",
+      "asset_path": "/images/figures/fig-p026-obj172.jpg",
+      "source_pdf_page": 26,
+      "source_figure_description": "パレタイジングロボット",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — パレタイジングロボット",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p026-obj173",
+      "asset_path": "/images/figures/fig-p026-obj173.jpg",
+      "source_pdf_page": 26,
+      "source_figure_description": "伸縮コンベア",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — 伸縮コンベア",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p027-obj177",
+      "asset_path": "/images/figures/fig-p027-obj177.jpg",
+      "source_pdf_page": 27,
+      "source_figure_description": "バンド結束機",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — バンド結束機",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p027-obj178",
+      "asset_path": "/images/figures/fig-p027-obj178.jpg",
+      "source_pdf_page": 27,
+      "source_figure_description": "ストレッチ包装機",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — ストレッチ包装機",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p028-obj182",
+      "asset_path": "/images/figures/fig-p028-obj182.jpg",
+      "source_pdf_page": 28,
+      "source_figure_description": "シャックル",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — シャックル",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p028-obj183",
+      "asset_path": "/images/figures/fig-p028-obj183.jpg",
+      "source_pdf_page": 28,
+      "source_figure_description": "ハンディターミナル",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1,
+        3
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — ハンディターミナル",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p029-obj187",
+      "asset_path": "/images/figures/fig-p029-obj187.jpg",
+      "source_pdf_page": 29,
+      "source_figure_description": "検針機",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — 検針機",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p029-obj188",
+      "asset_path": "/images/figures/fig-p029-obj188.jpg",
+      "source_pdf_page": 29,
+      "source_figure_description": "床洗浄機",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — 床洗浄機",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p029-obj189",
+      "asset_path": "/images/figures/fig-p029-obj189.jpg",
+      "source_pdf_page": 29,
+      "source_figure_description": "台はかり",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — 台はかり",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p029-obj190",
+      "asset_path": "/images/figures/fig-p029-obj190.jpg",
+      "source_pdf_page": 29,
+      "source_figure_description": "自動採寸計量機",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-5",
+      "related_sentence_or_concept": "第1編 Ⅱ-3. 倉庫用機器・用語 (Warehouse Tools & Terminology · p.27–30) — 自動採寸計量機",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p030-container-40ft",
+      "asset_path": "/images/figures/fig-p030-container-40ft.jpg",
+      "source_pdf_page": 30,
+      "source_figure_description": "40フィート海上コンテナ",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "第1編 Ⅱ-4. 車両・機械 (Containers, Trucks & Tail-Gate Lifters · p.31–34) — 40フィート海上コンテナ",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p030-obj194",
+      "asset_path": "/images/figures/fig-p030-obj194.jpg",
+      "source_pdf_page": 30,
+      "source_figure_description": "Top strip of 40ft ISO Dry Container Dimensions Diagram merged into composite fig-p030-container-40ft.jpg",
+      "study_part_id": 1,
+      "referenced_in_parts": [],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "Raw PDF slice superseded by stitched composite /images/figures/fig-p030-container-40ft.jpg",
+      "mapping_status": "superseded_by_composite",
+      "superseded_by": "/images/figures/fig-p030-container-40ft.jpg"
+    },
+    {
+      "visual_id": "fig-p030-obj195",
+      "asset_path": "/images/figures/fig-p030-obj195.jpg",
+      "source_pdf_page": 30,
+      "source_figure_description": "Middle strip (height 2,591mm) of 40ft ISO Dry Container Dimensions Diagram merged into composite fig-p030-container-40ft.jpg",
+      "study_part_id": 1,
+      "referenced_in_parts": [],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "Raw PDF slice superseded by stitched composite /images/figures/fig-p030-container-40ft.jpg",
+      "mapping_status": "superseded_by_composite",
+      "superseded_by": "/images/figures/fig-p030-container-40ft.jpg"
+    },
+    {
+      "visual_id": "fig-p030-obj196",
+      "asset_path": "/images/figures/fig-p030-obj196.jpg",
+      "source_pdf_page": 30,
+      "source_figure_description": "Bottom strip (length 12,192mm, width 2,438mm) of 40ft ISO Dry Container Dimensions Diagram merged into composite fig-p030-container-40ft.jpg",
+      "study_part_id": 1,
+      "referenced_in_parts": [],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "Raw PDF slice superseded by stitched composite /images/figures/fig-p030-container-40ft.jpg",
+      "mapping_status": "superseded_by_composite",
+      "superseded_by": "/images/figures/fig-p030-container-40ft.jpg"
+    },
+    {
+      "visual_id": "fig-p031-obj204",
+      "asset_path": "/images/figures/fig-p031-obj204.jpg",
+      "source_pdf_page": 31,
+      "source_figure_description": "ヘッドとシャーシ",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "第1編 Ⅱ-4. 車両・機械 (Containers, Trucks & Tail-Gate Lifters · p.31–34) — ヘッドとシャーシ",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p032-obj209",
+      "asset_path": "/images/figures/fig-p032-obj209.jpg",
+      "source_pdf_page": 32,
+      "source_figure_description": "平ボディ車",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "第1編 Ⅱ-4. 車両・機械 (Containers, Trucks & Tail-Gate Lifters · p.31–34) — 平ボディ車",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p032-obj210",
+      "asset_path": "/images/figures/fig-p032-obj210.jpg",
+      "source_pdf_page": 32,
+      "source_figure_description": "バン型車",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "第1編 Ⅱ-4. 車両・機械 (Containers, Trucks & Tail-Gate Lifters · p.31–34) — バン型車",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p032-obj211",
+      "asset_path": "/images/figures/fig-p032-obj211.jpg",
+      "source_pdf_page": 32,
+      "source_figure_description": "フル・セミトレーラー",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "第1編 Ⅱ-4. 車両・機械 (Containers, Trucks & Tail-Gate Lifters · p.31–34) — フル・セミトレーラー",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p033-obj215",
+      "asset_path": "/images/figures/fig-p033-obj215.jpg",
+      "source_pdf_page": 33,
+      "source_figure_description": "ウイング車",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "第1編 Ⅱ-4. 車両・機械 (Containers, Trucks & Tail-Gate Lifters · p.31–34) — ウイング車",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p033-obj216",
+      "asset_path": "/images/figures/fig-p033-obj216.jpg",
+      "source_pdf_page": 33,
+      "source_figure_description": "パワーゲート車",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "第1編 Ⅱ-4. 車両・機械 (Containers, Trucks & Tail-Gate Lifters · p.31–34) — パワーゲート車",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p033-obj217",
+      "asset_path": "/images/figures/fig-p033-obj217.jpg",
+      "source_pdf_page": 33,
+      "source_figure_description": "クレーン付トラック",
+      "study_part_id": 1,
+      "referenced_in_parts": [
+        1
+      ],
+      "note_section_id": "part-1-sec-6",
+      "related_sentence_or_concept": "第1編 Ⅱ-4. 車両・機械 (Containers, Trucks & Tail-Gate Lifters · p.31–34) — クレーン付トラック",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p052-obj267",
+      "asset_path": "/images/figures/fig-p052-obj267.jpg",
+      "source_pdf_page": 52,
+      "source_figure_description": "プラスチック製平パレット",
+      "study_part_id": 2,
+      "referenced_in_parts": [
+        2
+      ],
+      "note_section_id": "part-2-sec-8",
+      "related_sentence_or_concept": "第1編 付録. パレットの種類 (Pallet Types & Specifications · p.51–53) — プラスチック製平パレット",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p052-obj268",
+      "asset_path": "/images/figures/fig-p052-obj268.jpg",
+      "source_pdf_page": 52,
+      "source_figure_description": "二方差し・四方差しパレット",
+      "study_part_id": 2,
+      "referenced_in_parts": [
+        2
+      ],
+      "note_section_id": "part-2-sec-8",
+      "related_sentence_or_concept": "第1編 付録. パレットの種類 (Pallet Types & Specifications · p.51–53) — 二方差し・四方差しパレット",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p052-obj269",
+      "asset_path": "/images/figures/fig-p052-obj269.jpg",
+      "source_pdf_page": 52,
+      "source_figure_description": "桁型パレット構造",
+      "study_part_id": 2,
+      "referenced_in_parts": [
+        2
+      ],
+      "note_section_id": "part-2-sec-8",
+      "related_sentence_or_concept": "第1編 付録. パレットの種類 (Pallet Types & Specifications · p.51–53) — 桁型パレット構造",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p053-obj274",
+      "asset_path": "/images/figures/fig-p053-obj274.jpg",
+      "source_pdf_page": 53,
+      "source_figure_description": "ブロック型パレット",
+      "study_part_id": 2,
+      "referenced_in_parts": [
+        2
+      ],
+      "note_section_id": "part-2-sec-8",
+      "related_sentence_or_concept": "第1編 付録. パレットの種類 (Pallet Types & Specifications · p.51–53) — ブロック型パレット",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p053-obj275",
+      "asset_path": "/images/figures/fig-p053-obj275.jpg",
+      "source_pdf_page": 53,
+      "source_figure_description": "プラスチックパレット",
+      "study_part_id": 2,
+      "referenced_in_parts": [
+        2
+      ],
+      "note_section_id": "part-2-sec-8",
+      "related_sentence_or_concept": "第1編 付録. パレットの種類 (Pallet Types & Specifications · p.51–53) — プラスチックパレット",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p054-obj279",
+      "asset_path": "/images/figures/fig-p054-obj279.jpg",
+      "source_pdf_page": 54,
+      "source_figure_description": "反射テープ付安全ベスト（視認性確保）",
+      "study_part_id": 3,
+      "referenced_in_parts": [
+        3
+      ],
+      "note_section_id": "part-3-sec-1",
+      "related_sentence_or_concept": "第2編 Ⅰ-1. 服装・保護具(PPE) (Work Clothing & PPE · p.54) — 反射テープ付安全ベスト（視認性確保）",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p067-obj316",
+      "asset_path": "/images/figures/fig-p067-obj316.jpg",
+      "source_pdf_page": 67,
+      "source_figure_description": "フレコンバッグ",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — フレコンバッグ",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p067-obj317",
+      "asset_path": "/images/figures/fig-p067-obj317.jpg",
+      "source_pdf_page": 67,
+      "source_figure_description": "紙袋",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — 紙袋",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p067-obj318",
+      "asset_path": "/images/figures/fig-p067-obj318.jpg",
+      "source_pdf_page": 67,
+      "source_figure_description": "木箱",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — 木箱",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p067-obj319",
+      "asset_path": "/images/figures/fig-p067-obj319.jpg",
+      "source_pdf_page": 67,
+      "source_figure_description": "段ボール箱",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — 段ボール箱",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p068-obj323",
+      "asset_path": "/images/figures/fig-p068-obj323.jpg",
+      "source_pdf_page": 68,
+      "source_figure_description": "ドラム缶",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — ドラム缶",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p068-obj324",
+      "asset_path": "/images/figures/fig-p068-obj324.jpg",
+      "source_pdf_page": 68,
+      "source_figure_description": "一斗缶",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — 一斗缶",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p068-obj325",
+      "asset_path": "/images/figures/fig-p068-obj325.jpg",
+      "source_pdf_page": 68,
+      "source_figure_description": "ペール缶",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — ペール缶",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p068-obj326",
+      "asset_path": "/images/figures/fig-p068-obj326.jpg",
+      "source_pdf_page": 68,
+      "source_figure_description": "ロール紙",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — ロール紙",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p068-obj327",
+      "asset_path": "/images/figures/fig-p068-obj327.jpg",
+      "source_pdf_page": 68,
+      "source_figure_description": "ベール",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — ベール",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p069-obj331",
+      "asset_path": "/images/figures/fig-p069-obj331.jpg",
+      "source_pdf_page": 69,
+      "source_figure_description": "オリコン",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — オリコン",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p069-obj332",
+      "asset_path": "/images/figures/fig-p069-obj332.jpg",
+      "source_pdf_page": 69,
+      "source_figure_description": "メッシュパレット",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-2",
+      "related_sentence_or_concept": "代表的な荷姿（貨物の形状・容器） — メッシュパレット",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p075-obj347",
+      "asset_path": "/images/figures/fig-p075-obj347.jpg",
+      "source_pdf_page": 75,
+      "source_figure_description": "ブロック積み配列",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-3",
+      "related_sentence_or_concept": "第2編 Ⅱ-2. 出庫作業（全7工程） (Outbound Operations & Pallet Patterns · p.72–77) — ブロック積み配列",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p075-obj348",
+      "asset_path": "/images/figures/fig-p075-obj348.jpg",
+      "source_pdf_page": 75,
+      "source_figure_description": "ブロック積み立体",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-3",
+      "related_sentence_or_concept": "第2編 Ⅱ-2. 出庫作業（全7工程） (Outbound Operations & Pallet Patterns · p.72–77) — ブロック積み立体",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p076-obj352",
+      "asset_path": "/images/figures/fig-p076-obj352.jpg",
+      "source_pdf_page": 76,
+      "source_figure_description": "交互列積み配列",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-3",
+      "related_sentence_or_concept": "第2編 Ⅱ-2. 出庫作業（全7工程） (Outbound Operations & Pallet Patterns · p.72–77) — 交互列積み配列",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p076-obj353",
+      "asset_path": "/images/figures/fig-p076-obj353.jpg",
+      "source_pdf_page": 76,
+      "source_figure_description": "交互列積み立体",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-3",
+      "related_sentence_or_concept": "第2編 Ⅱ-2. 出庫作業（全7工程） (Outbound Operations & Pallet Patterns · p.72–77) — 交互列積み立体",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p076-obj354",
+      "asset_path": "/images/figures/fig-p076-obj354.jpg",
+      "source_pdf_page": 76,
+      "source_figure_description": "レンガ積み",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-3",
+      "related_sentence_or_concept": "第2編 Ⅱ-2. 出庫作業（全7工程） (Outbound Operations & Pallet Patterns · p.72–77) — レンガ積み",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p076-obj355",
+      "asset_path": "/images/figures/fig-p076-obj355.jpg",
+      "source_pdf_page": 76,
+      "source_figure_description": "ピンホイール配列",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-3",
+      "related_sentence_or_concept": "第2編 Ⅱ-2. 出庫作業（全7工程） (Outbound Operations & Pallet Patterns · p.72–77) — ピンホイール配列",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p076-obj356",
+      "asset_path": "/images/figures/fig-p076-obj356.jpg",
+      "source_pdf_page": 76,
+      "source_figure_description": "ピンホイール立体",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-3",
+      "related_sentence_or_concept": "第2編 Ⅱ-2. 出庫作業（全7工程） (Outbound Operations & Pallet Patterns · p.72–77) — ピンホイール立体",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p076-obj357",
+      "asset_path": "/images/figures/fig-p076-obj357.jpg",
+      "source_pdf_page": 76,
+      "source_figure_description": "スプリット積み",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-3",
+      "related_sentence_or_concept": "第2編 Ⅱ-2. 出庫作業（全7工程） (Outbound Operations & Pallet Patterns · p.72–77) — スプリット積み",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p078-obj363",
+      "asset_path": "/images/figures/fig-p078-obj363.jpg",
+      "source_pdf_page": 78,
+      "source_figure_description": "ラベルプリンター",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — ラベルプリンター",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p079-obj367",
+      "asset_path": "/images/figures/fig-p079-obj367.jpg",
+      "source_pdf_page": 79,
+      "source_figure_description": "タグガン",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — タグガン",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p080-obj371",
+      "asset_path": "/images/figures/fig-p080-obj371.jpg",
+      "source_pdf_page": 80,
+      "source_figure_description": "一の字貼り",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — 一の字貼り",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p080-obj372",
+      "asset_path": "/images/figures/fig-p080-obj372.jpg",
+      "source_pdf_page": 80,
+      "source_figure_description": "十の字貼り",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — 十の字貼り",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p080-obj373",
+      "asset_path": "/images/figures/fig-p080-obj373.jpg",
+      "source_pdf_page": 80,
+      "source_figure_description": "キの字貼り",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — キの字貼り",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p080-obj374",
+      "asset_path": "/images/figures/fig-p080-obj374.jpg",
+      "source_pdf_page": 80,
+      "source_figure_description": "米の字貼り",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — 米の字貼り",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p080-obj375",
+      "asset_path": "/images/figures/fig-p080-obj375.jpg",
+      "source_pdf_page": 80,
+      "source_figure_description": "H字貼り",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — H字貼り",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p081-obj380",
+      "asset_path": "/images/figures/fig-p081-obj380.jpg",
+      "source_pdf_page": 81,
+      "source_figure_description": "安全カッター",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — 安全カッター",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p082-obj386",
+      "asset_path": "/images/figures/fig-p082-obj386.jpg",
+      "source_pdf_page": 82,
+      "source_figure_description": "ストレッチ包装機",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — ストレッチ包装機",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p082-obj387",
+      "asset_path": "/images/figures/fig-p082-obj387.jpg",
+      "source_pdf_page": 82,
+      "source_figure_description": "手動PPバンド結束",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — 手動PPバンド結束",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p082-obj388",
+      "asset_path": "/images/figures/fig-p082-obj388.jpg",
+      "source_pdf_page": 82,
+      "source_figure_description": "半自動梱包機",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — 半自動梱包機",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p083-obj393",
+      "asset_path": "/images/figures/fig-p083-obj393.jpg",
+      "source_pdf_page": 83,
+      "source_figure_description": "検針機",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — 検針機",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p083-obj394",
+      "asset_path": "/images/figures/fig-p083-obj394.jpg",
+      "source_pdf_page": 83,
+      "source_figure_description": "品質タグ",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-5",
+      "related_sentence_or_concept": "外装梱包テープ貼り5種・流通加工機器 — 品質タグ",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p087-obj404",
+      "asset_path": "/images/figures/fig-p087-obj404.jpg",
+      "source_pdf_page": 87,
+      "source_figure_description": "1. 取扱注意",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 1. 取扱注意",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p087-obj405",
+      "asset_path": "/images/figures/fig-p087-obj405.jpg",
+      "source_pdf_page": 87,
+      "source_figure_description": "2. 壊れもの",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 2. 壊れもの",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p087-obj406",
+      "asset_path": "/images/figures/fig-p087-obj406.jpg",
+      "source_pdf_page": 87,
+      "source_figure_description": "3. 水濡れ防止",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 3. 水濡れ防止",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p088-obj410",
+      "asset_path": "/images/figures/fig-p088-obj410.jpg",
+      "source_pdf_page": 88,
+      "source_figure_description": "4. 横積み禁止",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 4. 横積み禁止",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p088-obj411",
+      "asset_path": "/images/figures/fig-p088-obj411.jpg",
+      "source_pdf_page": 88,
+      "source_figure_description": "5. 踏みつけ厳禁",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 5. 踏みつけ厳禁",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p088-obj412",
+      "asset_path": "/images/figures/fig-p088-obj412.jpg",
+      "source_pdf_page": 88,
+      "source_figure_description": "6. カッター注意",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 6. カッター注意",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p088-obj413",
+      "asset_path": "/images/figures/fig-p088-obj413.jpg",
+      "source_pdf_page": 88,
+      "source_figure_description": "7. 積段数制限",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 7. 積段数制限",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p088-obj414",
+      "asset_path": "/images/figures/fig-p088-obj414.jpg",
+      "source_pdf_page": 88,
+      "source_figure_description": "8. 手かぎ禁止",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 8. 手かぎ禁止",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p089-obj420",
+      "asset_path": "/images/figures/fig-p089-obj420.jpg",
+      "source_pdf_page": 89,
+      "source_figure_description": "9. 直射日光・熱遮へい",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 9. 直射日光・熱遮へい",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p089-obj422",
+      "asset_path": "/images/figures/fig-p089-obj422.jpg",
+      "source_pdf_page": 89,
+      "source_figure_description": "10. 火気厳禁",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 10. 火気厳禁",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p089-pallet-pattern",
+      "asset_path": "/images/figures/fig-p089-pallet-pattern.jpg",
+      "source_pdf_page": 89,
+      "source_figure_description": "11. パレットパターン",
+      "study_part_id": 4,
+      "referenced_in_parts": [
+        4
+      ],
+      "note_section_id": "part-4-sec-6",
+      "related_sentence_or_concept": "第2編 付録. ケアマーク 全11種 — 11. パレットパターン",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p096-obj440",
+      "asset_path": "/images/figures/fig-p096-obj440.jpg",
+      "source_pdf_page": 96,
+      "source_figure_description": "体に密着させて運ぶ",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-2",
+      "related_sentence_or_concept": "第3編 3. 健康管理・熱中症・4. 安全作業の基本 (Health, Lifting & Roll Cages · p.92–98) — 体に密着させて運ぶ",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p096-obj441",
+      "asset_path": "/images/figures/fig-p096-obj441.jpg",
+      "source_pdf_page": 96,
+      "source_figure_description": "正しい持ち上げ姿勢（しゃがむ）",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-2",
+      "related_sentence_or_concept": "第3編 3. 健康管理・熱中症・4. 安全作業の基本 (Health, Lifting & Roll Cages · p.92–98) — 正しい持ち上げ姿勢（しゃがむ）",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p099-obj449",
+      "asset_path": "/images/figures/fig-p099-obj449.jpg",
+      "source_pdf_page": 99,
+      "source_figure_description": "トラテープ",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-3",
+      "related_sentence_or_concept": "第3編 5. 構内の安全・6. KYT（危険予知訓練）・7. 5S (Site Safety, KYT & 5S · p.99–105) — トラテープ",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p099-obj450",
+      "asset_path": "/images/figures/fig-p099-obj450.jpg",
+      "source_pdf_page": 99,
+      "source_figure_description": "安全柵",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-3",
+      "related_sentence_or_concept": "第3編 5. 構内の安全・6. KYT（危険予知訓練）・7. 5S (Site Safety, KYT & 5S · p.99–105) — 安全柵",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p100-obj454",
+      "asset_path": "/images/figures/fig-p100-obj454.jpg",
+      "source_pdf_page": 100,
+      "source_figure_description": "関係者以外立入禁止",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-3",
+      "related_sentence_or_concept": "第3編 5. 構内の安全・6. KYT（危険予知訓練）・7. 5S (Site Safety, KYT & 5S · p.99–105) — 関係者以外立入禁止",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p100-obj455",
+      "asset_path": "/images/figures/fig-p100-obj455.jpg",
+      "source_pdf_page": 100,
+      "source_figure_description": "指差し呼称（ミス率 2.38% → 0.38% へ約1/6に減少）",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-3",
+      "related_sentence_or_concept": "第3編 5. 構内の安全・6. KYT（危険予知訓練）・7. 5S (Site Safety, KYT & 5S · p.99–105) — 指差し呼称（ミス率 2.38% → 0.38% へ約1/6に減少）",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p109-obj479",
+      "asset_path": "/images/figures/fig-p109-obj479.jpg",
+      "source_pdf_page": 109,
+      "source_figure_description": "1. 爆弾の爆発",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-4",
+      "related_sentence_or_concept": "第3編 8. 異常天候・危険物/有害物・付録 GHSラベル全9種 (Weather, Hazmat & 9 GHS Pictograms · p.106–113) — 1. 爆弾の爆発",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p109-obj480",
+      "asset_path": "/images/figures/fig-p109-obj480.jpg",
+      "source_pdf_page": 109,
+      "source_figure_description": "2. 炎",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-4",
+      "related_sentence_or_concept": "第3編 8. 異常天候・危険物/有害物・付録 GHSラベル全9種 (Weather, Hazmat & 9 GHS Pictograms · p.106–113) — 2. 炎",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p110-obj484",
+      "asset_path": "/images/figures/fig-p110-obj484.jpg",
+      "source_pdf_page": 110,
+      "source_figure_description": "3. 円上の炎",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-4",
+      "related_sentence_or_concept": "第3編 8. 異常天候・危険物/有害物・付録 GHSラベル全9種 (Weather, Hazmat & 9 GHS Pictograms · p.106–113) — 3. 円上の炎",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p110-obj485",
+      "asset_path": "/images/figures/fig-p110-obj485.jpg",
+      "source_pdf_page": 110,
+      "source_figure_description": "4. ガスボンベ",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-4",
+      "related_sentence_or_concept": "第3編 8. 異常天候・危険物/有害物・付録 GHSラベル全9種 (Weather, Hazmat & 9 GHS Pictograms · p.106–113) — 4. ガスボンベ",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p110-obj486",
+      "asset_path": "/images/figures/fig-p110-obj486.jpg",
+      "source_pdf_page": 110,
+      "source_figure_description": "5. 感嘆符（！）",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-4",
+      "related_sentence_or_concept": "第3編 8. 異常天候・危険物/有害物・付録 GHSラベル全9種 (Weather, Hazmat & 9 GHS Pictograms · p.106–113) — 5. 感嘆符（！）",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p111-obj490",
+      "asset_path": "/images/figures/fig-p111-obj490.jpg",
+      "source_pdf_page": 111,
+      "source_figure_description": "6. どくろ",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-4",
+      "related_sentence_or_concept": "第3編 8. 異常天候・危険物/有害物・付録 GHSラベル全9種 (Weather, Hazmat & 9 GHS Pictograms · p.106–113) — 6. どくろ",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p111-obj491",
+      "asset_path": "/images/figures/fig-p111-obj491.jpg",
+      "source_pdf_page": 111,
+      "source_figure_description": "7. 腐食性",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-4",
+      "related_sentence_or_concept": "第3編 8. 異常天候・危険物/有害物・付録 GHSラベル全9種 (Weather, Hazmat & 9 GHS Pictograms · p.106–113) — 7. 腐食性",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p111-obj492",
+      "asset_path": "/images/figures/fig-p111-obj492.jpg",
+      "source_pdf_page": 111,
+      "source_figure_description": "8. 健康有害性",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-4",
+      "related_sentence_or_concept": "第3編 8. 異常天候・危険物/有害物・付録 GHSラベル全9種 (Weather, Hazmat & 9 GHS Pictograms · p.106–113) — 8. 健康有害性",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p112-obj497",
+      "asset_path": "/images/figures/fig-p112-obj497.jpg",
+      "source_pdf_page": 112,
+      "source_figure_description": "9. 環境（木と魚）",
+      "study_part_id": 5,
+      "referenced_in_parts": [
+        5
+      ],
+      "note_section_id": "part-5-sec-4",
+      "related_sentence_or_concept": "第3編 8. 異常天候・危険物/有害物・付録 GHSラベル全9種 (Weather, Hazmat & 9 GHS Pictograms · p.106–113) — 9. 環境（木と魚）",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p114-obj523",
+      "asset_path": "/images/figures/fig-p114-obj523.jpg",
+      "source_pdf_page": 114,
+      "source_figure_description": "フォークリフト運転技能講習修了証（1トン以上は携帯必須）",
+      "study_part_id": 6,
+      "referenced_in_parts": [
+        6
+      ],
+      "note_section_id": "part-6-sec-1",
+      "related_sentence_or_concept": "第4編 1. 資格・始業前点検・2. 基本注意 (License, Pre-Shift Inspection & Rules · p.114–115) — フォークリフト運転技能講習修了証（1トン以上は携帯必須）",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p116-obj529",
+      "asset_path": "/images/figures/fig-p116-obj529.jpg",
+      "source_pdf_page": 116,
+      "source_figure_description": "制限速度 8km/h",
+      "study_part_id": 6,
+      "referenced_in_parts": [
+        6
+      ],
+      "note_section_id": "part-6-sec-2",
+      "related_sentence_or_concept": "第4編 3. 走行の注意・4. 積降ろし基本操作8手順 (Driving & 8-Step Handling · p.116–117) — 制限速度 8km/h",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p116-obj530",
+      "asset_path": "/images/figures/fig-p116-obj530.jpg",
+      "source_pdf_page": 116,
+      "source_figure_description": "前が見えないときは後進",
+      "study_part_id": 6,
+      "referenced_in_parts": [
+        6
+      ],
+      "note_section_id": "part-6-sec-2",
+      "related_sentence_or_concept": "第4編 3. 走行の注意・4. 積降ろし基本操作8手順 (Driving & 8-Step Handling · p.116–117) — 前が見えないときは後進",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p121-obj542",
+      "asset_path": "/images/figures/fig-p121-obj542.jpg",
+      "source_pdf_page": 121,
+      "source_figure_description": "ロールクランプリフト",
+      "study_part_id": 6,
+      "referenced_in_parts": [
+        6
+      ],
+      "note_section_id": "part-6-sec-4",
+      "related_sentence_or_concept": "第4編 8. 貨物種類別手順・9. コンテナ作業 (Cargo Types & Container Operations · p.120–122) — ロールクランプリフト",
+      "mapping_status": "mapped"
+    },
+    {
+      "visual_id": "fig-p121-obj543",
+      "asset_path": "/images/figures/fig-p121-obj543.jpg",
+      "source_pdf_page": 121,
+      "source_figure_description": "フレコンバッグ積付け",
+      "study_part_id": 6,
+      "referenced_in_parts": [
+        6
+      ],
+      "note_section_id": "part-6-sec-4",
+      "related_sentence_or_concept": "第4編 8. 貨物種類別手順・9. コンテナ作業 (Cargo Types & Container Operations · p.120–122) — フレコンバッグ積付け",
+      "mapping_status": "mapped"
+    }
+  ]
+}

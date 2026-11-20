@@ -34,7 +34,7 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
     return parts.flatMap((part) =>
       part.flashcards.map((fc, idx) => ({
         ...fc,
-        id: `part-${part.part_number}-fc-${idx}`,
+        id: fc.id ?? `part-${part.part_number}-fc-${idx}`,
         partNumber: part.part_number,
         partTitle: part.title,
         originalIndexInPart: idx,
@@ -246,14 +246,32 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
             }`}
           >
             {/* Front Face */}
-            <div className="surface-card backface-hidden absolute inset-0 flex flex-col justify-between rounded-2xl p-6 sm:p-8">
+            <div className="surface-card backface-hidden absolute inset-0 flex flex-col justify-between rounded-2xl p-5 sm:p-7">
               <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
-                <span className="tracking-wide text-blue-600">Question</span>
+                <span className="tracking-wide text-blue-600">
+                  {currentCard.image ? 'Visual Flashcard' : 'Question'}
+                </span>
                 <span className="truncate">{currentCard.partTitle}</span>
               </div>
 
-              <div className="font-jp my-auto flex items-center justify-center py-4 text-center">
-                <p className="max-w-lg text-lg font-semibold leading-[2.15] tracking-tight text-slate-900 sm:text-xl">
+              <div className="font-jp my-auto flex flex-col items-center justify-center gap-3 overflow-y-auto py-2 text-center">
+                {currentCard.image && (
+                  <div className="flex max-h-[145px] w-full max-w-[240px] items-center justify-center overflow-hidden rounded-xl border border-slate-200/90 bg-white p-2 shadow-2xs sm:max-h-[168px]">
+                    <img
+                      src={currentCard.image}
+                      alt={currentCard.imageAlt ?? 'Textbook visual flashcard'}
+                      loading="lazy"
+                      className="max-h-[126px] w-auto object-contain sm:max-h-[150px]"
+                    />
+                  </div>
+                )}
+                <p
+                  className={`max-w-lg font-semibold leading-[2.05] tracking-tight text-slate-900 ${
+                    currentCard.image
+                      ? 'text-base sm:text-lg'
+                      : 'text-lg sm:text-xl'
+                  }`}
+                >
                   <FuriganaText
                     text={currentCard.question}
                     showFurigana={showFurigana}

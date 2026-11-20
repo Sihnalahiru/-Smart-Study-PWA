@@ -8,11 +8,13 @@ import {
   Flame,
   Layers,
   LayoutDashboard,
+  Library,
   LogOut,
   Maximize2,
   Minimize2,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
   Users,
   X,
 } from 'lucide-react';
@@ -21,16 +23,19 @@ import {DashboardTab} from './components/DashboardTab';
 import {EmptyStudyState} from './components/EmptyStudyState';
 import {FlashcardsTab} from './components/FlashcardsTab';
 import {GlobalSearchModal} from './components/GlobalSearchModal';
+import {LibraryTab} from './components/LibraryTab';
 import {LoginScreen} from './components/LoginScreen';
 import {OfflineIndicator} from './components/OfflineIndicator';
 import {PWAInstallButton} from './components/PWAInstallButton';
 import {QuizTab} from './components/QuizTab';
+import {SettingsTab} from './components/SettingsTab';
 import {StudyNotesTab} from './components/StudyNotesTab';
 import {UploadPdfTab} from './components/UploadPdfTab';
 import {useStudyProgress} from './hooks/useStudyProgress';
 import type {
   ActiveTab,
   SearchNavigationTarget,
+  SswExamTopic,
   StudyManifest,
   StudyPart,
   UserId,
@@ -85,13 +90,38 @@ const NAV_ITEMS: NavItem[] = [
     icon: CheckSquare,
   },
   {
+    id: 'library',
+    label: 'Study Library',
+    shortLabel: 'Library',
+    section: 'library',
+    icon: Library,
+  },
+  {
     id: 'upload',
     label: '+ Upload PDF',
     shortLabel: 'Upload',
     section: 'library',
     icon: FileUp,
   },
+  {
+    id: 'settings',
+    label: 'Settings',
+    shortLabel: 'Settings',
+    section: 'library',
+    icon: SlidersHorizontal,
+  },
 ];
+
+const EYE_COMFORT_PREFIX = 'smart_study_eye_comfort_v1_';
+
+function readEyeComfortForUser(userId: UserId | null): boolean {
+  if (!userId) return false;
+  try {
+    return localStorage.getItem(`${EYE_COMFORT_PREFIX}${userId}`) === 'true';
+  } catch {
+    return false;
+  }
+}
 
 export default function App() {
   const [activeUserId, setActiveUserId] = useState<UserId | null>(() =>
@@ -110,6 +140,11 @@ export default function App() {
     partNumber: number;
     cardIndex: number;
   } | null>(null);
+  const [pendingPracticeTopic, setPendingPracticeTopic] =
+    useState<SswExamTopic | null>(null);
+  const [eyeComfortMode, setEyeComfortMode] = useState<boolean>(() =>
+    readEyeComfortForUser(getStoredActiveUserId()),
+  );
 
   const activeUser = useMemo(
     () => (activeUserId ? getUserProfile(activeUserId) : null),
@@ -118,7 +153,34 @@ export default function App() {
 
   useEffect(() => {
     setHeaderAvatarFailed(false);
+    setEyeComfortMode(readEyeComfortForUser(activeUserId));
   }, [activeUserId]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      'eye-comfort-mode',
+      eyeComfortMode,
+    );
+    return () => {
+      document.documentElement.classList.remove('eye-comfort-mode');
+    };
+  }, [eyeComfortMode]);
+
+  const handleEyeComfortChange = useCallback(
+    (enabled: boolean) => {
+      setEyeComfortMode(enabled);
+      if (!activeUserId) return;
+      try {
+        localStorage.setItem(
+          `${EYE_COMFORT_PREFIX}${activeUserId}`,
+          enabled ? 'true' : 'false',
+        );
+      } catch {
+        // Ignore storage write error
+      }
+    },
+    [activeUserId],
+  );
 
   const {
     progress,
@@ -129,6 +191,7 @@ export default function App() {
     markFlashcardMastered,
     recordQuizAnswer,
     recordCbtExamAttempt,
+    resetProgress,
   } = useStudyProgress(activeUserId);
 
   const manifest = manifestData as StudyManifest;
@@ -268,6 +331,11 @@ export default function App() {
     setFocusNotePart(null);
     setActiveTab(tab);
   };
+
+  const handlePracticeWeakTopic = useCallback((topic: SswExamTopic) => {
+    setPendingPracticeTopic(topic);
+    setActiveTab('quiz');
+  }, []);
 
   if (!activeUserId || !activeUser) {
     return (
@@ -709,8 +777,26 @@ export default function App() {
               progress={progress}
               onSelectPartAndTab={handleSelectPartAndTab}
               onNavigateTab={(tab) => setActiveTab(tab)}
+              onPracticeTopic={handlePracticeWeakTopic}
               onOpenSearch={() => setIsSearchOpen(true)}
               onEnterFocusMode={() => enterFocusMode()}
+            />
+          ) : activeTab === 'library' ? (
+            <LibraryTab
+              parts={allParts}
+              onOpenSearch={() => setIsSearchOpen(true)}
+              onSelectPartAndTab={handleSelectPartAndTab}
+              onUploadPdf={() => setActiveTab('upload')}
+            />
+          ) : activeTab === 'settings' ? (
+            <SettingsTab
+              key={activeUserId}
+              eyeComfortMode={eyeComfortMode}
+              onEyeComfortChange={handleEyeComfortChange}
+              onResetComplete={() => {
+                resetProgress();
+                setActiveTab('dashboard');
+              }}
             />
           ) : activeTab === 'upload' ? (
             <UploadPdfTab />
@@ -744,6 +830,8 @@ export default function App() {
               attemptedQuizIds={progress.attemptedQuizIds}
               quizQuestionStats={progress.quizQuestionStats}
               cbtExamHistory={progress.cbtExamHistory}
+              initialPracticeTopic={pendingPracticeTopic}
+              onConsumePracticeTopic={() => setPendingPracticeTopic(null)}
               onRecordQuizAnswer={recordQuizAnswer}
               onRecordCbtExamAttempt={recordCbtExamAttempt}
             />
@@ -780,7 +868,11 @@ export default function App() {
           aria-label="Mobile study navigation"
           className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-5 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
         >
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) =>
+            ['dashboard', 'notes', 'flashcards', 'quiz', 'settings'].includes(
+              item.id,
+            ),
+          ).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
@@ -863,13 +955,10 @@ export default function App() {
                       />
                       <div>
                         <p className="text-sm font-bold text-slate-900">
-                          {profile.name}{' '}
-                          <span className="font-jp text-xs font-medium text-slate-500">
-                            ({profile.japaneseName})
-                          </span>
+                          {profile.name}
                         </p>
                         <p className="text-xs text-slate-500">
-                          {profile.genderLabel}
+                          {profile.genderLabel} · Isolated Profile
                         </p>
                       </div>
                     </div>

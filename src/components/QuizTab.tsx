@@ -45,6 +45,8 @@ interface QuizTabProps {
   attemptedQuizIds?: string[];
   quizQuestionStats?: Record<string, QuizQuestionStat>;
   cbtExamHistory?: CbtExamAttempt[];
+  initialPracticeTopic?: SswExamTopic | null;
+  onConsumePracticeTopic?: () => void;
   onRecordQuizAnswer: (
     questionId: string,
     isCorrect: boolean,
@@ -90,6 +92,8 @@ export const QuizTab: React.FC<QuizTabProps> = ({
   attemptedQuizIds = [],
   quizQuestionStats,
   cbtExamHistory = [],
+  initialPracticeTopic = null,
+  onConsumePracticeTopic,
   onRecordQuizAnswer,
   onRecordCbtExamAttempt,
 }) => {
@@ -162,6 +166,16 @@ export const QuizTab: React.FC<QuizTabProps> = ({
     }, 1000);
     return () => window.clearInterval(interval);
   }, [view]);
+
+  // Launch directly into a targeted weak topic when triggered from Dashboard Analytics
+  useEffect(() => {
+    if (!initialPracticeTopic) return;
+    setPracticeTopic(initialPracticeTopic);
+    setPracticeAnswers({});
+    setPracticeElapsed(0);
+    setView('practice');
+    onConsumePracticeTopic?.();
+  }, [initialPracticeTopic, onConsumePracticeTopic]);
 
   const startExam = (mode: ExamSessionMode, paperSet: 1 | 2 | 3) => {
     const bundle = paperBundles[paperSet];
@@ -1181,10 +1195,22 @@ export const QuizTab: React.FC<QuizTabProps> = ({
             ? 'Practical Calculation & Planning Drill'
             : SSW_TOPIC_MAP[practiceTopic].englishLabel;
 
+    const practiceBudgetSeconds = Math.max(
+      60,
+      practiceQuestions.length *
+        Math.round(
+          (SSW_EXAM_RULES.totalMinutes * 60) / SSW_EXAM_RULES.totalQuestions,
+        ),
+    );
+    const practiceRemainingSeconds = Math.max(
+      0,
+      practiceBudgetSeconds - practiceElapsed,
+    );
+
     return (
       <div className="space-y-4">
         <div className="surface-glass sticky top-16 z-20 rounded-2xl border border-slate-200/90 p-3.5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-2.5">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -1199,42 +1225,66 @@ export const QuizTab: React.FC<QuizTabProps> = ({
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowFurigana((prev) => !prev)}
-              className={`inline-flex min-h-[34px] items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-semibold ${
-                showFurigana
-                  ? 'border-blue-300 bg-blue-50 text-blue-700'
-                  : 'border-slate-200 bg-white text-slate-600'
-              }`}
-            >
-              <Languages className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Furigana: {showFurigana ? 'ON' : 'OFF'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <span className="font-mono-tabular text-xs font-semibold text-emerald-700">
+                Score {correctCount}/{answeredCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowFurigana((prev) => !prev)}
+                className={`inline-flex min-h-[34px] items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-semibold ${
+                  showFurigana
+                    ? 'border-blue-300 bg-blue-50 text-blue-700'
+                    : 'border-slate-200 bg-white text-slate-600'
+                }`}
+              >
+                <Languages className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Furigana: {showFurigana ? 'ON' : 'OFF'}</span>
+              </button>
+            </div>
           </div>
 
-          <div className="font-mono-tabular mt-2.5 flex flex-wrap items-center gap-3 border-t border-slate-200/70 pt-2 text-xs text-slate-600">
-            <span>
-              Score:{' '}
-              <strong className="text-emerald-700">
-                {correctCount}/{answeredCount}
-              </strong>
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>
-              Answered:{' '}
-              <strong className="text-blue-700">
+          <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="rounded-xl border border-slate-200/80 bg-white/90 px-3 py-1.5">
+              <p className="text-[10px] font-semibold text-slate-500">
+                Answered
+              </p>
+              <p className="font-mono-tabular text-sm font-bold text-blue-700">
                 {answeredCount}/{practiceQuestions.length}
-              </strong>
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>
-              Remaining: <strong>{remainingCount}</strong>
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>
-              Elapsed: <strong>{formatMmSs(practiceElapsed)}</strong>
-            </span>
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200/80 bg-white/90 px-3 py-1.5">
+              <p className="text-[10px] font-semibold text-slate-500">
+                Remaining
+              </p>
+              <p className="font-mono-tabular text-sm font-bold text-slate-900">
+                {remainingCount} left
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200/80 bg-white/90 px-3 py-1.5">
+              <p className="flex items-center gap-1 text-[10px] font-semibold text-slate-500">
+                <Clock className="h-3 w-3 text-slate-400" aria-hidden="true" />
+                <span>Time Elapsed</span>
+              </p>
+              <p className="font-mono-tabular text-sm font-bold text-slate-900">
+                {formatMmSs(practiceElapsed)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200/80 bg-white/90 px-3 py-1.5">
+              <p className="flex items-center gap-1 text-[10px] font-semibold text-slate-500">
+                <Timer className="h-3 w-3 text-slate-400" aria-hidden="true" />
+                <span>Time Remaining</span>
+              </p>
+              <p
+                className={`font-mono-tabular text-sm font-bold ${
+                  practiceRemainingSeconds <= 120
+                    ? 'text-amber-700'
+                    : 'text-emerald-700'
+                }`}
+              >
+                {formatMmSs(practiceRemainingSeconds)}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -1564,6 +1614,25 @@ export const QuizTab: React.FC<QuizTabProps> = ({
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => startTopicPractice('all')}
+            className="surface-card-interactive flex items-center justify-between gap-2 rounded-xl px-3.5 py-3 text-left sm:col-span-2"
+          >
+            <div>
+              <p className="text-xs font-bold text-slate-900">
+                Full PDF Question Bank Drill (Mixed All 5 Topics)
+              </p>
+              <p className="text-[11px] text-slate-500">
+                All Academic reading, Practical visual judgment &amp; planning
+                math questions across the entire textbook
+              </p>
+            </div>
+            <span className="font-mono-tabular shrink-0 text-xs font-bold text-slate-900">
+              {allCbtQuestions.length} Qs
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={() => startTopicPractice('images')}

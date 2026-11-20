@@ -169,7 +169,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLogin}) => {
                       {profile.genderLabel}
                     </span>
                     <span aria-hidden="true">·</span>
-                    <span className="font-jp">{profile.japaneseName}</span>
+                    <span>Isolated Profile</span>
                     {hasPin && (
                       <>
                         <span aria-hidden="true">·</span>
@@ -265,7 +265,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLogin}) => {
                       : `Sign in as ${pinModalUser.name}`}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {pinModalUser.genderLabel} · {pinModalUser.japaneseName}
+                    {pinModalUser.genderLabel} · Isolated Profile
                   </p>
                 </div>
               </div>

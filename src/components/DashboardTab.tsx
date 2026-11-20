@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type {
   ActiveTab,
+  SswExamTopic,
   StudyPart,
   StudyProgressState,
   UserProfile,
@@ -39,6 +40,7 @@ interface DashboardTabProps {
   progress: StudyProgressState;
   onSelectPartAndTab: (partNumber: number, tab: ActiveTab) => void;
   onNavigateTab: (tab: ActiveTab) => void;
+  onPracticeTopic: (topic: SswExamTopic) => void;
   onOpenSearch: () => void;
   onEnterFocusMode: () => void;
 }
@@ -104,6 +106,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   progress,
   onSelectPartAndTab,
   onNavigateTab,
+  onPracticeTopic,
   onOpenSearch,
   onEnterFocusMode,
 }) => {
@@ -508,7 +511,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         attemptedQuizIds={progress.attemptedQuizIds}
         quizQuestionStats={progress.quizQuestionStats}
         cbtExamHistory={cbtHistory}
-        onPracticeTopic={() => onNavigateTab('quiz')}
+        onPracticeTopic={onPracticeTopic}
       />
 
       {/* Curriculum Study Roadmap (100% English) */}

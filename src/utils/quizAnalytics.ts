@@ -32,10 +32,22 @@ export interface SectionAnalyticsBreakdown {
   passTargetPercent: number;
 }
 
+export interface ExamTimeMetrics {
+  examsTracked: number;
+  totalExamSeconds: number;
+  avgExamSeconds: number;
+  avgSecondsPerQuestion: number;
+  lastExamSeconds: number | null;
+  fastestExamSeconds: number | null;
+  targetSecondsPerQuestion: number;
+}
+
 export interface QuizAnalyticsSummary {
   axes: TopicAnalyticsAxis[];
+  weakTopics: TopicAnalyticsAxis[];
   academic: SectionAnalyticsBreakdown;
   practical: SectionAnalyticsBreakdown;
+  timeMetrics: ExamTimeMetrics;
   totalQuestions: number;
   totalMastered: number;
   totalAttempts: number;
@@ -201,10 +213,61 @@ export function computeQuizAnalytics(
         })[0]
       : null;
 
+  const weakTopics = [...axes]
+    .filter(
+      (a) =>
+        a.totalAttempts === 0 || a.accuracyPercent < SSW_EXAM_RULES.passPercent,
+    )
+    .sort((a, b) => {
+      // Prioritize attempted topics below pass threshold first, then unattempted
+      if (a.totalAttempts > 0 && b.totalAttempts === 0) return -1;
+      if (a.totalAttempts === 0 && b.totalAttempts > 0) return 1;
+      if (a.accuracyPercent !== b.accuracyPercent) {
+        return a.accuracyPercent - b.accuracyPercent;
+      }
+      return a.masteryPercent - b.masteryPercent;
+    });
+
+  const examsTracked = cbtExamHistory.length;
+  const totalExamSeconds = cbtExamHistory.reduce(
+    (sum, item) => sum + Math.max(0, item.elapsedSeconds || 0),
+    0,
+  );
+  const totalExamQuestions = cbtExamHistory.reduce(
+    (sum, item) => sum + Math.max(1, item.totalQuestions || 0),
+    0,
+  );
+  const avgExamSeconds =
+    examsTracked > 0 ? Math.round(totalExamSeconds / examsTracked) : 0;
+  const avgSecondsPerQuestion =
+    totalExamQuestions > 0
+      ? Math.round(totalExamSeconds / totalExamQuestions)
+      : 0;
+  const lastExamSeconds =
+    cbtExamHistory.length > 0 ? cbtExamHistory[0].elapsedSeconds : null;
+  const fastestExamSeconds =
+    cbtExamHistory.length > 0
+      ? Math.min(...cbtExamHistory.map((item) => item.elapsedSeconds))
+      : null;
+
+  const targetSecondsPerQuestion = Math.round(
+    (SSW_EXAM_RULES.totalMinutes * 60) / SSW_EXAM_RULES.totalQuestions,
+  );
+
   return {
     axes,
+    weakTopics,
     academic: makeSectionSummary(secBuckets.academic),
     practical: makeSectionSummary(secBuckets.practical),
+    timeMetrics: {
+      examsTracked,
+      totalExamSeconds,
+      avgExamSeconds,
+      avgSecondsPerQuestion,
+      lastExamSeconds,
+      fastestExamSeconds,
+      targetSecondsPerQuestion,
+    },
     totalQuestions,
     totalMastered,
     totalAttempts,

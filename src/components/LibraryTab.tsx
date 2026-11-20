@@ -36,7 +36,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
           <div className="min-w-0">
             <h1 className="text-lg font-bold tracking-tight text-slate-900">Study Library</h1>
             <p className="mt-1 text-xs leading-relaxed text-slate-500">
-              Choose a module to open its notes, flashcards, or Japanese quiz.
+              Choose a module to open illustrated study notes, flashcards, or CBT exam practice.
             </p>
           </div>
         </div>
@@ -68,13 +68,15 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
           {visibleParts.map((part) => (
             <article key={part.part_number} className="surface-card rounded-2xl p-4">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium text-slate-500">
-                <span className="text-blue-600">Part {part.part_number}</span>
+                <span className="font-mono-tabular font-semibold text-blue-600">Part {part.part_number}</span>
                 <span aria-hidden="true">·</span>
-                <span>{part.flashcards.length} cards</span>
+                <span className="font-mono-tabular">{part.flashcards.length} cards</span>
                 <span aria-hidden="true">·</span>
-                <span>{part.quiz.length} quiz</span>
+                <span className="font-mono-tabular">{part.quiz.length} questions</span>
               </div>
-              <h2 className="mt-2 text-sm font-semibold leading-relaxed text-slate-900">{part.title}</h2>
+              <h2 className="mt-2 text-sm font-semibold leading-relaxed text-slate-900">
+                {part.english_title ?? part.title}
+              </h2>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <button type="button" onClick={() => onSelectPartAndTab(part.part_number, 'notes')} className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:bg-blue-50">
                   <BookOpen className="h-3.5 w-3.5" aria-hidden="true" /> Notes
@@ -83,7 +85,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
                   <Layers className="h-3.5 w-3.5" aria-hidden="true" /> Cards
                 </button>
                 <button type="button" onClick={() => onSelectPartAndTab(part.part_number, 'quiz')} className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-2 text-xs font-semibold text-white transition-colors hover:bg-slate-700">
-                  <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" /> Quiz (JP)
+                  <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" /> CBT Exam
                 </button>
               </div>
             </article>

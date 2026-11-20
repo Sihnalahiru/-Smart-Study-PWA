@@ -738,6 +738,19 @@ export function useStudyProgress(userId: UserId | null) {
     [updateForActiveUser, showToast],
   );
 
+  const resetProgress = useCallback(() => {
+    if (!userId) return;
+    const fresh = createInitialProgressState();
+    saveProgressForUser(userId, fresh);
+    try {
+      localStorage.removeItem(`smart_study_celebrated_v1_${userId}`);
+    } catch {
+      // Ignore storage error
+    }
+    setBundle({ownerId: userId, data: fresh});
+    setXpToast(null);
+  }, [userId]);
+
   // If userId just changed and effect hasn't run yet, read synchronously so
   // renders NEVER briefly show the previous user's progress!
   const effectiveProgress =
@@ -757,5 +770,6 @@ export function useStudyProgress(userId: UserId | null) {
     markFlashcardMastered,
     recordQuizAnswer,
     recordCbtExamAttempt,
+    resetProgress,
   };
 }

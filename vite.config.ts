@@ -9,9 +9,8 @@ import {VitePWA} from 'vite-plugin-pwa';
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(() => {
-  const base = process.env.GITHUB_PAGES === 'true' ? '/-Smart-Study-PWA/' : '/';
   return {
-    base,
+    base: '/',
     plugins: [
       react(),
       tailwindcss(),
@@ -25,31 +24,31 @@ export default defineConfig(() => {
           'pwa-maskable-512x512.png',
         ],
         manifest: {
-          id: base,
+          id: '/',
           name: 'Smart Study PWA',
           short_name: 'SmartStudy',
           description:
-            'Offline-ready study companion turning PDFs into structured Markdown notes, 3D flashcards, and interactive quizzes.',
+            'Offline-ready SSW Logistics Warehousing CBT exam prep companion with illustrated study notes, 3D flashcards, and timed mock exams.',
           theme_color: '#0F172A',
           background_color: '#F8FAFC',
           display: 'standalone',
-          start_url: base,
-          scope: base,
+          start_url: '/',
+          scope: '/',
           icons: [
             {
-              src: `${base}pwa-192x192.png`,
+              src: '/pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: `${base}pwa-512x512.png`,
+              src: '/pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: `${base}pwa-maskable-512x512.png`,
+              src: '/pwa-maskable-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',
@@ -58,7 +57,7 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff,woff2}'],
-          globIgnores: ['**/images/pages/**', '**/assets/aistudio/**'],
+          globIgnores: ['**/assets/aistudio/**'],
           navigateFallbackDenylist: [/^\/api/, /^\/__/, /^\/_aistudio/],
           maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
           runtimeCaching: [

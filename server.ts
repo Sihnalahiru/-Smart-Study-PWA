@@ -48,6 +48,35 @@ async function startServer() {
     res.json({status: 'ok'});
   });
 
+  app.post('/api/admin/verify-reset', (req, res) => {
+    const configuredPassword = process.env.ADMIN_RESET_PASSWORD;
+    if (!configuredPassword) {
+      res.status(503).json({error: 'Admin reset is not configured'});
+      return;
+    }
+    const body = (req.body ?? {}) as {username?: string; password?: string};
+    const username = typeof body.username === 'string' ? body.username : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    const constantTimeEqual = (a: string, b: string) => {
+      const aBuf = Buffer.from(a);
+      const bBuf = Buffer.from(b);
+      let diff = aBuf.length ^ bBuf.length;
+      const len = Math.max(aBuf.length, bBuf.length);
+      for (let i = 0; i < len; i += 1) {
+        diff |= (aBuf[i] ?? 0) ^ (bBuf[i] ?? 0);
+      }
+      return diff === 0;
+    };
+    if (
+      !constantTimeEqual(username, 'Admin') ||
+      !constantTimeEqual(password, configuredPassword)
+    ) {
+      res.status(401).json({error: 'Invalid administrator credentials'});
+      return;
+    }
+    res.json({verified: true});
+  });
+
   if (!isProd) {
     const {createServer: createViteServer} = await import('vite');
     const disableHmr = process.env.DISABLE_HMR === 'true';

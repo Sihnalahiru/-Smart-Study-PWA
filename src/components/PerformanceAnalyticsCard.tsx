@@ -6,8 +6,10 @@ import {
   ChevronDown,
   ChevronUp,
   CircleDashed,
+  Clock,
   Radar,
   Target,
+  Timer,
 } from 'lucide-react';
 import type {
   CbtExamAttempt,
@@ -19,7 +21,7 @@ import {
   computeQuizAnalytics,
   type TopicAnalyticsAxis,
 } from '../utils/quizAnalytics';
-import {SSW_EXAM_RULES} from '../utils/cbtExam';
+import {formatMmSs, SSW_EXAM_RULES} from '../utils/cbtExam';
 
 interface PerformanceAnalyticsCardProps {
   allParts: StudyPart[];
@@ -319,6 +321,126 @@ export const PerformanceAnalyticsCard: React.FC<
               </div>
             </div>
           </div>
+
+          {/* Time Metrics & Exam Pacing (100% English) */}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="rounded-xl border border-slate-200/80 bg-white px-3 py-2.5">
+              <p className="flex items-center gap-1 text-[10px] font-semibold text-slate-500">
+                <Clock className="h-3 w-3 text-slate-400" aria-hidden="true" />
+                <span>Avg Exam Time</span>
+              </p>
+              <p className="font-mono-tabular mt-1 text-sm font-bold text-slate-900">
+                {analytics.timeMetrics.examsTracked > 0
+                  ? formatMmSs(analytics.timeMetrics.avgExamSeconds)
+                  : '—'}
+              </p>
+              <p className="text-[10px] text-slate-400">
+                Budget 80:00 (40m + 40m)
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/80 bg-white px-3 py-2.5">
+              <p className="flex items-center gap-1 text-[10px] font-semibold text-slate-500">
+                <Timer className="h-3 w-3 text-slate-400" aria-hidden="true" />
+                <span>Avg Pace / Q</span>
+              </p>
+              <p className="font-mono-tabular mt-1 text-sm font-bold text-slate-900">
+                {analytics.timeMetrics.avgSecondsPerQuestion > 0
+                  ? `${analytics.timeMetrics.avgSecondsPerQuestion}s`
+                  : '—'}
+              </p>
+              <p className="text-[10px] text-slate-400">
+                Target ≤ {analytics.timeMetrics.targetSecondsPerQuestion}s / Q
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/80 bg-white px-3 py-2.5">
+              <p className="text-[10px] font-semibold text-slate-500">
+                Latest CBT Score
+              </p>
+              <p
+                className={`font-mono-tabular mt-1 text-sm font-bold ${
+                  !analytics.latestExam
+                    ? 'text-slate-400'
+                    : analytics.latestExam.passedOverall
+                      ? 'text-emerald-700'
+                      : 'text-amber-700'
+                }`}
+              >
+                {analytics.latestExam
+                  ? `${analytics.latestExam.totalCorrect}/${analytics.latestExam.totalQuestions}`
+                  : '—'}
+              </p>
+              <p className="text-[10px] text-slate-400">
+                {analytics.latestExam
+                  ? `${analytics.latestExam.passedOverall ? 'PASS' : 'Below 60%'} · ${formatMmSs(analytics.latestExam.elapsedSeconds)}`
+                  : 'No timed exam yet'}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/80 bg-white px-3 py-2.5">
+              <p className="text-[10px] font-semibold text-slate-500">
+                Pass Rate
+              </p>
+              <p className="font-mono-tabular mt-1 text-sm font-bold text-slate-900">
+                {analytics.totalExamsCompleted > 0
+                  ? `${Math.round((analytics.totalExamsPassed / analytics.totalExamsCompleted) * 100)}%`
+                  : '—'}
+              </p>
+              <p className="text-[10px] text-slate-400">
+                {analytics.totalExamsPassed}/{analytics.totalExamsCompleted} CBT
+                passed
+              </p>
+            </div>
+          </div>
+
+          {/* Weak Topics Priority Panel (100% English) */}
+          {analytics.weakTopics.length > 0 && (
+            <div className="rounded-xl border border-amber-200/80 bg-amber-50/45 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950">
+                  <AlertTriangle
+                    className="h-3.5 w-3.5 shrink-0 text-amber-600"
+                    aria-hidden="true"
+                  />
+                  <span>Weak Topics to Prioritize (Below 60% Pass Target)</span>
+                </div>
+                <span className="font-mono-tabular text-[11px] font-semibold text-amber-800">
+                  {analytics.weakTopics.length} topic
+                  {analytics.weakTopics.length === 1 ? '' : 's'}
+                </span>
+              </div>
+              <div className="mt-2.5 space-y-1.5">
+                {analytics.weakTopics.slice(0, 3).map((topic) => (
+                  <div
+                    key={topic.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-amber-200/70 bg-white px-2.5 py-2 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900">
+                        {topic.englishLabel}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        {topic.totalAttempts > 0
+                          ? `Accuracy ${topic.accuracyPercent}% (${topic.totalCorrect}/${topic.totalAttempts}) · Need +${Math.max(1, PASS_BENCHMARK - topic.accuracyPercent)}% to pass`
+                          : `Not attempted yet · ${topic.totalQuestions} questions ready`}
+                      </p>
+                    </div>
+                    {onPracticeTopic && (
+                      <button
+                        type="button"
+                        onClick={() => onPracticeTopic(topic.id)}
+                        className="inline-flex min-h-[30px] shrink-0 items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-900 transition-colors hover:bg-amber-100 whitespace-nowrap"
+                      >
+                        <span>Drill</span>
+                        <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 5-Axis English Spider Chart (5 Official SSW Exam Topics) */}
           <div className="mx-auto max-w-[460px]">

@@ -9,7 +9,9 @@ import {VitePWA} from 'vite-plugin-pwa';
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(() => {
+  const base = process.env.GITHUB_PAGES === 'true' ? '/-Smart-Study-PWA/' : '/';
   return {
+    base,
     plugins: [
       react(),
       tailwindcss(),
@@ -31,23 +33,23 @@ export default defineConfig(() => {
           theme_color: '#0F172A',
           background_color: '#F8FAFC',
           display: 'standalone',
-          start_url: '/',
-          scope: '/',
+          start_url: base,
+          scope: base,
           icons: [
             {
-              src: '/pwa-192x192.png',
+              src: `${base}pwa-192x192.png`,
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-512x512.png',
+              src: `${base}pwa-512x512.png`,
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-maskable-512x512.png',
+              src: `${base}pwa-maskable-512x512.png`,
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',
@@ -62,7 +64,7 @@ export default defineConfig(() => {
           runtimeCaching: [
             {
               urlPattern: ({url}) =>
-                url.pathname.startsWith('/images/') ||
+                url.pathname.includes('/images/') ||
                 url.pathname.endsWith('.json'),
               handler: 'CacheFirst',
               options: {

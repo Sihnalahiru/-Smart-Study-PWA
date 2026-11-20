@@ -46,7 +46,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
 
   if (questions.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+      <div className="surface-card rounded-2xl p-8 text-center">
         <p className="font-jp text-sm text-slate-600">
           <FuriganaText
             text="{選択|せんたく}したパートに{問題|もんだい}がありません。"
@@ -100,9 +100,9 @@ export const QuizTab: React.FC<QuizTabProps> = ({
   return (
     <div className="font-jp space-y-5">
       {/* Japanese Furigana Quiz Score Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5">
+      <div className="surface-glass flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3.5">
         <div className="flex flex-wrap items-center gap-2.5 text-sm">
-          <span className="font-semibold text-slate-900">
+          <span className="font-semibold tracking-tight text-slate-900">
             <FuriganaText text="{得点|とくてん}" showFurigana={showFurigana} />
             :{' '}
             <span className="font-mono-tabular">
@@ -132,10 +132,10 @@ export const QuizTab: React.FC<QuizTabProps> = ({
           <button
             type="button"
             onClick={() => setShowFurigana((prev) => !prev)}
-            className={`inline-flex min-h-[36px] items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors ${
+            className={`inline-flex min-h-[36px] items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all ${
               showFurigana
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
-                : 'border-slate-200 bg-white text-slate-600'
+                ? 'border-blue-300 bg-gradient-to-b from-blue-50 to-indigo-50/70 text-blue-700 shadow-2xs'
+                : 'border-slate-200/90 bg-white text-slate-600'
             }`}
           >
             <Languages className="h-3.5 w-3.5" aria-hidden="true" />
@@ -146,7 +146,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
             type="button"
             onClick={handleRetake}
             disabled={answeredCount === 0}
-            className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex min-h-[36px] items-center gap-1 rounded-xl border border-slate-200/90 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
             <span>
@@ -157,10 +157,10 @@ export const QuizTab: React.FC<QuizTabProps> = ({
       </div>
 
       {allAnswered && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-5">
+        <div className="rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/70 p-5 shadow-xs">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold tracking-tight text-slate-900">
                 <FuriganaText
                   text="{試験|しけん}{練習|れんしゅう}{完了|かんりょう}！"
                   showFurigana={showFurigana}
@@ -176,7 +176,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
             <button
               type="button"
               onClick={handleRetake}
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 shrink-0"
+              className="btn-primary-premium inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shrink-0"
             >
               <RotateCcw className="h-4 w-4" aria-hidden="true" />
               <span>
@@ -190,7 +190,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-4 sm:space-y-5">
         {questions.map((q, qIdx) => {
           const selectedIdx = answers[q.id];
           const isAnswered = selectedIdx !== undefined;
@@ -199,7 +199,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
           return (
             <section
               key={q.id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
+              className="surface-card rounded-2xl p-5 sm:p-6"
             >
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-slate-500">
                 <span className="font-mono-tabular font-semibold text-blue-600">
@@ -212,7 +212,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                 <span>Part {q.partNumber}</span>
               </div>
 
-              <h3 className="mt-3 text-base font-semibold leading-[2.1] text-slate-900">
+              <h3 className="mt-3 text-base font-semibold leading-[2.15] tracking-tight text-slate-900">
                 <FuriganaText text={q.question} showFurigana={showFurigana} />
               </h3>
 
@@ -222,15 +222,15 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                   const isThisSelected = optIdx === selectedIdx;
 
                   let containerClasses =
-                    'border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50';
+                    'border-slate-200/90 bg-gradient-to-b from-white to-slate-50/50 text-slate-800 hover:border-blue-300/90 hover:from-white hover:to-blue-50/30';
                   let letterClasses =
-                    'border-slate-200 bg-slate-50 text-slate-600';
+                    'border-slate-200/90 bg-slate-50 text-slate-600';
                   let statusLabel: React.ReactNode = null;
 
                   if (isAnswered) {
                     if (isThisCorrect) {
                       containerClasses =
-                        'border-emerald-500 bg-emerald-50 text-emerald-950';
+                        'border-emerald-400 bg-gradient-to-r from-emerald-50/90 to-teal-50/60 text-emerald-950 shadow-2xs';
                       letterClasses =
                         'border-emerald-600 bg-emerald-600 text-white';
                       statusLabel = (
@@ -249,7 +249,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                       );
                     } else if (isThisSelected) {
                       containerClasses =
-                        'border-red-500 bg-red-50 text-red-950';
+                        'border-red-400 bg-gradient-to-r from-red-50/90 to-rose-50/60 text-red-950';
                       letterClasses = 'border-red-600 bg-red-600 text-white';
                       statusLabel = (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 whitespace-nowrap shrink-0">
@@ -264,7 +264,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                       );
                     } else {
                       containerClasses =
-                        'border-slate-200 bg-slate-50/50 text-slate-500 opacity-75';
+                        'border-slate-200/70 bg-slate-50/40 text-slate-500 opacity-70';
                       letterClasses =
                         'border-slate-200 bg-slate-100 text-slate-400';
                     }
@@ -276,7 +276,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                       type="button"
                       disabled={isAnswered}
                       onClick={() => handleSelectOption(q, optIdx)}
-                      className={`flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${containerClasses} ${
+                      className={`flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${containerClasses} ${
                         isAnswered ? 'cursor-default' : 'cursor-pointer'
                       }`}
                     >
@@ -303,8 +303,8 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                 <div
                   className={`mt-4 rounded-xl border p-4 text-sm leading-[2.05] ${
                     isUserCorrect
-                      ? 'border-emerald-200 bg-emerald-50/60 text-emerald-950'
-                      : 'border-slate-200 bg-slate-50 text-slate-800'
+                      ? 'border-emerald-200/80 bg-gradient-to-br from-emerald-50/75 to-teal-50/40 text-emerald-950'
+                      : 'border-slate-200/80 bg-gradient-to-b from-slate-50 to-slate-100/50 text-slate-800'
                   }`}
                 >
                   <p className="font-bold text-slate-900">

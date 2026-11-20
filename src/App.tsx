@@ -221,14 +221,14 @@ export default function App() {
     activeTab === 'studio' || activeTab === 'audio' || activeTab === 'upload';
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900">
-      {/* Desktop Left Sidebar */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-slate-200 lg:bg-white">
-        <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
+    <div className="min-h-screen text-slate-900">
+      {/* Desktop Glassmorphic Sidebar */}
+      <aside className="surface-nav-glass hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-slate-200/80">
+        <div className="flex h-16 items-center gap-3 border-b border-slate-200/70 px-5">
           <img
             src="/icon.svg"
             alt=""
-            className="h-8 w-8 rounded-lg shrink-0"
+            className="h-8 w-8 rounded-xl shadow-xs shrink-0"
           />
           <span className="text-base font-bold tracking-tight text-slate-900 whitespace-nowrap">
             Smart Study PWA
@@ -240,7 +240,7 @@ export default function App() {
           className="flex-1 space-y-6 overflow-y-auto px-3 py-5"
         >
           <div>
-            <p className="px-3 text-xs font-semibold text-slate-400">
+            <p className="px-3 text-[11px] font-semibold tracking-[0.04em] text-slate-400">
               Study Workspace
             </p>
             <ul className="mt-2 space-y-1">
@@ -255,10 +255,10 @@ export default function App() {
                         setFocusCard(null);
                         setActiveTab(item.id);
                       }}
-                      className={`flex min-h-[42px] w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors whitespace-nowrap ${
+                      className={`flex min-h-[42px] w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                         active
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          ? 'bg-gradient-to-r from-blue-50 to-indigo-50/70 text-blue-700 ring-1 ring-blue-200/70 shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
                       }`}
                     >
                       <Icon
@@ -276,7 +276,7 @@ export default function App() {
           </div>
 
           <div>
-            <p className="px-3 text-xs font-semibold text-slate-400">
+            <p className="px-3 text-[11px] font-semibold tracking-[0.04em] text-slate-400">
               Studio &amp; Capture
             </p>
             <ul className="mt-2 space-y-1">
@@ -288,10 +288,10 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => setActiveTab(item.id)}
-                      className={`flex min-h-[42px] w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors whitespace-nowrap ${
+                      className={`flex min-h-[42px] w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                         active
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          ? 'bg-gradient-to-r from-blue-50 to-indigo-50/70 text-blue-700 ring-1 ring-blue-200/70 shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
                       }`}
                     >
                       <Icon
@@ -310,9 +310,8 @@ export default function App() {
         </nav>
 
         {/* Sidebar Daily Streak + XP Summary */}
-        <div className="space-y-3 border-t border-slate-200 p-4">
-          {/* Daily Streak Card in Sidebar */}
-          <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+        <div className="space-y-3 border-t border-slate-200/70 p-4">
+          <div className="surface-streak rounded-xl p-3.5">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Flame
@@ -342,7 +341,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveTab('dashboard')}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-left transition-colors hover:border-slate-300 hover:bg-slate-100/70"
+            className="surface-card-interactive w-full rounded-xl p-3.5 text-left"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-semibold text-slate-900">
@@ -352,9 +351,9 @@ export default function App() {
                 {progress.xp} XP
               </span>
             </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+            <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/80">
               <div
-                className="h-full rounded-full bg-amber-500 transition-all duration-300"
+                className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-300"
                 style={{width: `${levelInfo.progressPercent}%`}}
               />
             </div>
@@ -367,9 +366,9 @@ export default function App() {
 
       {/* Main Portrait-Optimized App Shell */}
       <div className="lg:pl-64">
-        {/* Top Command Header */}
-        <header className="sticky top-0 z-30 h-14 border-b border-slate-200 bg-white/95 backdrop-blur-md">
-          <div className="mx-auto flex h-full max-w-xl items-center justify-between gap-2 px-3 sm:px-4">
+        {/* Top Frosted Glass Command Header */}
+        <header className="surface-nav-glass sticky top-0 z-30 h-14 border-b border-slate-200/80">
+          <div className="mx-auto flex h-full max-w-xl items-center justify-between gap-2 px-3.5 sm:px-4">
             {/* Mobile Brand */}
             <a
               href="/"
@@ -382,7 +381,7 @@ export default function App() {
               <img
                 src="/icon.svg"
                 alt=""
-                className="h-7 w-7 rounded-md shrink-0"
+                className="h-7 w-7 rounded-lg shadow-xs shrink-0"
               />
             </a>
 
@@ -390,7 +389,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setIsSearchOpen(true)}
-              className="flex min-h-[38px] min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left text-xs text-slate-500 transition-colors hover:border-slate-300 hover:bg-white"
+              className="flex min-h-[38px] min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-slate-200/90 bg-white/75 px-3 py-1.5 text-left text-xs text-slate-500 shadow-xs transition-all hover:border-slate-300 hover:bg-white"
             >
               <span className="flex min-w-0 items-center gap-1.5 truncate">
                 <Search
@@ -399,7 +398,7 @@ export default function App() {
                 />
                 <span className="truncate">Search notes &amp; cards...</span>
               </span>
-              <kbd className="font-mono-tabular hidden rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:inline">
+              <kbd className="font-mono-tabular hidden rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:inline">
                 ⌘K
               </kbd>
             </button>
@@ -417,7 +416,7 @@ export default function App() {
                     setSelectedPart(e.target.value);
                     setFocusCard(null);
                   }}
-                  className="min-h-[38px] max-w-[110px] appearance-none truncate rounded-xl border border-slate-200 bg-slate-50 py-1.5 pr-6 pl-2.5 text-xs font-semibold text-slate-800 transition-colors hover:border-slate-300 focus:border-blue-600 focus:bg-white focus:outline-none sm:max-w-[155px]"
+                  className="min-h-[38px] max-w-[110px] appearance-none truncate rounded-xl border border-slate-200/90 bg-white/80 py-1.5 pr-6 pl-2.5 text-xs font-semibold text-slate-800 shadow-xs transition-colors hover:border-slate-300 hover:bg-white focus:border-blue-600 focus:bg-white focus:outline-none sm:max-w-[155px]"
                 >
                   <option value="all">All ({allParts.length})</option>
                   {allParts.map((part) => (
@@ -439,7 +438,7 @@ export default function App() {
                 type="button"
                 onClick={() => setActiveTab('dashboard')}
                 aria-label="View daily streak and XP"
-                className="inline-flex min-h-[38px] items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800 whitespace-nowrap shrink-0"
+                className="inline-flex min-h-[38px] items-center gap-1 rounded-xl border border-amber-200/90 bg-gradient-to-b from-amber-50 to-orange-50/70 px-2.5 py-1 text-xs font-bold text-amber-800 shadow-xs transition-colors hover:border-amber-300 whitespace-nowrap shrink-0"
               >
                 <Flame
                   className="h-3.5 w-3.5 text-amber-600"
@@ -454,7 +453,7 @@ export default function App() {
         </header>
 
         {/* Tablet Navigation Strip */}
-        <div className="hidden border-b border-slate-200 bg-white md:block lg:hidden">
+        <div className="surface-nav-glass hidden border-b border-slate-200/80 md:block lg:hidden">
           <nav
             aria-label="Tablet study navigation"
             className="mx-auto flex max-w-xl items-center gap-1 overflow-x-auto px-3"
@@ -467,7 +466,7 @@ export default function App() {
                   key={item.id}
                   type="button"
                   onClick={() => setActiveTab(item.id)}
-                  className={`relative inline-flex min-h-[44px] items-center gap-1.5 px-3 py-2 text-xs font-semibold whitespace-nowrap shrink-0 ${
+                  className={`relative inline-flex min-h-[44px] items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                     isActive
                       ? 'text-blue-600'
                       : 'text-slate-600 hover:text-slate-900'
@@ -488,7 +487,7 @@ export default function App() {
         </div>
 
         {/* Portrait Mobile Main Viewport */}
-        <main className="mx-auto max-w-xl px-3.5 py-5 pb-24 sm:px-4 sm:py-6 md:pb-12">
+        <main className="mx-auto max-w-xl px-3.5 py-6 pb-24 sm:px-4 sm:py-7 md:pb-14">
           {activeTab === 'dashboard' ? (
             <DashboardTab
               allParts={allParts}
@@ -539,10 +538,10 @@ export default function App() {
         </main>
       </div>
 
-      {/* Mobile Fixed Bottom Navigation (<= 15% viewport height) */}
+      {/* Mobile Glassmorphic Bottom Navigation */}
       <nav
         aria-label="Mobile study navigation"
-        className="fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-5 border-t border-slate-200 bg-white/95 backdrop-blur-md md:hidden"
+        className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-5 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
       >
         {studyNavItems.map((item) => {
           const Icon = item.icon;
@@ -555,10 +554,16 @@ export default function App() {
                 setIsMobileToolsOpen(false);
                 setActiveTab(item.id);
               }}
-              className={`flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-semibold transition-colors whitespace-nowrap ${
+              className={`relative flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-semibold transition-colors whitespace-nowrap ${
                 isActive ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
+              {isActive && (
+                <span
+                  className="absolute top-0 h-0.5 w-8 rounded-full bg-blue-600"
+                  aria-hidden="true"
+                />
+              )}
               <Icon className="h-5 w-5" aria-hidden="true" />
               <span>{item.shortLabel}</span>
             </button>
@@ -568,33 +573,39 @@ export default function App() {
         <button
           type="button"
           onClick={() => setIsMobileToolsOpen((prev) => !prev)}
-          className={`flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-semibold transition-colors whitespace-nowrap ${
+          className={`relative flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-semibold transition-colors whitespace-nowrap ${
             isToolTabActive || isMobileToolsOpen
               ? 'text-blue-600'
               : 'text-slate-500 hover:text-slate-900'
           }`}
         >
+          {(isToolTabActive || isMobileToolsOpen) && (
+            <span
+              className="absolute top-0 h-0.5 w-8 rounded-full bg-blue-600"
+              aria-hidden="true"
+            />
+          )}
           <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
           <span>Tools</span>
         </button>
       </nav>
 
-      {/* Mobile Tools Bottom Sheet */}
+      {/* Mobile Tools Glassmorphic Bottom Sheet */}
       {isMobileToolsOpen && (
         <div
-          className="fixed inset-0 z-40 flex items-end bg-slate-950/50 backdrop-blur-xs md:hidden"
+          className="fixed inset-0 z-40 flex items-end bg-slate-950/45 backdrop-blur-sm md:hidden"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsMobileToolsOpen(false);
           }}
         >
-          <div className="w-full rounded-t-3xl border-t border-slate-200 bg-white p-5 pb-8 shadow-2xl">
-            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-slate-300" />
-            <div className="flex items-center justify-between pb-3">
+          <div className="surface-glass w-full rounded-t-3xl p-5 pb-8 shadow-2xl">
+            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-slate-300/90" />
+            <div className="flex items-center justify-between pb-4">
               <div>
-                <p className="text-sm font-bold text-slate-900">
+                <p className="text-sm font-bold tracking-tight text-slate-900">
                   Study Tools &amp; Upload
                 </p>
-                <p className="font-mono-tabular text-xs text-slate-500">
+                <p className="font-mono-tabular mt-0.5 text-xs text-slate-500">
                   {progress.streakDays}d streak ({streakBadge.title}) ·{' '}
                   {progress.xp} XP
                 </p>
@@ -603,7 +614,7 @@ export default function App() {
                 type="button"
                 onClick={() => setIsMobileToolsOpen(false)}
                 aria-label="Close tools menu"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -621,10 +632,10 @@ export default function App() {
                       setActiveTab(item.id);
                       setIsMobileToolsOpen(false);
                     }}
-                    className={`flex min-h-[48px] items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold ${
+                    className={`flex min-h-[48px] items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-all ${
                       isActive
-                        ? 'border-blue-300 bg-blue-50 text-blue-700'
-                        : 'border-slate-200 bg-white text-slate-800'
+                        ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50/70 text-blue-700'
+                        : 'surface-card text-slate-800'
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -646,12 +657,12 @@ export default function App() {
         onNavigate={handleSearchNavigate}
       />
 
-      {/* XP Reward Toast */}
+      {/* Premium XP Reward Toast */}
       {xpToast && (
         <div
           role="status"
           aria-live="polite"
-          className="fixed right-4 bottom-20 z-50 flex items-center gap-2.5 rounded-xl border border-amber-200 bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-lg md:bottom-6"
+          className="surface-hero fixed right-4 bottom-20 z-50 flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-xs font-semibold text-white md:bottom-6"
         >
           <Award
             className="h-4 w-4 text-amber-400 shrink-0"

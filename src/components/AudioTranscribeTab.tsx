@@ -268,9 +268,9 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
   return (
     <div className="grid grid-cols-1 gap-6">
       {/* Recorder & Uploader */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-        <header className="border-b border-slate-100 pb-4">
-          <h2 className="text-lg font-bold text-slate-900">
+      <section className="surface-card rounded-2xl p-5 sm:p-6">
+        <header className="border-b border-slate-200/70 pb-4">
+          <h2 className="text-lg font-bold tracking-tight text-slate-900">
             Voice Notes &amp; Transcription
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-slate-500">
@@ -294,14 +294,14 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
               value={noteTitle}
               onChange={(e) => setNoteTitle(e.target.value)}
               placeholder="e.g., Chapter 4 — Cellular Respiration Recap"
-              className="mt-1.5 block min-h-[42px] w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+              className="mt-1.5 block min-h-[42px] w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
             />
           </div>
 
           {/* Microphone Capture Card */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-center">
+          <div className="rounded-xl border border-slate-200/80 bg-gradient-to-b from-slate-50/90 to-blue-50/30 p-5 text-center shadow-2xs">
             <div className="flex items-center justify-center gap-3">
-              <span className="font-mono-tabular text-2xl font-bold text-slate-900">
+              <span className="font-mono-tabular text-2xl font-bold tracking-tight text-slate-900">
                 {formatDuration(elapsedSec)}
               </span>
             </div>
@@ -331,7 +331,7 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
                   type="button"
                   disabled={isTranscribing}
                   onClick={startRecording}
-                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+                  className="btn-primary-premium inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold disabled:opacity-60"
                 >
                   <Mic className="h-4 w-4" aria-hidden="true" />
                   <span>Start Microphone Recording</span>
@@ -340,7 +340,7 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
                 <button
                   type="button"
                   onClick={stopRecording}
-                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-red-500 to-red-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-105"
                 >
                   <Square className="h-4 w-4 fill-current" aria-hidden="true" />
                   <span>Stop &amp; Transcribe</span>
@@ -351,7 +351,7 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
 
           {/* Alternative Audio File Upload */}
           <div>
-            <label className="flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50">
+            <label className="surface-card-interactive flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-700">
               <FileAudio className="h-4 w-4 text-blue-600" aria-hidden="true" />
               <span>Or Upload Audio File (MP3, WAV, WebM, M4A)</span>
               <input
@@ -365,7 +365,7 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
           </div>
 
           {isTranscribing && (
-            <div className="flex items-center gap-2.5 rounded-xl border border-blue-200 bg-blue-50 p-3.5 text-xs font-semibold text-blue-900">
+            <div className="flex items-center gap-2.5 rounded-xl border border-blue-200/80 bg-gradient-to-r from-blue-50 to-indigo-50/70 p-3.5 text-xs font-semibold text-blue-900">
               <Loader2
                 className="h-4 w-4 shrink-0 animate-spin text-blue-600"
                 aria-hidden="true"
@@ -377,7 +377,7 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
           {error && (
             <div
               role="alert"
-              className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs leading-relaxed text-red-900"
+              className="flex items-start gap-2.5 rounded-xl border border-red-200/90 bg-gradient-to-r from-red-50 to-rose-50/70 p-3.5 text-xs leading-relaxed text-red-900"
             >
               <AlertCircle
                 className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
@@ -389,11 +389,11 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
         </div>
       </section>
 
-      {/* Right: Saved Transcripts */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 lg:col-span-7">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+      {/* Saved Transcripts */}
+      <section className="surface-card rounded-2xl p-5 sm:p-6">
+        <div className="flex items-center justify-between border-b border-slate-200/70 pb-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-bold tracking-tight text-slate-900">
               Saved Voice Transcripts
             </h3>
             <p className="mt-0.5 text-xs text-slate-500">
@@ -411,10 +411,10 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
               className="mx-auto h-8 w-8 text-slate-300"
               aria-hidden="true"
             />
-            <p className="mt-3 text-sm font-semibold text-slate-700">
+            <p className="mt-3 text-sm font-semibold tracking-tight text-slate-700">
               No voice transcripts yet
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
               Record a study summary or upload an audio clip to generate your
               first transcript.
             </p>
@@ -424,11 +424,11 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
             {savedTranscripts.map((item) => (
               <article
                 key={item.id}
-                className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5"
+                className="rounded-xl border border-slate-200/80 bg-gradient-to-b from-slate-50/80 to-white p-4 shadow-2xs sm:p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">
+                    <h4 className="text-sm font-bold tracking-tight text-slate-900">
                       {item.title}
                     </h4>
                     <p className="mt-0.5 text-xs text-slate-500">
@@ -443,7 +443,7 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
                     <button
                       type="button"
                       onClick={() => handleCopy(item.id, item.transcript)}
-                      className="inline-flex min-h-[34px] items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      className="inline-flex min-h-[34px] items-center gap-1 rounded-lg border border-slate-200/90 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50"
                     >
                       {copiedId === item.id ? (
                         <>
@@ -464,7 +464,7 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
                     <button
                       type="button"
                       onClick={() => handleDownloadTxt(item)}
-                      className="inline-flex min-h-[34px] items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      className="inline-flex min-h-[34px] items-center gap-1 rounded-lg border border-slate-200/90 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50"
                     >
                       <Download className="h-3.5 w-3.5" aria-hidden="true" />
                       <span>.txt</span>
@@ -474,7 +474,7 @@ export const AudioTranscribeTab: React.FC<AudioTranscribeTabProps> = ({
                       type="button"
                       onClick={() => onDeleteTranscript(item.id)}
                       aria-label="Delete transcript"
-                      className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                      className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

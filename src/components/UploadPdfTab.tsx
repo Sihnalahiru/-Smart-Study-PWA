@@ -194,14 +194,14 @@ export const UploadPdfTab: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
-        <header className="border-b border-slate-200 pb-5">
+      <div className="surface-card rounded-2xl p-6 sm:p-8">
+        <header className="border-b border-slate-200/70 pb-5">
           <h2 className="text-xl font-bold tracking-tight text-slate-900">
             Upload Study PDF
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
             Commit a new PDF directly to your repository&apos;s{' '}
-            <code className="font-mono-tabular rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-800">
+            <code className="font-mono-tabular rounded border border-slate-200/80 bg-slate-100/80 px-1.5 py-0.5 text-xs text-slate-800">
               pdfs/
             </code>{' '}
             folder to trigger automated extraction of notes, diagrams,
@@ -224,7 +224,7 @@ export const UploadPdfTab: React.FC = () => {
               onChange={(e) => handleRepoChange(e.target.value)}
               placeholder="owner/repo"
               autoComplete="off"
-              className="mt-2 block min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+              className="mt-2 block min-h-[44px] w-full rounded-xl border border-slate-200/90 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
             />
             <p className="mt-1.5 text-xs text-slate-500">
               Saved locally in your browser&apos;s localStorage.
@@ -246,13 +246,13 @@ export const UploadPdfTab: React.FC = () => {
                 onChange={(e) => handleTokenChange(e.target.value)}
                 placeholder="ghp_... or github_pat_..."
                 autoComplete="off"
-                className="block min-h-[44px] w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-12 pl-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                className="block min-h-[44px] w-full rounded-xl border border-slate-200/90 bg-white py-2.5 pr-12 pl-4 text-sm text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               />
               <button
                 type="button"
                 onClick={() => setShowToken((prev) => !prev)}
                 aria-label={showToken ? 'Hide token' : 'Show token'}
-                className="absolute top-1/2 right-1.5 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                className="absolute top-1/2 right-1.5 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
               >
                 {showToken ? (
                   <EyeOff className="h-4 w-4" />
@@ -280,7 +280,7 @@ export const UploadPdfTab: React.FC = () => {
             </label>
             <label
               htmlFor="pdf-file"
-              className="mt-2 flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-6 text-center transition-colors hover:border-blue-500 hover:bg-blue-50/40"
+              className="mt-2 flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-gradient-to-b from-slate-50/90 to-slate-100/40 px-4 py-6 text-center transition-all hover:border-blue-500 hover:from-blue-50/50 hover:to-indigo-50/30"
             >
               <FileUp className="h-6 w-6 text-blue-600" aria-hidden="true" />
               <span className="mt-2 text-sm font-semibold text-slate-900">
@@ -305,7 +305,7 @@ export const UploadPdfTab: React.FC = () => {
           <button
             type="submit"
             disabled={status.type === 'uploading'}
-            className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary-premium inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {status.type === 'uploading' ? (
               <>
@@ -325,12 +325,12 @@ export const UploadPdfTab: React.FC = () => {
           <div
             role="status"
             aria-live="polite"
-            className={`mt-6 rounded-xl border p-4 text-sm ${
+            className={`mt-6 rounded-xl border p-4 text-sm shadow-2xs ${
               status.type === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-950'
+                ? 'border-emerald-200/90 bg-gradient-to-r from-emerald-50 to-teal-50/60 text-emerald-950'
                 : status.type === 'error'
-                  ? 'border-red-200 bg-red-50 text-red-950'
-                  : 'border-blue-200 bg-blue-50 text-blue-950'
+                  ? 'border-red-200/90 bg-gradient-to-r from-red-50 to-rose-50/60 text-red-950'
+                  : 'border-blue-200/90 bg-gradient-to-r from-blue-50 to-indigo-50/60 text-blue-950'
             }`}
           >
             <div className="flex items-start gap-3">

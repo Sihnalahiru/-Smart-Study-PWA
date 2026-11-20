@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import http from 'http';
 import path from 'path';
 import {fileURLToPath} from 'url';
 import {GoogleGenAI} from '@google/genai';
@@ -71,6 +72,7 @@ function extractErrorDetails(err: unknown): {status: number; message: string} {
 
 async function startServer() {
   const app = express();
+  const httpServer = http.createServer(app);
   app.use(express.json({limit: '30mb'}));
 
   app.get('/api/health', (_req, res) => {
@@ -238,7 +240,12 @@ async function startServer() {
   if (!isProd) {
     const {createServer: createViteServer} = await import('vite');
     const vite = await createViteServer({
-      server: {middlewareMode: true},
+      server: {
+        middlewareMode: true,
+        allowedHosts: true,
+        ws: {server: httpServer},
+        hmr: process.env.DISABLE_HMR === 'true' ? false : true,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -250,7 +257,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`Smart Study PWA server listening on http://0.0.0.0:${PORT}`);
   });
 }

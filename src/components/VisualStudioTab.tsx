@@ -138,9 +138,9 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
   return (
     <div className="grid grid-cols-1 gap-6">
       {/* Prompt & Configuration */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-        <header className="border-b border-slate-100 pb-4">
-          <h2 className="text-lg font-bold text-slate-900">
+      <section className="surface-card rounded-2xl p-5 sm:p-6">
+        <header className="border-b border-slate-200/70 pb-4">
+          <h2 className="text-lg font-bold tracking-tight text-slate-900">
             Study Visual Studio
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-slate-500">
@@ -150,11 +150,11 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
         </header>
 
         {/* Mode Switcher */}
-        <div className="mt-5 grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+        <div className="mt-5 grid grid-cols-2 gap-1 rounded-xl border border-slate-200/80 bg-slate-100/70 p-1">
           <button
             type="button"
             onClick={() => setMode('create')}
-            className={`inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg text-xs font-semibold transition-colors ${
+            className={`inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg text-xs font-semibold transition-all ${
               mode === 'create'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -166,7 +166,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
           <button
             type="button"
             onClick={() => setMode('edit')}
-            className={`inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg text-xs font-semibold transition-colors ${
+            className={`inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg text-xs font-semibold transition-all ${
               mode === 'edit'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -183,19 +183,19 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
               <label className="block text-xs font-semibold text-slate-800">
                 Base Image to Edit
               </label>
-              <label className="mt-2 flex min-h-[96px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-4 text-center transition-colors hover:border-blue-500 hover:bg-blue-50/40">
+              <label className="mt-2 flex min-h-[96px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-gradient-to-b from-slate-50/90 to-slate-100/40 p-4 text-center transition-all hover:border-blue-500 hover:from-blue-50/50 hover:to-indigo-50/30">
                 {sourceDataUrl ? (
                   <div className="flex items-center gap-3">
                     <img
                       src={sourceDataUrl}
                       alt="Selected base visual"
-                      className="h-14 w-14 rounded-lg border border-slate-200 object-cover"
+                      className="h-14 w-14 rounded-lg border border-slate-200 object-cover shadow-2xs"
                     />
                     <div className="text-left">
                       <p className="text-xs font-semibold text-slate-900">
                         {sourceName || 'Base image loaded'}
                       </p>
-                      <p className="text-[11px] text-blue-600">
+                      <p className="text-[11px] font-medium text-blue-600">
                         Click to replace image
                       </p>
                     </div>
@@ -242,7 +242,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
                   ? 'Example: Clean textbook diagram of the human heart showing oxygenated and deoxygenated blood flow with crisp labels on a light slate background'
                   : 'Example: Add clear arrows showing electron flow and highlight the membrane in cobalt blue'
               }
-              className="mt-2 block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+              className="mt-2 block w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
             />
           </div>
 
@@ -258,7 +258,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
                 id="aspect-ratio"
                 value={aspectRatio}
                 onChange={(e) => setAspectRatio(e.target.value)}
-                className="mt-1.5 block min-h-[42px] w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 focus:border-blue-600 focus:outline-none"
+                className="mt-1.5 block min-h-[42px] w-full rounded-xl border border-slate-200/90 bg-white px-3 text-sm font-medium text-slate-800 shadow-2xs focus:border-blue-600 focus:outline-none"
               >
                 {ASPECT_RATIOS.map((ratio) => (
                   <option key={ratio} value={ratio}>
@@ -279,7 +279,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
                 id="image-size"
                 value={imageSize}
                 onChange={(e) => setImageSize(e.target.value)}
-                className="mt-1.5 block min-h-[42px] w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 focus:border-blue-600 focus:outline-none"
+                className="mt-1.5 block min-h-[42px] w-full rounded-xl border border-slate-200/90 bg-white px-3 text-sm font-medium text-slate-800 shadow-2xs focus:border-blue-600 focus:outline-none"
               >
                 {IMAGE_SIZES.map((sz) => (
                   <option key={sz} value={sz}>
@@ -293,7 +293,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary-premium inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? (
               <>
@@ -318,7 +318,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
         {error && (
           <div
             role="alert"
-            className="mt-4 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs leading-relaxed text-red-900"
+            className="mt-4 flex items-start gap-2.5 rounded-xl border border-red-200/90 bg-gradient-to-r from-red-50 to-rose-50/70 p-3.5 text-xs leading-relaxed text-red-900"
           >
             <AlertCircle
               className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
@@ -331,9 +331,11 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
 
       {/* Output Canvas & Saved Visuals Gallery */}
       <div className="space-y-6">
-        <section className="rounded-2xl border border-slate-200 bg-white p-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <h3 className="text-sm font-bold text-slate-900">Canvas Preview</h3>
+        <section className="surface-card rounded-2xl p-5 sm:p-6">
+          <div className="flex items-center justify-between border-b border-slate-200/70 pb-4">
+            <h3 className="text-sm font-bold tracking-tight text-slate-900">
+              Canvas Preview
+            </h3>
             {activePreview && (
               <div className="flex items-center gap-2">
                 <button
@@ -344,7 +346,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
                       'Generated visual',
                     )
                   }
-                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50"
                 >
                   <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Edit This</span>
@@ -352,7 +354,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
                 <a
                   href={activePreview.imageDataUrl}
                   download={`study-visual-${Date.now()}.png`}
-                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-all hover:brightness-110"
                 >
                   <Download className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Download</span>
@@ -363,28 +365,28 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
 
           <div className="mt-5">
             {activePreview ? (
-              <figure className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+              <figure className="overflow-hidden rounded-xl border border-slate-200/90 bg-gradient-to-b from-slate-50 to-slate-100/50 shadow-2xs">
                 <img
                   src={activePreview.imageDataUrl}
                   alt={activePreview.prompt}
                   className="mx-auto max-h-[460px] w-auto max-w-full object-contain p-3"
                 />
-                <figcaption className="border-t border-slate-200 bg-white px-4 py-3 text-xs text-slate-600">
+                <figcaption className="border-t border-slate-200/80 bg-white px-4 py-3 text-xs text-slate-600">
                   {activePreview.caption || activePreview.prompt}
                 </figcaption>
               </figure>
             ) : (
-              <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center">
+              <div className="flex min-h-[240px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-gradient-to-b from-slate-50/90 to-slate-100/40 p-8 text-center">
                 <ImageIcon
                   className="h-8 w-8 text-slate-300"
                   aria-hidden="true"
                 />
-                <p className="mt-3 text-sm font-semibold text-slate-700">
+                <p className="mt-3 text-sm font-semibold tracking-tight text-slate-700">
                   Your study diagram will appear here
                 </p>
-                <p className="mt-1 max-w-sm text-xs text-slate-500">
-                  Describe any concept diagram, chart, or visual mnemonic on the
-                  left to generate or edit it.
+                <p className="mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
+                  Describe any concept diagram, chart, or visual mnemonic above
+                  to generate or edit it.
                 </p>
               </div>
             )}
@@ -392,12 +394,12 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
         </section>
 
         {savedVisuals.length > 0 && (
-          <section className="rounded-2xl border border-slate-200 bg-white p-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <h3 className="text-sm font-bold text-slate-900">
+          <section className="surface-card rounded-2xl p-5 sm:p-6">
+            <div className="flex items-center justify-between border-b border-slate-200/70 pb-4">
+              <h3 className="text-sm font-bold tracking-tight text-slate-900">
                 Saved Visual Library
               </h3>
-              <span className="font-mono-tabular text-xs text-slate-500">
+              <span className="font-mono-tabular text-xs font-medium text-slate-500">
                 {savedVisuals.length} saved
               </span>
             </div>
@@ -406,7 +408,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
               {savedVisuals.map((vis) => (
                 <div
                   key={vis.id}
-                  className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                  className="surface-card-interactive overflow-hidden rounded-xl"
                 >
                   <button
                     type="button"
@@ -416,7 +418,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
                         prompt: vis.prompt,
                       })
                     }
-                    className="block w-full bg-slate-50 p-2"
+                    className="block w-full bg-gradient-to-b from-slate-50 to-slate-100/50 p-2"
                   >
                     <img
                       src={vis.imageDataUrl}
@@ -424,8 +426,8 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
                       className="h-40 w-full rounded-lg object-contain"
                     />
                   </button>
-                  <div className="border-t border-slate-100 p-3">
-                    <p className="line-clamp-2 text-xs font-medium text-slate-700">
+                  <div className="border-t border-slate-200/70 p-3">
+                    <p className="line-clamp-2 text-xs font-medium leading-relaxed text-slate-700">
                       {vis.prompt}
                     </p>
                     <div className="mt-2.5 flex items-center justify-between gap-2">
@@ -438,7 +440,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
                           onClick={() =>
                             handleUseForEdit(vis.imageDataUrl, 'Saved visual')
                           }
-                          className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                         >
                           Edit
                         </button>
@@ -446,7 +448,7 @@ export const VisualStudioTab: React.FC<VisualStudioTabProps> = ({
                           type="button"
                           onClick={() => onDeleteVisual(vis.id)}
                           aria-label="Delete visual"
-                          className="rounded-md p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

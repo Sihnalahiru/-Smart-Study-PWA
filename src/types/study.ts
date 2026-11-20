@@ -53,6 +53,7 @@ export interface CbtQuestion {
   explanation: string;
   image?: string;
   imageAlt?: string;
+  imageSource?: 'explicit' | 'mapped_pdf';
   isCalculation?: boolean;
 }
 

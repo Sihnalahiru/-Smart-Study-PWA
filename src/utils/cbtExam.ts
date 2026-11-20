@@ -5,6 +5,11 @@ import type {
   SswExamTopic,
   StudyPart,
 } from '../types/study';
+import {
+  buildPdfFigureIndex,
+  resolveQuestionVisual,
+  type MappedPdfFigure,
+} from './pdfVisualResolver';
 
 export const SSW_EXAM_RULES = {
   totalQuestions: 50,
@@ -134,7 +139,11 @@ function inferTopicForAcademicQuestion(
   }
 }
 
-export function buildAllAcademicQuestions(allParts: StudyPart[]): CbtQuestion[] {
+export function buildAllAcademicQuestions(
+  allParts: StudyPart[],
+  figureIndex?: MappedPdfFigure[],
+): CbtQuestion[] {
+  const resolvedIndex = figureIndex ?? buildPdfFigureIndex(allParts);
   const raw: Omit<CbtQuestion, 'paperSet'>[] = [];
 
   for (const part of allParts) {
@@ -146,6 +155,20 @@ export function buildAllAcademicQuestions(allParts: StudyPart[]): CbtQuestion[] 
           q.question,
           q.note_topic,
         );
+      const visual = resolveQuestionVisual(
+        {
+          partNumber: part.part_number,
+          question: q.question,
+          noteTopic: q.note_topic,
+          options: q.options,
+          correctIndex: q.correct_index,
+          explanation: q.explanation,
+          explicitImage: q.image,
+          explicitImageAlt: q.imageAlt,
+        },
+        resolvedIndex,
+      );
+
       raw.push({
         id: q.id ?? `part-${part.part_number}-q-${idx}`,
         section: 'academic',
@@ -155,8 +178,9 @@ export function buildAllAcademicQuestions(allParts: StudyPart[]): CbtQuestion[] 
         options: q.options,
         correct_index: q.correct_index,
         explanation: q.explanation,
-        image: q.image,
-        imageAlt: q.imageAlt,
+        image: visual?.src,
+        imageAlt: visual?.alt,
+        imageSource: visual?.source,
         isCalculation: q.isCalculation,
       });
     });
@@ -196,17 +220,37 @@ export function buildAllAcademicQuestions(allParts: StudyPart[]): CbtQuestion[] 
   }));
 }
 
-export function getAllPracticalQuestions(): CbtQuestion[] {
-  return (practicalData as CbtQuestion[]).map((q) => ({
-    ...q,
-    section: 'practical' as CbtExamSection,
-  }));
+export function getAllPracticalQuestions(
+  figureIndex: MappedPdfFigure[] = [],
+): CbtQuestion[] {
+  return (practicalData as CbtQuestion[]).map((q) => {
+    const visual = resolveQuestionVisual(
+      {
+        partNumber: q.partNumber,
+        question: q.question,
+        options: q.options,
+        correctIndex: q.correct_index,
+        explanation: q.explanation,
+        explicitImage: q.image,
+        explicitImageAlt: q.imageAlt,
+      },
+      figureIndex,
+    );
+    return {
+      ...q,
+      section: 'practical' as CbtExamSection,
+      image: visual?.src,
+      imageAlt: visual?.alt ?? q.imageAlt,
+      imageSource: visual?.source,
+    };
+  });
 }
 
 export function getAllCbtQuestions(allParts: StudyPart[]): CbtQuestion[] {
+  const figureIndex = buildPdfFigureIndex(allParts);
   return [
-    ...buildAllAcademicQuestions(allParts),
-    ...getAllPracticalQuestions(),
+    ...buildAllAcademicQuestions(allParts, figureIndex),
+    ...getAllPracticalQuestions(figureIndex),
   ];
 }
 
@@ -225,8 +269,9 @@ export function buildPaperSet(
   allParts: StudyPart[],
   paperSet: 1 | 2 | 3,
 ): CbtPaperSetBundle {
-  const allAcademic = buildAllAcademicQuestions(allParts);
-  const allPractical = getAllPracticalQuestions();
+  const figureIndex = buildPdfFigureIndex(allParts);
+  const allAcademic = buildAllAcademicQuestions(allParts, figureIndex);
+  const allPractical = getAllPracticalQuestions(figureIndex);
 
   // Select 30 Academic questions for this paper set (prioritizing assigned set, then filling if needed)
   const primaryAcademic = allAcademic.filter((q) => q.paperSet === paperSet);
@@ -244,6 +289,8 @@ export function buildPaperSet(
     SSW_EXAM_RULES.practicalQuestions,
   );
 
+  const allQuestions = [...academic, ...practical];
+
   const subtitles: Record<1 | 2 | 3, string> = {
     1: 'Mixed All 5 Topics · Care Marks, Interlock Stacking, Forklift Safety & Planning Math',
     2: 'Mixed All 5 Topics · GHS Labels, Pallet Capacity, Equipment & Lifting Calculations',
@@ -256,10 +303,11 @@ export function buildPaperSet(
     subtitle: subtitles[paperSet],
     academic,
     practical,
-    allQuestions: [...academic, ...practical],
-    imageQuestionCount: practical.filter((q) => Boolean(q.image)).length,
-    calculationQuestionCount: practical.filter((q) => Boolean(q.isCalculation))
-      .length,
+    allQuestions,
+    imageQuestionCount: allQuestions.filter((q) => Boolean(q.image)).length,
+    calculationQuestionCount: allQuestions.filter((q) =>
+      Boolean(q.isCalculation),
+    ).length,
   };
 }
 

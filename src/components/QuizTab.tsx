@@ -12,7 +12,6 @@ import {
   Image as ImageIcon,
   Languages,
   LayoutGrid,
-  Maximize2,
   Play,
   RotateCcw,
   ShieldCheck,
@@ -22,6 +21,7 @@ import {
 } from 'lucide-react';
 import {FuriganaText} from './FuriganaText';
 import {PerformanceAnalyticsCard} from './PerformanceAnalyticsCard';
+import {QuestionFigureCard} from './QuestionFigureCard';
 import type {
   CbtExamAttempt,
   CbtQuestion,
@@ -589,7 +589,11 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                     </span>
                     <span className="inline-flex items-center gap-1 font-medium text-indigo-700">
                       <ImageIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>Visual Judgment</span>
+                      <span>
+                        {currentQ.section === 'practical'
+                          ? 'Visual Judgment'
+                          : 'Mapped PDF Visual'}
+                      </span>
                     </span>
                   </>
                 )}
@@ -632,39 +636,39 @@ export const QuizTab: React.FC<QuizTabProps> = ({
               </button>
             </div>
 
-            {/* Practical Question Visual Figure */}
-            {currentQ.image && (
-              <div className="mt-4 overflow-hidden rounded-xl border border-slate-200/90 bg-slate-50/70 p-3 text-center">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setZoomImage({
-                      src: currentQ.image!,
-                      alt: currentQ.imageAlt || 'Exam diagram',
-                    })
-                  }
-                  className="group relative mx-auto inline-block cursor-zoom-in rounded-lg bg-white p-2 shadow-2xs"
-                  aria-label="Zoom question diagram"
-                >
-                  <img
-                    src={currentQ.image}
-                    alt={currentQ.imageAlt || 'Exam figure'}
-                    referrerPolicy="no-referrer"
-                    className="mx-auto max-h-[240px] w-auto max-w-full rounded-md object-contain"
-                  />
-                  <span className="absolute right-2 bottom-2 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white/90 text-blue-600 shadow-xs">
-                    <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  </span>
-                </button>
-                <p className="mt-1.5 text-[11px] text-slate-500">
-                  Tap illustration to enlarge
-                </p>
-              </div>
-            )}
+            {/* Text Question Paired Alongside Dynamically Mapped PDF Visual */}
+            <div
+              className={
+                currentQ.image
+                  ? 'mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-start'
+                  : 'mt-4'
+              }
+            >
+              <h3 className="text-base font-semibold leading-[2.15] tracking-tight text-slate-900 sm:text-lg">
+                <FuriganaText
+                  text={currentQ.question}
+                  showFurigana={showFurigana}
+                />
+              </h3>
 
-            <h3 className="mt-4 text-base font-semibold leading-[2.15] tracking-tight text-slate-900 sm:text-lg">
-              <FuriganaText text={currentQ.question} showFurigana={showFurigana} />
-            </h3>
+              {currentQ.image && (
+                <QuestionFigureCard
+                  src={currentQ.image}
+                  alt={currentQ.imageAlt || 'Exam figure'}
+                  showFurigana={showFurigana}
+                  revealCaption={false}
+                  variant={
+                    currentQ.section === 'practical' ? 'prominent' : 'side'
+                  }
+                  badgeLabel={
+                    currentQ.section === 'practical'
+                      ? 'Exam Figure'
+                      : 'PDF Figure'
+                  }
+                  onZoom={(src, alt) => setZoomImage({src, alt})}
+                />
+              )}
+            </div>
 
             <div className="mt-4 space-y-2.5">
               {currentQ.options.map((opt, optIdx) => {
@@ -1114,19 +1118,31 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                   </span>
                 </div>
 
-                {q.image && (
-                  <div className="mt-3 flex justify-center rounded-xl border border-slate-200/80 bg-slate-50 p-2.5">
-                    <img
+                <div
+                  className={
+                    q.image
+                      ? 'mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_175px] sm:items-start'
+                      : 'mt-3'
+                  }
+                >
+                  <p className="text-sm font-semibold leading-[2.05] text-slate-900">
+                    <FuriganaText
+                      text={q.question}
+                      showFurigana={showFurigana}
+                    />
+                  </p>
+
+                  {q.image && (
+                    <QuestionFigureCard
                       src={q.image}
                       alt={q.imageAlt || 'Exam figure'}
-                      className="max-h-[160px] w-auto rounded-md bg-white object-contain p-1"
+                      showFurigana={showFurigana}
+                      revealCaption={true}
+                      variant="compact"
+                      onZoom={(src, alt) => setZoomImage({src, alt})}
                     />
-                  </div>
-                )}
-
-                <p className="mt-3 text-sm font-semibold leading-[2.05] text-slate-900">
-                  <FuriganaText text={q.question} showFurigana={showFurigana} />
-                </p>
+                  )}
+                </div>
 
                 <div className="mt-3 space-y-1.5">
                   {q.options.map((opt, optIdx) => {
@@ -1167,6 +1183,34 @@ export const QuizTab: React.FC<QuizTabProps> = ({
             );
           })}
         </section>
+
+        {zoomImage && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md"
+            onClick={() => setZoomImage(null)}
+          >
+            <div
+              className="relative max-w-2xl rounded-2xl bg-white p-3 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setZoomImage(null)}
+                aria-label="Close diagram preview"
+                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900/80 text-white hover:bg-slate-900"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <img
+                src={zoomImage.src}
+                alt={zoomImage.alt}
+                className="max-h-[80vh] w-auto max-w-full rounded-lg object-contain"
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1309,30 +1353,36 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                   </span>
                 </div>
 
-                {q.image && (
-                  <div className="mt-3 flex justify-center rounded-xl border border-slate-200/80 bg-slate-50 p-3">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setZoomImage({
-                          src: q.image!,
-                          alt: q.imageAlt || 'Exam figure',
-                        })
-                      }
-                      className="cursor-zoom-in rounded-lg bg-white p-1.5 shadow-2xs"
-                    >
-                      <img
-                        src={q.image}
-                        alt={q.imageAlt || 'Exam figure'}
-                        className="max-h-[200px] w-auto rounded-md object-contain"
-                      />
-                    </button>
-                  </div>
-                )}
+                <div
+                  className={
+                    q.image
+                      ? 'mt-3 grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_190px] sm:items-start'
+                      : 'mt-3'
+                  }
+                >
+                  <h3 className="text-base font-semibold leading-[2.1] text-slate-900">
+                    <FuriganaText
+                      text={q.question}
+                      showFurigana={showFurigana}
+                    />
+                  </h3>
 
-                <h3 className="mt-3 text-base font-semibold leading-[2.1] text-slate-900">
-                  <FuriganaText text={q.question} showFurigana={showFurigana} />
-                </h3>
+                  {q.image && (
+                    <QuestionFigureCard
+                      src={q.image}
+                      alt={q.imageAlt || 'Exam figure'}
+                      showFurigana={showFurigana}
+                      revealCaption={isAnswered}
+                      variant="side"
+                      badgeLabel={
+                        q.section === 'practical'
+                          ? 'Exam Figure'
+                          : 'PDF Figure'
+                      }
+                      onZoom={(src, alt) => setZoomImage({src, alt})}
+                    />
+                  )}
+                </div>
 
                 <div className="mt-3.5 space-y-2">
                   {q.options.map((opt, optIdx) => {
@@ -1479,16 +1529,17 @@ export const QuizTab: React.FC<QuizTabProps> = ({
             <p className="text-[11px] text-emerald-300">Pass ≥ 12/20 (60%)</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/[0.06] p-3">
-            <p className="text-[11px] text-slate-300">Practical Visuals</p>
+            <p className="text-[11px] text-slate-300">Visual Questions</p>
             <p className="font-mono-tabular mt-1 text-base font-bold text-white">
-              42 Diagrams
+              {allCbtQuestions.filter((q) => Boolean(q.image)).length} Diagrams
             </p>
-            <p className="text-[11px] text-slate-300">Signs, GHS &amp; Gear</p>
+            <p className="text-[11px] text-slate-300">Mapped PDF Assets</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/[0.06] p-3">
             <p className="text-[11px] text-slate-300">Planning Math</p>
             <p className="font-mono-tabular mt-1 text-base font-bold text-white">
-              18 Problems
+              {allCbtQuestions.filter((q) => Boolean(q.isCalculation)).length}{' '}
+              Problems
             </p>
             <p className="text-[11px] text-slate-300">Workers, Time &amp; Load</p>
           </div>

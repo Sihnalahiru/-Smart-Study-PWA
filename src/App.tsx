@@ -292,7 +292,7 @@ export default function App() {
         <aside className="surface-nav-glass hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-slate-200/80">
           <div className="flex h-16 items-center gap-3 border-b border-slate-200/70 px-5">
             <img
-              src="/icon.svg"
+              src={`${import.meta.env.BASE_URL}icon.svg`}
               alt=""
               className="h-8 w-8 shrink-0 rounded-xl shadow-xs"
             />
@@ -546,7 +546,7 @@ export default function App() {
               <>
                 {/* Mobile Brand */}
                 <a
-                  href="/"
+                  href={import.meta.env.BASE_URL}
                   onClick={(e) => {
                     e.preventDefault();
                     setActiveTab('dashboard');
@@ -554,7 +554,7 @@ export default function App() {
                   className="flex shrink-0 items-center gap-2 text-sm font-bold tracking-tight text-slate-900 whitespace-nowrap lg:hidden"
                 >
                   <img
-                    src="/icon.svg"
+                    src={`${import.meta.env.BASE_URL}icon.svg`}
                     alt=""
                     className="h-7 w-7 shrink-0 rounded-lg shadow-xs"
                   />

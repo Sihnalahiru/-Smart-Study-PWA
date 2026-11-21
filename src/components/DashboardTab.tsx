@@ -1,15 +1,15 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {
-  ArrowRight,
+  AlertTriangle,
   Award,
-  BookA,
+  BookMarked,
   BookOpen,
   CheckSquare,
-  FileUp,
   Flame,
   Layers,
+  Library,
   Maximize2,
-  Search,
+  RotateCcw,
   ShieldCheck,
   Target,
   TrendingUp,
@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import type {
   ActiveTab,
-  SswExamTopic,
   StudyPart,
   StudyProgressState,
   UserProfile,
@@ -29,10 +28,9 @@ import {
   getStreakBadge,
   getTodayKey,
 } from '../hooks/useStudyProgress';
+import {VOCAB_DAILY_TARGET, WAREHOUSE_VOCABULARY} from '../data/vocabulary';
 import {getUnlockedMilestoneEntries} from '../utils/trophyBadges';
-import {getAllCbtQuestions} from '../utils/cbtExam';
 import {CelebrationConfetti} from './CelebrationConfetti';
-import {PerformanceAnalyticsCard} from './PerformanceAnalyticsCard';
 import {StudyRoadmap} from './StudyRoadmap';
 import {TrophyCase} from './TrophyCase';
 
@@ -40,11 +38,14 @@ interface DashboardTabProps {
   activeUser: UserProfile;
   allParts: StudyPart[];
   progress: StudyProgressState;
-  onSelectPartAndTab: (partNumber: number, tab: ActiveTab) => void;
+  onSelectPartAndTab: (
+    partNumber: number,
+    tab: ActiveTab,
+    actionMode?: 'vocab' | 'mistakes',
+  ) => void;
   onNavigateTab: (tab: ActiveTab) => void;
-  onOpenTotalVocabulary: () => void;
-  onPracticeTopic: (topic: SswExamTopic) => void;
-  onOpenSearch: () => void;
+  onOpenVocabSprint: () => void;
+  onOpenMistakeReview: () => void;
   onEnterFocusMode: () => void;
 }
 
@@ -109,9 +110,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   progress,
   onSelectPartAndTab,
   onNavigateTab,
-  onOpenTotalVocabulary,
-  onPracticeTopic,
-  onOpenSearch,
+  onOpenVocabSprint,
+  onOpenMistakeReview,
   onEnterFocusMode,
 }) => {
   const [avatarFailed, setAvatarFailed] = useState(false);
@@ -124,8 +124,6 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   const streakBadge = getStreakBadge(progress.streakDays);
   const recent7Days = getRecent7Days();
   const studiedToday = progress.lastActiveDate === getTodayKey();
-  const cbtHistory = progress.cbtExamHistory ?? [];
-  const latestExam = cbtHistory[0] ?? null;
 
   const unlockedEntries = useMemo(
     () => getUnlockedMilestoneEntries(allParts, progress, streakBadge),
@@ -204,90 +202,42 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
     (sum, p) => sum + p.flashcards.length,
     0,
   );
-  const totalVocabCount = useMemo(
-    () =>
-      allParts.reduce(
-        (sum, p) =>
-          sum +
-          p.flashcards.filter((fc) => (fc.id ?? '').includes('-fc-vocab-'))
-            .length,
-        0,
-      ),
-    [allParts],
+  const totalQuizQuestions = allParts.reduce(
+    (sum, p) => sum + p.quiz.length,
+    0,
   );
-  const vocabMasteredCount = useMemo(
-    () =>
-      progress.reviewedFlashcardIds.filter((id) => id.includes('-fc-vocab-'))
-        .length,
-    [progress.reviewedFlashcardIds],
-  );
-
-  const allCbtQuestions = useMemo(
-    () => getAllCbtQuestions(allParts),
-    [allParts],
-  );
-  const totalExamBankQuestions = allCbtQuestions.length;
-  const cbtCountByPart = useMemo(() => {
-    const map = new Map<number, number>();
-    for (const q of allCbtQuestions) {
-      map.set(q.partNumber, (map.get(q.partNumber) ?? 0) + 1);
-    }
-    return map;
-  }, [allCbtQuestions]);
-
-  const quizAccuracy = useMemo(() => {
-    const statValues = Object.values(progress.quizQuestionStats ?? {});
-    const statAttempts = statValues.reduce((sum, s) => sum + s.attempts, 0);
-    const statCorrect = statValues.reduce((sum, s) => sum + s.correct, 0);
-    if (statAttempts > 0) {
-      return Math.round((statCorrect / statAttempts) * 100);
-    }
-    return progress.attemptedQuizIds.length > 0
+  const quizAccuracy =
+    progress.attemptedQuizIds.length > 0
       ? Math.round(
           (progress.correctQuizIds.length / progress.attemptedQuizIds.length) *
             100,
         )
       : 0;
-  }, [
-    progress.quizQuestionStats,
-    progress.attemptedQuizIds.length,
-    progress.correctQuizIds.length,
-  ]);
-
-  const examCoveragePct =
-    totalExamBankQuestions > 0
+  const noteCoveragePct =
+    totalQuizQuestions > 0
       ? Math.round(
-          (progress.correctQuizIds.length / totalExamBankQuestions) * 100,
+          (progress.correctQuizIds.length / totalQuizQuestions) * 100,
         )
       : 0;
-
-  const modulesPct =
-    allParts.length > 0
-      ? Math.round((progress.readPartNumbers.length / allParts.length) * 100)
-      : 0;
-  const cardsPct =
-    totalFlashcards > 0
-      ? Math.round(
-          (progress.reviewedFlashcardIds.length / totalFlashcards) * 100,
-        )
-      : 0;
-
-  const nextUnreadPart =
-    allParts.find((p) => !progress.readPartNumbers.includes(p.part_number)) ??
-    allParts[0];
 
   const dailyQuests = [
     {
-      label: 'Review 5 flashcards today',
+      label: `Review ${VOCAB_DAILY_TARGET} daily vocabulary words`,
+      current: Math.min(VOCAB_DAILY_TARGET, progress.daily.vocabReviewedCount),
+      target: VOCAB_DAILY_TARGET,
+      reward: '+30 XP bonus',
+    },
+    {
+      label: 'Review 5 study flashcards today',
       current: Math.min(5, progress.daily.flashcardsReviewed),
       target: 5,
       reward: '+50 XP',
     },
     {
-      label: 'Answer 10 CBT exam questions today',
-      current: Math.min(10, progress.daily.quizAnswered),
-      target: 10,
-      reward: '+100 XP',
+      label: 'Answer 3 Japanese quiz checks today',
+      current: Math.min(3, progress.daily.quizAnswered),
+      target: 3,
+      reward: '+75 XP',
     },
     {
       label: 'Complete 1 study note section',
@@ -298,7 +248,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <CelebrationConfetti
         burstKey={confettiBurstKey}
         active={confettiActive}
@@ -309,10 +259,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         <section
           role="status"
           aria-live="polite"
-          className="surface-card flex items-start justify-between gap-3 rounded-2xl border-amber-300/90 bg-gradient-to-r from-amber-50/90 via-white to-blue-50/60 p-4"
+          className="flex items-start justify-between gap-3 rounded-2xl border border-amber-300/90 bg-gradient-to-r from-amber-50 via-white to-blue-50/70 p-4 shadow-sm"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-xs">
               <Trophy className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
@@ -339,40 +289,34 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </section>
       )}
 
-      {/* ROW 1: Executive Command Hero + Daily Consistency Studio (12-Col Split) */}
-      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12">
-        {/* Dominant Focal Anchor: Executive Profile & Exam Readiness Hero */}
-        <section className="surface-hero flex flex-col justify-between rounded-3xl p-6 text-white sm:p-7 lg:col-span-7">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 space-y-2">
+      {/* Executive XP & Level Hero Banner (Personalized for Haruto / Sakura) */}
+      <section className="surface-hero rounded-2xl p-5 text-white sm:p-6">
+        <div className="flex flex-col gap-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-300">
                 <span className="font-mono-tabular font-semibold text-amber-400">
                   Level {levelInfo.level}
                 </span>
-                <span className="text-slate-500" aria-hidden="true">
-                  ·
-                </span>
+                <span className="text-slate-500" aria-hidden="true">·</span>
                 <span className="text-slate-200">{levelInfo.rank}</span>
-                <span className="text-slate-500" aria-hidden="true">
-                  ·
-                </span>
+                <span className="text-slate-500" aria-hidden="true">·</span>
                 <span className="font-mono-tabular text-slate-200">
                   +{progress.daily.xpEarnedToday} XP today
                 </span>
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
                 Welcome back, {activeUser.name}
               </h1>
-              <p className="max-w-lg text-xs leading-relaxed text-slate-300/90 sm:text-sm">
-                SSW Logistics Warehousing CBT Preparation · 6 Illustrated
-                Modules, {totalFlashcards} Flashcards &amp;{' '}
-                {totalExamBankQuestions} Exam Questions
+              <p className="text-xs leading-relaxed text-slate-300/90 sm:text-sm">
+                {activeUser.genderLabel} · Warehouse &amp; Logistics Exam Prep ·
+                Japanese + Sinhala
               </p>
             </div>
 
             {avatarFailed ? (
               <div
-                className={`flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${activeUser.accentGradient} text-lg font-bold text-white ring-2 ring-white/20`}
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${activeUser.accentGradient} text-base font-bold text-white ring-2 ring-white/25`}
               >
                 {activeUser.name.slice(0, 1)}
               </div>
@@ -382,27 +326,28 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                 alt={activeUser.name}
                 referrerPolicy="no-referrer"
                 onError={() => setAvatarFailed(true)}
-                className="h-13 w-13 shrink-0 rounded-2xl object-cover ring-2 ring-white/20"
+                className="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-white/25 shadow-sm"
               />
             )}
           </div>
 
-          {/* XP Meter */}
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+          <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-md">
             <div className="flex items-baseline justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <Award className="h-5 w-5 text-amber-400" aria-hidden="true" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-400/15 ring-1 ring-amber-400/30">
+                  <Award className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                </div>
                 <span className="font-mono-tabular text-2xl font-bold tracking-tight text-white">
                   {progress.xp} XP
                 </span>
               </div>
               <span className="font-mono-tabular text-xs font-medium text-slate-300">
-                {levelInfo.xpToNext} XP to Level {levelInfo.level + 1}
+                {levelInfo.xpToNext} XP to Lv.{levelInfo.level + 1}
               </span>
             </div>
 
             <div
-              className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-800/90"
+              className="mt-3.5 h-2 w-full overflow-hidden rounded-full bg-slate-800/90 ring-1 ring-white/5"
               role="progressbar"
               aria-valuenow={levelInfo.currentLevelXp}
               aria-valuemin={0}
@@ -414,576 +359,388 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
               />
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Primary Action + Quiet Secondary Actions */}
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => onNavigateTab('quiz')}
-              className="btn-primary-premium inline-flex min-h-[44px] items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold sm:text-sm whitespace-nowrap"
+      {/* Dedicated Daily Streak & Streak Badge Card */}
+      <section className="surface-streak rounded-2xl p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            <div
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-xs ${
+                progress.streakDays > 0
+                  ? 'border-amber-200/80 bg-gradient-to-br from-amber-50 to-orange-100/70 text-amber-600'
+                  : 'border-slate-200/80 bg-gradient-to-br from-slate-50 to-slate-100/70 text-slate-400'
+              }`}
             >
-              <span>Start CBT Mock Exam</span>
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-
-            <button
-              type="button"
-              onClick={onOpenTotalVocabulary}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-white/15 sm:text-sm whitespace-nowrap"
-            >
-              <BookA className="h-4 w-4 text-blue-300" aria-hidden="true" />
-              <span>Total Vocabulary ({totalVocabCount})</span>
-            </button>
-
-            {nextUnreadPart && (
-              <button
-                type="button"
-                onClick={() =>
-                  onSelectPartAndTab(nextUnreadPart.part_number, 'notes')
-                }
-                className="inline-flex min-h-[44px] items-center gap-1.5 px-2 text-xs font-semibold text-slate-300 transition-colors hover:text-white whitespace-nowrap"
-              >
-                <span>Continue Part {nextUnreadPart.part_number}</span>
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            )}
+              <Flame className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono-tabular text-2xl font-bold tracking-tight text-slate-900">
+                  {progress.streakDays}
+                </span>
+                <span className="text-sm font-semibold tracking-tight text-slate-700">
+                  Day Daily Streak
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+                {studiedToday
+                  ? `Studied today · Best streak: ${progress.bestStreak} day${progress.bestStreak === 1 ? '' : 's'}`
+                  : `Complete a card, quiz, or note today to ${progress.streakDays > 0 ? 'extend' : 'start'} your streak`}
+              </p>
+            </div>
           </div>
-        </section>
 
-        {/* Daily Streak & 7-Day Consistency Studio */}
-        <section className="surface-streak flex flex-col justify-between rounded-3xl p-6 sm:p-7 lg:col-span-5">
-          <div>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3.5">
-                <div
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${
-                    progress.streakDays > 0
-                      ? 'border-amber-200 bg-amber-50 text-amber-600'
-                      : 'border-slate-200 bg-slate-50 text-slate-400'
+          <div
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-2xs shrink-0 ${streakBadge.toneClass}`}
+          >
+            <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>{streakBadge.title}</span>
+          </div>
+        </div>
+
+        {/* 7-Day Consistency Strip */}
+        <div className="mt-4 grid grid-cols-7 gap-2 border-t border-amber-200/40 pt-4">
+          {recent7Days.map((day) => {
+            const isActive = progress.activeDates.includes(day.key);
+            return (
+              <div
+                key={day.key}
+                className="flex flex-col items-center gap-1.5"
+              >
+                <span
+                  className={`text-[11px] font-semibold tracking-wide ${
+                    day.isToday ? 'text-blue-600' : 'text-slate-400'
                   }`}
                 >
-                  <Flame className="h-6 w-6" aria-hidden="true" />
-                </div>
-                <div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-mono-tabular text-3xl font-bold tracking-tight text-slate-900">
-                      {progress.streakDays}
-                    </span>
-                    <span className="text-sm font-semibold text-slate-700">
-                      Day Streak
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    {studiedToday
-                      ? `Active today · Best ${progress.bestStreak}d`
-                      : `Best ${progress.bestStreak}d · Study today to keep streak`}
-                  </p>
+                  {day.label}
+                </span>
+                <div
+                  title={day.key}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold transition-all ${
+                    isActive
+                      ? 'border-amber-400 bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-xs'
+                      : day.isToday
+                        ? 'border-blue-300 bg-blue-50/90 text-blue-600'
+                        : 'border-slate-200/80 bg-white/80 text-slate-300'
+                  }`}
+                >
+                  {isActive ? (
+                    <Flame className="h-3.5 w-3.5" aria-hidden="true" />
+                  ) : (
+                    '·'
+                  )}
                 </div>
               </div>
+            );
+          })}
+        </div>
+      </section>
 
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 shrink-0">
-                <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>{streakBadge.title}</span>
-              </span>
-            </div>
-
-            {/* 7-Day Consistency Strip */}
-            <div className="mt-6 grid grid-cols-7 gap-2 border-t border-slate-200/70 pt-5">
-              {recent7Days.map((day) => {
-                const isActive = progress.activeDates.includes(day.key);
-                return (
-                  <div
-                    key={day.key}
-                    className="flex flex-col items-center gap-2"
-                  >
-                    <span
-                      className={`text-[11px] font-semibold ${
-                        day.isToday ? 'text-blue-600' : 'text-slate-400'
-                      }`}
-                    >
-                      {day.label}
-                    </span>
-                    <div
-                      title={day.key}
-                      className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs font-bold transition-all ${
-                        isActive
-                          ? 'border-amber-400 bg-gradient-to-br from-amber-500 to-orange-500 text-white'
-                          : day.isToday
-                            ? 'border-blue-300 bg-blue-50 text-blue-600'
-                            : 'border-slate-200 bg-white text-slate-300'
-                      }`}
-                    >
-                      {isActive ? (
-                        <Flame className="h-4 w-4" aria-hidden="true" />
-                      ) : (
-                        '·'
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Vocabulary Mastery Highlight Footer */}
-          <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-200/70 pt-4 text-xs">
-            <div>
-              <p className="font-semibold text-slate-900">
-                Warehouse Vocabulary Mastery
-              </p>
-              <p className="font-mono-tabular mt-0.5 text-slate-500">
-                {vocabMasteredCount} / {totalVocabCount} terms mastered across
-                Parts 1–6
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onOpenTotalVocabulary}
-              className="inline-flex min-h-[38px] items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:text-blue-700 whitespace-nowrap shrink-0"
-            >
-              <span>Drill Vocab</span>
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </div>
-        </section>
-      </div>
-
-      {/* ROW 2: Full-Width 4-Column Executive KPI Strip (100% English) */}
-      <section
-        aria-label="Key Study Metrics"
-        className="grid grid-cols-2 gap-3.5 lg:grid-cols-4"
-      >
-        <div className="surface-card rounded-2xl p-4 sm:p-5">
+      {/* 2x2 Portrait KPI Grid */}
+      <section className="grid grid-cols-2 gap-3.5">
+        <div className="surface-card rounded-2xl p-4 sm:p-4.5">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>Study Modules</span>
-            <BookOpen className="h-4 w-4 text-blue-600" aria-hidden="true" />
+            <span>Exam Modules</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50/80 text-blue-600">
+              <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+            </div>
           </div>
-          <p className="font-mono-tabular mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            {progress.readPartNumbers.length}
-            <span className="text-sm font-medium text-slate-400">
-              /{allParts.length}
-            </span>
+          <p className="font-mono-tabular mt-2.5 text-2xl font-bold tracking-tight text-slate-900">
+            {allParts.length}
           </p>
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-blue-600 transition-all duration-300"
-              style={{width: `${modulesPct}%`}}
-            />
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            {modulesPct}% notes completed
+          <p className="mt-1 text-xs text-slate-500">
+            {progress.readPartNumbers.length} completed
           </p>
         </div>
 
-        <div className="surface-card rounded-2xl p-4 sm:p-5">
+        <div className="surface-card rounded-2xl p-4 sm:p-4.5">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
             <span>Cards Mastered</span>
-            <Layers className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50/80 text-blue-600">
+              <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+            </div>
           </div>
-          <p className="font-mono-tabular mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          <p className="font-mono-tabular mt-2.5 text-2xl font-bold tracking-tight text-slate-900">
             {progress.reviewedFlashcardIds.length}
             <span className="text-sm font-medium text-slate-400">
               /{totalFlashcards}
             </span>
           </p>
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-indigo-600 transition-all duration-300"
-              style={{width: `${cardsPct}%`}}
-            />
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            {progress.daily.flashcardsReviewed} reviewed today
+          <p className="mt-1 text-xs text-slate-500">
+            {progress.daily.flashcardsReviewed} today
           </p>
         </div>
 
-        <div className="surface-card rounded-2xl p-4 sm:p-5">
+        <div className="surface-card rounded-2xl p-4 sm:p-4.5">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>Exam Accuracy</span>
-            <CheckSquare
-              className="h-4 w-4 text-emerald-600"
-              aria-hidden="true"
-            />
+            <span>Quiz Accuracy</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50/80 text-emerald-600">
+              <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
+            </div>
           </div>
-          <p className="font-mono-tabular mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          <p className="font-mono-tabular mt-2.5 text-2xl font-bold tracking-tight text-slate-900">
             {progress.attemptedQuizIds.length > 0 ? `${quizAccuracy}%` : '—'}
           </p>
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${
-                quizAccuracy >= 60 ? 'bg-emerald-600' : 'bg-amber-500'
-              }`}
-              style={{width: `${quizAccuracy}%`}}
-            />
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            {progress.correctQuizIds.length}/{totalExamBankQuestions} mastered
+          <p className="mt-1 text-xs text-slate-500">
+            {progress.correctQuizIds.length}/{totalQuizQuestions} correct
           </p>
         </div>
 
-        <div className="surface-card rounded-2xl p-4 sm:p-5">
+        <div className="surface-card rounded-2xl p-4 sm:p-4.5">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>CBT Readiness</span>
-            <TrendingUp className="h-4 w-4 text-amber-600" aria-hidden="true" />
+            <span>Notes Coverage</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50/80 text-amber-600">
+              <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+            </div>
           </div>
-          <p className="font-mono-tabular mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            {latestExam
-              ? `${Math.round((latestExam.totalCorrect / Math.max(1, latestExam.totalQuestions)) * 100)}%`
-              : `${examCoveragePct}%`}
+          <p className="font-mono-tabular mt-2.5 text-2xl font-bold tracking-tight text-slate-900">
+            {noteCoveragePct}%
           </p>
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-amber-500 transition-all duration-300"
-              style={{
-                width: `${
-                  latestExam
-                    ? Math.round(
-                        (latestExam.totalCorrect /
-                          Math.max(1, latestExam.totalQuestions)) *
-                          100,
-                      )
-                    : examCoveragePct
-                }%`,
-              }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            {latestExam
-              ? `Last: ${latestExam.passedOverall ? 'PASS' : 'Review'} (${latestExam.totalCorrect}/${latestExam.totalQuestions})`
-              : `${cbtHistory.length} CBT exams taken`}
+          <p className="mt-1 text-xs text-slate-500">
+            {progress.completedQuizParts.length}/{allParts.length} full quizzes
           </p>
         </div>
       </section>
 
-      {/* ROW 3: 12-Col Analytics & Daily Execution Split */}
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-7">
-          <PerformanceAnalyticsCard
-            allParts={allParts}
-            correctQuizIds={progress.correctQuizIds}
-            attemptedQuizIds={progress.attemptedQuizIds}
-            quizQuestionStats={progress.quizQuestionStats}
-            cbtExamHistory={cbtHistory}
-            onPracticeTopic={onPracticeTopic}
-          />
-        </div>
-
-        <div className="space-y-5 lg:col-span-5">
-          {/* Daily Study Goals */}
-          <section className="surface-card rounded-2xl p-5 sm:p-6">
-            <div className="flex items-center justify-between border-b border-slate-200/70 pb-3.5">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-blue-600" aria-hidden="true" />
-                <h2 className="text-base font-bold tracking-tight text-slate-900">
-                  Daily Study Goals
-                </h2>
-              </div>
-              <span className="font-mono-tabular text-xs text-slate-500">
-                {dailyQuests.filter((q) => q.current >= q.target).length}/3 done
-              </span>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              {dailyQuests.map((quest) => {
-                const pct = Math.round((quest.current / quest.target) * 100);
-                const done = quest.current >= quest.target;
-                return (
-                  <div key={quest.label} className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                      <span
-                        className={`font-semibold ${
-                          done ? 'text-emerald-700' : 'text-slate-800'
-                        }`}
-                      >
-                        {quest.label}
-                      </span>
-                      <span className="font-mono-tabular text-slate-500 shrink-0">
-                        {quest.current}/{quest.target} · {quest.reward}
-                      </span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          done ? 'bg-emerald-500' : 'bg-blue-600'
-                        }`}
-                        style={{width: `${pct}%`}}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Quick Launch Studio */}
-          <section className="surface-card rounded-2xl p-5 sm:p-6">
-            <h2 className="border-b border-slate-200/70 pb-3.5 text-base font-bold tracking-tight text-slate-900">
-              Quick Study Launchpad
-            </h2>
-            <div className="mt-3.5 divide-y divide-slate-100">
-              <button
-                type="button"
-                onClick={onOpenTotalVocabulary}
-                className="group flex w-full items-center justify-between gap-3 py-3 text-left transition-colors hover:text-blue-700 first:pt-1"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <BookA className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900 group-hover:text-blue-700">
-                      Total Vocabulary Deck
-                    </p>
-                    <p className="truncate text-xs text-slate-500">
-                      All {totalVocabCount} Japanese + Sinhala warehouse terms
-                    </p>
-                  </div>
-                </div>
-                <ArrowRight
-                  className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-600"
-                  aria-hidden="true"
-                />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onNavigateTab('quiz');
-                  onEnterFocusMode();
-                }}
-                className="group flex w-full items-center justify-between gap-3 py-3 text-left transition-colors hover:text-blue-700"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white">
-                    <Maximize2 className="h-4 w-4" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900 group-hover:text-blue-700">
-                      80-Min CBT Focus Simulation
-                    </p>
-                    <p className="truncate text-xs text-slate-500">
-                      30 Academic + 20 Practical in distraction-free mode
-                    </p>
-                  </div>
-                </div>
-                <ArrowRight
-                  className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-600"
-                  aria-hidden="true"
-                />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onNavigateTab('notes')}
-                className="group flex w-full items-center justify-between gap-3 py-3 text-left transition-colors hover:text-blue-700 last:pb-0"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                    <BookOpen className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900 group-hover:text-blue-700">
-                      Illustrated Bilingual Notes
-                    </p>
-                    <p className="truncate text-xs text-slate-500">
-                      105 textbook figures with Japanese + Sinhala notes
-                    </p>
-                  </div>
-                </div>
-                <ArrowRight
-                  className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-600"
-                  aria-hidden="true"
-                />
-              </button>
-            </div>
-          </section>
-
-          {/* Activity & XP Log */}
-          <section className="surface-card rounded-2xl p-5 sm:p-6">
-            <div className="flex items-center justify-between border-b border-slate-200/70 pb-3.5">
-              <h2 className="text-base font-bold tracking-tight text-slate-900">
-                Recent Activity
-              </h2>
-              <span className="font-mono-tabular text-xs font-medium text-slate-500">
-                {progress.activities.length} logged
-              </span>
-            </div>
-
-            {progress.activities.length === 0 ? (
-              <p className="py-6 text-center text-xs leading-relaxed text-slate-500">
-                No XP earned yet. Review a flashcard, take a CBT exam, or
-                complete a study note section to start your log.
-              </p>
-            ) : (
-              <ul className="divide-y divide-slate-100">
-                {progress.activities.slice(0, 5).map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex items-center justify-between gap-3 py-3 first:pt-3 last:pb-0"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-slate-900">
-                        {item.action}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">
-                        {item.detail}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <span className="font-mono-tabular text-xs font-bold text-amber-600">
-                        +{item.xp} XP
-                      </span>
-                      <p className="mt-0.5 text-[11px] text-slate-400">
-                        {formatRelativeTime(item.timestamp)}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </div>
-      </div>
-
-      {/* ROW 4: Curriculum Roadmap & Trophy Case (12-Col Split) */}
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-7">
-          <StudyRoadmap
-            allParts={allParts}
-            progress={progress}
-            onSelectPartAndTab={onSelectPartAndTab}
-          />
-        </div>
-        <div className="lg:col-span-5">
-          <TrophyCase
-            allParts={allParts}
-            progress={progress}
-            onSelectPartAndTab={onSelectPartAndTab}
-          />
-        </div>
-      </div>
-
-      {/* ROW 5: Full-Width Study Library Matrix (3-Column Desktop Grid) */}
+      {/* Daily 25 Vocabulary Target Card */}
       <section className="surface-card rounded-2xl p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 pb-4">
-          <div>
-            <h2 className="text-base font-bold tracking-tight text-slate-900">
-              Study Library
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Direct access to illustrated notes, flashcards, and CBT questions
-              for every module
-            </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-orange-50 text-amber-700">
+              <BookMarked className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold tracking-tight text-slate-900">
+                Daily {VOCAB_DAILY_TARGET} Warehouse Vocabulary
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                <span className="font-mono-tabular font-semibold text-amber-700">
+                  {progress.daily.vocabReviewedCount}/{VOCAB_DAILY_TARGET}
+                </span>{' '}
+                reviewed today ·{' '}
+                <span className="font-mono-tabular font-semibold text-slate-700">
+                  {progress.learnedVocabIds.length}/{WAREHOUSE_VOCABULARY.length}
+                </span>{' '}
+                mastered · +30 XP daily bonus
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onOpenSearch}
-              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 whitespace-nowrap"
-            >
-              <Search
-                className="h-3.5 w-3.5 text-slate-500"
-                aria-hidden="true"
-              />
-              <span>Search</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigateTab('upload')}
-              className="btn-primary-premium inline-flex min-h-[38px] items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap"
-            >
-              <FileUp className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Add PDF</span>
-            </button>
-          </div>
+
+          <button
+            type="button"
+            onClick={onOpenVocabSprint}
+            className="btn-primary-premium inline-flex min-h-[42px] items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold whitespace-nowrap shrink-0"
+          >
+            <BookMarked className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>
+              {progress.daily.vocabReviewedCount >= VOCAB_DAILY_TARGET
+                ? 'Practice More Vocab'
+                : 'Start 25-Word Sprint'}
+            </span>
+          </button>
         </div>
 
-        {allParts.length === 0 ? (
-          <div className="py-8 text-center">
-            <p className="text-sm font-medium text-slate-700">
-              No study modules loaded yet.
-            </p>
+        <div className="mt-3.5 h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/60">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${
+              progress.daily.vocabReviewedCount >= VOCAB_DAILY_TARGET
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                : 'bg-gradient-to-r from-amber-500 to-orange-500'
+            }`}
+            style={{
+              width: `${Math.min(
+                100,
+                Math.round(
+                  (progress.daily.vocabReviewedCount / VOCAB_DAILY_TARGET) * 100,
+                ),
+              )}%`,
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Wrong-Answer Mistake Review Banner */}
+      {progress.wrongQuizIds.length > 0 && (
+        <section className="rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-50 via-white to-orange-50/70 p-4 shadow-2xs sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-amber-100 text-amber-700">
+                <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">
+                  Mistake Review Queue ({progress.wrongQuizIds.length})
+                </h2>
+                <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
+                  {progress.daily.dailyWrongQuizIds.length > 0
+                    ? `${progress.daily.dailyWrongQuizIds.length} missed in today's shift. `
+                    : ''}
+                  Drill missed quiz questions and clear each for{' '}
+                  <strong className="font-semibold text-amber-800">
+                    +15 bonus XP
+                  </strong>
+                  .
+                </p>
+              </div>
+            </div>
+
             <button
               type="button"
-              onClick={() => onNavigateTab('upload')}
-              className="btn-dark-premium mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold"
+              onClick={onOpenMistakeReview}
+              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-amber-700 whitespace-nowrap shrink-0"
             >
-              <FileUp className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Upload First PDF</span>
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Practice Missed Questions</span>
             </button>
           </div>
-        ) : (
-          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {allParts.map((part) => {
-              const isRead = progress.readPartNumbers.includes(
-                part.part_number,
-              );
-              const qCount =
-                cbtCountByPart.get(part.part_number) ?? part.quiz.length;
+        </section>
+      )}
 
-              return (
-                <article
-                  key={part.part_number}
-                  className="flex flex-col justify-between rounded-2xl border border-slate-200/85 bg-slate-50/45 p-4 transition-colors hover:border-slate-300 hover:bg-white"
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                      <span className="font-mono-tabular font-bold text-blue-600">
-                        Part {part.part_number}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span className="font-mono-tabular">
-                        {part.flashcards.length} cards
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span className="font-mono-tabular">{qCount} Qs</span>
-                      {isRead && (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <span className="font-semibold text-emerald-600">
-                            Completed
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <p className="mt-2 text-sm font-bold leading-snug tracking-tight text-slate-900">
-                      {part.english_title ?? part.title}
-                    </p>
-                  </div>
+      {/* Duolingo-Style Curriculum Logistics Path */}
+      <StudyRoadmap
+        allParts={allParts}
+        progress={progress}
+        onSelectPartAndTab={(pNum, tab) => onSelectPartAndTab(pNum, tab)}
+      />
 
-                  <div className="mt-4 grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSelectPartAndTab(part.part_number, 'notes')
-                      }
-                      className="min-h-[38px] rounded-xl border border-slate-200/90 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:text-blue-700"
-                    >
-                      Notes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSelectPartAndTab(part.part_number, 'flashcards')
-                      }
-                      className="min-h-[38px] rounded-xl border border-slate-200/90 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:text-blue-700"
-                    >
-                      Cards
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSelectPartAndTab(part.part_number, 'quiz')
-                      }
-                      className="btn-dark-premium min-h-[38px] rounded-xl px-2.5 py-1.5 text-xs font-semibold"
-                    >
-                      CBT
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+      {/* Warehouse Trophy Case */}
+      <TrophyCase
+        allParts={allParts}
+        progress={progress}
+        onSelectPartAndTab={onSelectPartAndTab}
+      />
+
+      {/* Daily Shift Goals */}
+      <section className="surface-card rounded-2xl p-5 sm:p-6">
+        <div className="flex items-center gap-2.5 border-b border-slate-200/70 pb-3.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+            <Target className="h-4 w-4" aria-hidden="true" />
           </div>
+          <h2 className="text-base font-bold tracking-tight text-slate-900">
+            Daily Shift Goals
+          </h2>
+        </div>
+
+        <div className="mt-4 space-y-4">
+          {dailyQuests.map((quest) => {
+            const pct = Math.round((quest.current / quest.target) * 100);
+            const done = quest.current >= quest.target;
+            return (
+              <div key={quest.label} className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span
+                    className={`font-semibold ${
+                      done ? 'text-emerald-700' : 'text-slate-800'
+                    }`}
+                  >
+                    {quest.label}
+                  </span>
+                  <span className="font-mono-tabular text-slate-500 shrink-0">
+                    {quest.current}/{quest.target} · {quest.reward}
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/60">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      done
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                        : 'bg-gradient-to-r from-blue-600 to-indigo-500'
+                    }`}
+                    style={{width: `${pct}%`}}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Intensive Study Shortcuts */}
+      <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => {
+            onNavigateTab('quiz');
+            onEnterFocusMode();
+          }}
+          className="surface-card-interactive flex items-start gap-3.5 rounded-2xl p-4.5 text-left"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600">
+            <Maximize2 className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold tracking-tight text-slate-900">
+              Focused Exam Quiz
+            </h3>
+            <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
+              Test all {totalQuizQuestions} study note topics in distraction-free Focus Mode.
+            </p>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onNavigateTab('library')}
+          className="surface-card-interactive flex items-start gap-3.5 rounded-2xl p-4.5 text-left"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 text-amber-700">
+            <Library className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold tracking-tight text-slate-900">
+              Open Study Library
+            </h3>
+            <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
+              Browse all {allParts.length} textbook docks, 123 PDF pages &amp; diagrams.
+            </p>
+          </div>
+        </button>
+      </section>
+
+      {/* XP Reward Log */}
+      <section className="surface-card rounded-2xl p-5 sm:p-6">
+        <div className="flex items-center justify-between border-b border-slate-200/70 pb-3.5">
+          <h2 className="text-base font-bold tracking-tight text-slate-900">
+            XP Reward Log
+          </h2>
+          <span className="font-mono-tabular text-xs font-medium text-slate-500">
+            {progress.activities.length} recent
+          </span>
+        </div>
+
+        {progress.activities.length === 0 ? (
+          <p className="py-6 text-center text-xs leading-relaxed text-slate-500">
+            No XP earned yet. Review a flashcard, answer a quiz question, or
+            mark a study section complete to start your streak!
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-200/70">
+            {progress.activities.slice(0, 6).map((item) => (
+              <li
+                key={item.id}
+                className="flex items-center justify-between gap-3 py-3.5 first:pt-3.5 last:pb-1"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-slate-900">
+                    {item.action}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">
+                    {item.detail}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <span className="font-mono-tabular text-xs font-bold text-amber-600">
+                    +{item.xp} XP
+                  </span>
+                  <p className="mt-0.5 text-[11px] text-slate-400">
+                    {formatRelativeTime(item.timestamp)}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </div>

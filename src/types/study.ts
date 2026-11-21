@@ -12,6 +12,33 @@ export interface UserProfile {
   badgeClass: string;
 }
 
+export type QuestionImageCategory =
+  | 'sign'
+  | 'label'
+  | 'hazard'
+  | 'equipment'
+  | 'diagram'
+  | 'reference';
+
+export interface QuizQuestionImage {
+  path: string;
+  alt?: string;
+  category?: QuestionImageCategory;
+  source?: 'explicit' | 'mapped_pdf';
+  partNumber?: number;
+}
+
+export type QuizImageField = string | QuizQuestionImage;
+
+export type SswExamTopic =
+  | 'receiving_dispatching'
+  | 'storage_inventory'
+  | 'picking_processing'
+  | 'warehouse_equipment'
+  | 'safety_health';
+
+export type CbtExamSection = 'academic' | 'practical';
+
 export type PaperSetNumber =
   | 1
   | 2
@@ -30,78 +57,6 @@ export type PaperSetNumber =
   | 15
   | 16;
 
-export interface FlashcardItem {
-  id?: string;
-  question: string;
-  answer: string;
-  topic?: SswExamTopic;
-  note_section_id?: string;
-  source_pdf_page?: number;
-  image?: string;
-  imageAlt?: string;
-}
-
-export type CbtExamSection = 'academic' | 'practical';
-
-export type SswExamTopic =
-  | 'receiving_dispatching'
-  | 'storage_inventory'
-  | 'picking_processing'
-  | 'warehouse_equipment'
-  | 'safety_health';
-
-export type QuestionImageSource = 'explicit' | 'mapped_pdf';
-
-export type QuestionImageCategory =
-  | 'sign'
-  | 'label'
-  | 'equipment'
-  | 'hazard'
-  | 'diagram'
-  | 'reference';
-
-/**
- * Standardized image attachment schema for image-based MCQs.
- */
-export interface QuizQuestionImage {
-  /** Mapped PDF visual asset path (e.g. "/images/figures/fig-p087-obj404.jpg") */
-  path: string;
-  /** Accessible caption or textbook figure title (supports Furigana markup) */
-  alt?: string;
-  /** Semantic figure type used for visually distinct exam framing */
-  category?: QuestionImageCategory;
-  /** Origin of the asset mapping (explicitly authored vs dynamically mapped from PDF notes) */
-  source?: QuestionImageSource;
-  /** Textbook part number where the mapped PDF visual appears */
-  partNumber?: number;
-}
-
-/**
- * Standardized MCQ image field: accepts either a direct asset path string
- * or a full QuizQuestionImage metadata object.
- */
-export type QuizImageField = string | QuizQuestionImage;
-
-export interface QuizQuestion {
-  id?: string;
-  question: string;
-  options: string[];
-  correct_index: number;
-  explanation: string;
-  note_topic?: string;
-  note_section_id?: string;
-  source_pdf_page?: number;
-  difficulty?: 'easy' | 'medium' | 'hard';
-  validation_status?: 'verified' | 'pending_review';
-  module_code?: string;
-  section?: CbtExamSection;
-  topic?: SswExamTopic;
-  /** Optional standardized image field (path string or structured QuizQuestionImage) */
-  image?: QuizImageField;
-  imageAlt?: string;
-  isCalculation?: boolean;
-}
-
 export interface CbtQuestion {
   id: string;
   paperSet: PaperSetNumber;
@@ -110,43 +65,56 @@ export interface CbtQuestion {
   partNumber: number;
   note_section_id?: string;
   source_pdf_page?: number;
-  difficulty?: 'easy' | 'medium' | 'hard';
-  validation_status?: 'verified' | 'pending_review';
+  difficulty?: string;
+  validation_status?: string;
   question: string;
   options: string[];
   correct_index: number;
   explanation: string;
-  /** Normalized resolved image asset path when present */
   image?: string;
   imageAlt?: string;
-  imageSource?: QuestionImageSource;
-  /** Full standardized image metadata when the question includes an image */
+  imageSource?: 'explicit' | 'mapped_pdf';
   imageMeta?: QuizQuestionImage;
   isCalculation?: boolean;
 }
 
-export interface CbtTopicScore {
-  topic: SswExamTopic;
-  correct: number;
-  total: number;
-}
-
 export interface CbtExamAttempt {
-  id: string;
+  id?: string;
   mode: 'full' | 'academic' | 'practical';
   paperSet: PaperSetNumber;
-  completedAt: string;
-  elapsedSeconds: number;
-  academicCorrect: number;
-  academicTotal: number;
-  practicalCorrect: number;
-  practicalTotal: number;
   totalCorrect: number;
   totalQuestions: number;
-  passedAcademic: boolean;
-  passedPractical: boolean;
   passedOverall: boolean;
-  topicScores: CbtTopicScore[];
+  elapsedSeconds: number;
+  timestamp?: string;
+  academicCorrect?: number;
+  academicTotal?: number;
+  practicalCorrect?: number;
+  practicalTotal?: number;
+}
+
+export interface FlashcardItem {
+  id?: string;
+  question: string;
+  answer: string;
+}
+
+export interface QuizQuestion {
+  id?: string;
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation: string;
+  note_topic?: string;
+  module_code?: string;
+  topic?: SswExamTopic;
+  image?: QuizImageField;
+  imageAlt?: string;
+  note_section_id?: string;
+  source_pdf_page?: number;
+  difficulty?: string;
+  validation_status?: string;
+  isCalculation?: boolean;
 }
 
 export interface StudyPart {
@@ -179,11 +147,21 @@ export interface StudyManifest {
 export type ActiveTab =
   | 'dashboard'
   | 'library'
-  | 'settings'
   | 'notes'
   | 'flashcards'
-  | 'quiz'
-  | 'upload';
+  | 'quiz';
+
+export interface VocabItem {
+  id: string;
+  partNumber: number;
+  category: string;
+  jp: string;
+  romaji: string;
+  sinhala: string;
+  exampleJp: string;
+  exampleRomaji: string;
+  exampleSinhala: string;
+}
 
 export interface XpActivity {
   id: string;
@@ -199,6 +177,9 @@ export interface DailyProgress {
   quizAnswered: number;
   notesCompleted: number;
   xpEarnedToday: number;
+  vocabReviewedIds: string[];
+  vocabReviewedCount: number;
+  dailyWrongQuizIds: string[];
 }
 
 export interface QuizQuestionStat {
@@ -216,7 +197,9 @@ export interface StudyProgressState {
   readPartNumbers: number[];
   correctQuizIds: string[];
   attemptedQuizIds: string[];
+  wrongQuizIds: string[];
   completedQuizParts: number[];
+  learnedVocabIds: string[];
   quizQuestionStats?: Record<string, QuizQuestionStat>;
   cbtExamHistory?: CbtExamAttempt[];
   activities: XpActivity[];

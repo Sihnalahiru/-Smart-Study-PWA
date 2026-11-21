@@ -2,33 +2,37 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ArrowLeft,
   ArrowRight,
-  BookA,
+  BookMarked,
   CheckCircle2,
+  Eye,
   Languages,
-  LayoutGrid,
   Layers,
   RotateCcw,
-  Search,
   Shuffle,
-  X,
+  Sparkles,
 } from 'lucide-react';
-import {extractSearchableText, FuriganaText} from './FuriganaText';
-import type {FlashcardItem, StudyPart} from '../types/study';
+import {FuriganaText} from './FuriganaText';
+import {
+  buildDailyVocabDeck,
+  getVocabByPart,
+  VOCAB_DAILY_TARGET,
+  WAREHOUSE_VOCABULARY,
+} from '../data/vocabulary';
+import type {FlashcardItem, StudyPart, VocabItem} from '../types/study';
 
-export type FlashcardDeckFilter =
-  | 'all'
-  | 'total_vocab'
-  | 'part_vocab'
-  | 'visual';
+export type FlashcardViewMode = 'cards' | 'vocab';
 
 interface FlashcardsTabProps {
   parts: StudyPart[];
-  allParts: StudyPart[];
   reviewedFlashcardIds: string[];
   onMarkFlashcardMastered: (cardId: string, label: string) => void;
   focusCard?: {partNumber: number; cardIndex: number} | null;
-  initialDeckMode?: FlashcardDeckFilter | null;
-  onConsumeInitialDeckMode?: () => void;
+  learnedVocabIds: string[];
+  dailyVocabReviewedIds: string[];
+  vocabDailyTarget?: number;
+  onMarkVocabReviewed: (vocabId: string, label: string) => void;
+  initialMode?: FlashcardViewMode;
+  modeTriggerKey?: number;
 }
 
 interface IndexedFlashcard extends FlashcardItem {
@@ -36,131 +40,110 @@ interface IndexedFlashcard extends FlashcardItem {
   partNumber: number;
   partTitle: string;
   originalIndexInPart: number;
-  isVocab: boolean;
 }
 
-type MasteryFilter = 'all' | 'unmastered' | 'mastered';
-type FlashcardViewMode = 'cards' | 'list';
+function renderMultilineTrilingual(
+  rawText: string,
+  showFurigana: boolean,
+  variant: 'front' | 'back',
+) {
+  const lines = rawText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return (
+    <div className="space-y-2 text-center">
+      {lines.map((line, index) => {
+        const isRomaji = line.startsWith('*') && line.endsWith('*');
+        const cleanLine = isRomaji ? line.slice(1, -1).trim() : line;
+
+        if (isRomaji) {
+          return (
+            <p
+              key={index}
+              className={`text-xs italic leading-relaxed sm:text-sm ${
+                variant === 'back' ? 'text-slate-300' : 'text-slate-500'
+              }`}
+            >
+              {cleanLine}
+            </p>
+          );
+        }
+
+        const hasSinhala = /[\u0D80-\u0DFF]/.test(cleanLine);
+        if (hasSinhala) {
+          return (
+            <p
+              key={index}
+              className={`text-sm font-medium leading-relaxed sm:text-base ${
+                variant === 'back' ? 'text-amber-200' : 'text-slate-700'
+              }`}
+            >
+              {cleanLine}
+            </p>
+          );
+        }
+
+        return (
+          <p
+            key={index}
+            className={`font-jp font-bold leading-[2.05] tracking-tight ${
+              variant === 'back'
+                ? 'text-base text-white sm:text-lg [&_rt]:text-slate-300'
+                : 'text-base text-slate-900 sm:text-xl'
+            }`}
+          >
+            <FuriganaText text={cleanLine} showFurigana={showFurigana} />
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
   parts,
-  allParts,
   reviewedFlashcardIds,
   onMarkFlashcardMastered,
   focusCard,
-  initialDeckMode,
-  onConsumeInitialDeckMode,
+  learnedVocabIds,
+  dailyVocabReviewedIds,
+  vocabDailyTarget = VOCAB_DAILY_TARGET,
+  onMarkVocabReviewed,
+  initialMode = 'cards',
+  modeTriggerKey = 0,
 }) => {
-  const mapPartCards = useCallback(
-    (sourceParts: StudyPart[]): IndexedFlashcard[] =>
-      sourceParts.flatMap((part) =>
-        part.flashcards.map((fc, idx) => {
-          const id = fc.id ?? `part-${part.part_number}-fc-${idx}`;
-          return {
-            ...fc,
-            id,
-            partNumber: part.part_number,
-            partTitle: part.english_title ?? part.title,
-            originalIndexInPart: idx,
-            isVocab: id.includes('-fc-vocab-'),
-          };
-        }),
-      ),
-    [],
-  );
+  const [mode, setMode] = useState<FlashcardViewMode>(initialMode);
+  const [showFurigana, setShowFurigana] = useState(true);
 
-  const scopedPartCards = useMemo<IndexedFlashcard[]>(
-    () => mapPartCards(parts),
-    [mapPartCards, parts],
-  );
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode, modeTriggerKey]);
 
-  const totalVocabCards = useMemo<IndexedFlashcard[]>(
-    () => mapPartCards(allParts).filter((c) => c.isVocab),
-    [mapPartCards, allParts],
-  );
+  useEffect(() => {
+    if (focusCard) {
+      setMode('cards');
+    }
+  }, [focusCard]);
 
-  const isSinglePartScope = parts.length === 1 && allParts.length > 1;
-  const scopedVocabCount = useMemo(
-    () => scopedPartCards.filter((c) => c.isVocab).length,
-    [scopedPartCards],
-  );
-  const scopedVisualCount = useMemo(
-    () => scopedPartCards.filter((c) => Boolean(c.image)).length,
-    [scopedPartCards],
-  );
+  // --- Study Flashcards State ---
+  const orderedCards = useMemo<IndexedFlashcard[]>(() => {
+    return parts.flatMap((part) =>
+      part.flashcards.map((fc, idx) => ({
+        ...fc,
+        id: `part-${part.part_number}-fc-${idx}`,
+        partNumber: part.part_number,
+        partTitle: part.title,
+        originalIndexInPart: idx,
+      })),
+    );
+  }, [parts]);
 
-  const [deckFilter, setDeckFilter] = useState<FlashcardDeckFilter>('all');
-  const [masteryFilter, setMasteryFilter] = useState<MasteryFilter>('all');
-  const [viewMode, setViewMode] = useState<FlashcardViewMode>('cards');
-  const [vocabSearch, setVocabSearch] = useState('');
   const [isShuffled, setIsShuffled] = useState(false);
   const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [showFurigana, setShowFurigana] = useState(true);
-
-  useEffect(() => {
-    if (initialDeckMode) {
-      setDeckFilter(initialDeckMode);
-      setMasteryFilter('all');
-      setVocabSearch('');
-      setViewMode('cards');
-      onConsumeInitialDeckMode?.();
-    }
-  }, [initialDeckMode, onConsumeInitialDeckMode]);
-
-  useEffect(() => {
-    if (!isSinglePartScope && deckFilter === 'part_vocab') {
-      setDeckFilter('total_vocab');
-    }
-  }, [isSinglePartScope, deckFilter]);
-
-  useEffect(() => {
-    if (focusCard) {
-      setDeckFilter('all');
-      setMasteryFilter('all');
-      setViewMode('cards');
-    }
-  }, [focusCard]);
-
-  const reviewedSet = useMemo(
-    () => new Set(reviewedFlashcardIds),
-    [reviewedFlashcardIds],
-  );
-
-  const baseDeckCards = useMemo<IndexedFlashcard[]>(() => {
-    if (deckFilter === 'total_vocab') return totalVocabCards;
-    if (deckFilter === 'part_vocab') {
-      return scopedPartCards.filter((c) => c.isVocab);
-    }
-    if (deckFilter === 'visual') {
-      return scopedPartCards.filter((c) => Boolean(c.image));
-    }
-    return scopedPartCards;
-  }, [deckFilter, scopedPartCards, totalVocabCards]);
-
-  const orderedCards = useMemo<IndexedFlashcard[]>(() => {
-    let list = baseDeckCards;
-    if (masteryFilter === 'unmastered') {
-      list = list.filter((c) => !reviewedSet.has(c.id));
-    } else if (masteryFilter === 'mastered') {
-      list = list.filter((c) => reviewedSet.has(c.id));
-    }
-    const q = vocabSearch.trim().toLowerCase();
-    if (q) {
-      list = list.filter((c) => {
-        const hay =
-          `${extractSearchableText(c.question)} ${extractSearchableText(c.answer)} part ${c.partNumber} ${c.partTitle}`.toLowerCase();
-        return hay.includes(q);
-      });
-    }
-    return list;
-  }, [baseDeckCards, masteryFilter, reviewedSet, vocabSearch]);
-
-  const deckMasteredCount = useMemo(
-    () => baseDeckCards.filter((c) => reviewedSet.has(c.id)).length,
-    [baseDeckCards, reviewedSet],
-  );
 
   useEffect(() => {
     setIsShuffled(false);
@@ -173,9 +156,7 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
       );
       setCurrentIndex(targetIdx >= 0 ? targetIdx : 0);
     } else {
-      setCurrentIndex((prev) =>
-        prev < orderedCards.length ? prev : 0,
-      );
+      setCurrentIndex(0);
     }
     setIsFlipped(false);
   }, [orderedCards, focusCard]);
@@ -188,8 +169,7 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
   }, [isShuffled, orderedCards, shuffledIndices]);
 
   const total = activeCards.length;
-  const safeIndex = total > 0 ? Math.min(currentIndex, total - 1) : 0;
-  const currentCard = activeCards[safeIndex];
+  const currentCard = activeCards[currentIndex];
 
   const handleNext = useCallback(() => {
     if (total === 0) return;
@@ -226,8 +206,40 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
     setIsFlipped(false);
   };
 
+  // --- Daily 25 Vocab Sprint State ---
+  const [vocabScope, setVocabScope] = useState<'daily25' | number>('daily25');
+  const [vocabIndex, setVocabIndex] = useState(0);
+  const [vocabRevealed, setVocabRevealed] = useState(false);
+
+  const vocabDeck = useMemo<VocabItem[]>(() => {
+    if (vocabScope === 'daily25') {
+      return buildDailyVocabDeck(learnedVocabIds, undefined, vocabDailyTarget);
+    }
+    return getVocabByPart(vocabScope);
+  }, [vocabScope, learnedVocabIds, vocabDailyTarget]);
+
   useEffect(() => {
-    if (viewMode !== 'cards') return;
+    setVocabIndex(0);
+    setVocabRevealed(false);
+  }, [vocabScope]);
+
+  const safeVocabIndex =
+    vocabDeck.length > 0 ? Math.min(vocabIndex, vocabDeck.length - 1) : 0;
+  const currentVocab = vocabDeck[safeVocabIndex];
+
+  const handleNextVocab = useCallback(() => {
+    if (vocabDeck.length === 0) return;
+    setVocabRevealed(false);
+    setVocabIndex((prev) => (prev + 1 < vocabDeck.length ? prev + 1 : 0));
+  }, [vocabDeck.length]);
+
+  const handlePrevVocab = useCallback(() => {
+    if (vocabDeck.length === 0) return;
+    setVocabRevealed(false);
+    setVocabIndex((prev) => (prev - 1 >= 0 ? prev - 1 : vocabDeck.length - 1));
+  }, [vocabDeck.length]);
+
+  useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       if (
@@ -238,120 +250,136 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
       ) {
         return;
       }
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        handleNext();
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        handlePrev();
-      } else if (e.key === ' ') {
-        e.preventDefault();
-        setIsFlipped((prev) => !prev);
+      if (mode === 'cards') {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          handleNext();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          handlePrev();
+        } else if (e.key === ' ') {
+          e.preventDefault();
+          setIsFlipped((prev) => !prev);
+        }
+      } else {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          handleNextVocab();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          handlePrevVocab();
+        } else if (e.key === ' ') {
+          e.preventDefault();
+          setVocabRevealed((prev) => !prev);
+        }
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleNext, handlePrev, viewMode]);
+  }, [mode, handleNext, handlePrev, handleNextVocab, handlePrevVocab]);
 
-  const handleMasteredClick = () => {
-    if (!currentCard) return;
-    onMarkFlashcardMastered(
-      currentCard.id,
-      `Part ${currentCard.partNumber} · ${currentCard.isVocab ? 'Vocab' : `Card ${currentCard.originalIndexInPart + 1}`}`,
-    );
-    handleNext();
-  };
-
-  const deckHeading =
-    deckFilter === 'total_vocab'
-      ? 'Total Warehouse Vocabulary'
-      : deckFilter === 'part_vocab'
-        ? `Part ${parts[0]?.part_number ?? 1} Vocabulary`
-        : deckFilter === 'visual'
-          ? 'Visual Signs & Diagrams'
-          : isSinglePartScope
-            ? `Part ${parts[0]?.part_number ?? 1} Flashcards`
-            : 'Complete Flashcard Deck';
-
-  const deckMasteryPct =
-    baseDeckCards.length > 0
-      ? Math.round((deckMasteredCount / baseDeckCards.length) * 100)
-      : 0;
+  const dailyVocabPct = Math.min(
+    100,
+    Math.round((dailyVocabReviewedIds.length / vocabDailyTarget) * 100),
+  );
+  const dailyVocabComplete = dailyVocabReviewedIds.length >= vocabDailyTarget;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
-      {/* Studio Deck Command Header */}
-      <section className="surface-card rounded-2xl p-5 sm:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span className="font-semibold text-blue-600">
-                Active Recall Studio
-              </span>
-              <span aria-hidden="true">·</span>
-              <span className="font-mono-tabular font-medium text-slate-700">
-                {deckMasteredCount}/{baseDeckCards.length} mastered ({deckMasteryPct}%)
-              </span>
-            </div>
-            <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              {deckHeading}
-            </h1>
+    <div className="space-y-4 sm:space-y-5">
+      {/* Mode Switcher Bar: Study Flashcards vs Daily 25 Vocab Sprint */}
+      <div className="surface-glass flex flex-wrap items-center justify-between gap-2.5 rounded-2xl p-2 sm:px-4 sm:py-2.5">
+        <div
+          role="tablist"
+          aria-label="Flashcard Study Mode"
+          className="grid flex-1 grid-cols-2 gap-1.5 sm:max-w-md"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'cards'}
+            onClick={() => setMode('cards')}
+            className={`inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap ${
+              mode === 'cards'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white/80 text-slate-600 hover:bg-white hover:text-slate-900'
+            }`}
+          >
+            <Layers className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>Study Cards ({total})</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'vocab'}
+            onClick={() => setMode('vocab')}
+            className={`inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap ${
+              mode === 'vocab'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-white/80 text-slate-600 hover:bg-white hover:text-slate-900'
+            }`}
+          >
+            <BookMarked className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>
+              Daily 25 Vocab ({dailyVocabReviewedIds.length}/{vocabDailyTarget})
+            </span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowFurigana((prev) => !prev)}
+          className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all shrink-0 ${
+            showFurigana
+              ? 'border-blue-300 bg-gradient-to-b from-blue-50 to-indigo-50/70 text-blue-700 shadow-2xs'
+              : 'border-slate-200/90 bg-white text-slate-600'
+          }`}
+        >
+          <Languages className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>ふりがな</span>
+        </button>
+      </div>
+
+      {mode === 'cards' ? (
+        total === 0 || !currentCard ? (
+          <div className="surface-card rounded-2xl p-8 text-center">
+            <p className="text-sm text-slate-600">
+              No flashcards available in the selected part.
+            </p>
           </div>
+        ) : (
+          <>
+            <div className="surface-glass flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono-tabular text-sm font-bold tracking-tight text-slate-900">
+                  {currentIndex + 1} / {total}
+                </span>
+                <span className="text-slate-300" aria-hidden="true">
+                  ·
+                </span>
+                <span className="text-xs font-medium text-slate-500">
+                  Part {currentCard.partNumber}
+                </span>
+                {reviewedFlashcardIds.includes(currentCard.id) && (
+                  <>
+                    <span className="text-slate-300" aria-hidden="true">
+                      ·
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Mastered</span>
+                    </span>
+                  </>
+                )}
+              </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* View Mode Toggle: 3D Flip vs Glossary List */}
-            <div
-              role="group"
-              aria-label="Flashcard view mode"
-              className="flex items-center gap-1 rounded-xl border border-slate-200/90 bg-slate-100/75 p-1"
-            >
-              <button
-                type="button"
-                onClick={() => setViewMode('cards')}
-                className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
-                  viewMode === 'cards'
-                    ? 'bg-white text-slate-900 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Layers className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>3D Cards</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('list')}
-                className={`inline-flex min-h-[34px] items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
-                  viewMode === 'list'
-                    ? 'bg-white text-slate-900 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Glossary</span>
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowFurigana((prev) => !prev)}
-              className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
-                showFurigana
-                  ? 'border-blue-300 bg-blue-50 text-blue-700'
-                  : 'border-slate-200/90 bg-white text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Languages className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>ふりがな {showFurigana ? 'ON' : 'OFF'}</span>
-            </button>
-
-            {viewMode === 'cards' && (
-              <>
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={handleToggleShuffle}
-                  className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
+                  className={`inline-flex min-h-[38px] items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all ${
                     isShuffled
-                      ? 'border-blue-300 bg-blue-50 text-blue-700'
+                      ? 'border-blue-300 bg-gradient-to-b from-blue-50 to-indigo-50/70 text-blue-700 shadow-2xs'
                       : 'border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50'
                   }`}
                 >
@@ -363,428 +391,304 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                   type="button"
                   onClick={handleReset}
                   aria-label="Restart flashcard deck"
-                  title="Restart deck"
-                  className="inline-flex min-h-[38px] min-w-[38px] items-center justify-center rounded-xl border border-slate-200/90 bg-white px-2.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                  className="inline-flex min-h-[38px] items-center justify-center rounded-xl border border-slate-200/90 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                 >
                   <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Deck Mode Tabs (Including Dedicated Total Vocabulary Option) */}
-        <div className="mt-4 flex flex-col gap-3 border-t border-slate-200/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <div
-            role="tablist"
-            aria-label="Flashcard deck mode"
-            className="flex flex-wrap items-center gap-1.5"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={deckFilter === 'all'}
-              onClick={() => setDeckFilter('all')}
-              className={`min-h-[38px] rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
-                deckFilter === 'all'
-                  ? 'border-slate-900 bg-slate-900 text-white shadow-2xs'
-                  : 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              {isSinglePartScope
-                ? `Part ${parts[0].part_number} All (${scopedPartCards.length})`
-                : `All Cards (${scopedPartCards.length})`}
-            </button>
-
-            {totalVocabCards.length > 0 && (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={deckFilter === 'total_vocab'}
-                onClick={() => setDeckFilter('total_vocab')}
-                className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
-                  deckFilter === 'total_vocab'
-                    ? 'border-blue-600 bg-blue-600 text-white shadow-2xs'
-                    : 'border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100/70'
-                }`}
-              >
-                <BookA className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span>Total Vocabulary ({totalVocabCards.length})</span>
-              </button>
-            )}
-
-            {isSinglePartScope && scopedVocabCount > 0 && (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={deckFilter === 'part_vocab'}
-                onClick={() => setDeckFilter('part_vocab')}
-                className={`min-h-[38px] rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
-                  deckFilter === 'part_vocab'
-                    ? 'border-slate-900 bg-slate-900 text-white shadow-2xs'
-                    : 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                }`}
-              >
-                Part {parts[0].part_number} Vocab ({scopedVocabCount})
-              </button>
-            )}
-
-            {scopedVisualCount > 0 && (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={deckFilter === 'visual'}
-                onClick={() => setDeckFilter('visual')}
-                className={`min-h-[38px] rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
-                  deckFilter === 'visual'
-                    ? 'border-slate-900 bg-slate-900 text-white shadow-2xs'
-                    : 'border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                }`}
-              >
-                Visual ({scopedVisualCount})
-              </button>
-            )}
-          </div>
-
-          {/* Mastery Status Filter */}
-          <div
-            role="group"
-            aria-label="Filter by mastery status"
-            className="flex items-center gap-1 rounded-xl border border-slate-200/80 bg-slate-100/70 p-1 self-start sm:self-auto"
-          >
-            {(
-              [
-                {id: 'all', label: 'All'},
-                {id: 'unmastered', label: 'To Learn'},
-                {id: 'mastered', label: 'Mastered'},
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setMasteryFilter(opt.id)}
-                className={`min-h-[30px] rounded-lg px-2.5 py-1 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
-                  masteryFilter === opt.id
-                    ? 'bg-white text-slate-900 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Optional Quick Search Bar inside Glossary or Total Vocabulary */}
-        {(viewMode === 'list' || deckFilter === 'total_vocab') && (
-          <div className="mt-3.5">
-            <label className="flex min-h-[42px] items-center gap-2 rounded-xl border border-slate-200/90 bg-slate-50/70 px-3.5 transition-colors focus-within:border-blue-500 focus-within:bg-white">
-              <Search
-                className="h-4 w-4 shrink-0 text-slate-400"
-                aria-hidden="true"
-              />
-              <input
-                type="text"
-                value={vocabSearch}
-                onChange={(e) => setVocabSearch(e.target.value)}
-                placeholder="Filter vocabulary by Japanese, Sinhala, or English..."
-                aria-label="Filter flashcards"
-                className="min-w-0 flex-1 bg-transparent text-xs text-slate-900 outline-none placeholder:text-slate-400 sm:text-sm"
-              />
-              {vocabSearch && (
-                <button
-                  type="button"
-                  onClick={() => setVocabSearch('')}
-                  aria-label="Clear filter"
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-200/70 hover:text-slate-700"
-                >
-                  <X className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              )}
-            </label>
-          </div>
-        )}
-      </section>
-
-      {/* Empty State */}
-      {total === 0 || !currentCard ? (
-        <div className="surface-card space-y-3 rounded-2xl p-10 text-center">
-          <p className="text-base font-bold text-slate-900">
-            No flashcards match this filter
-          </p>
-          <p className="text-xs text-slate-500">
-            {masteryFilter === 'unmastered'
-              ? 'You have mastered every card in this deck.'
-              : 'Try clearing your search or switching back to all cards.'}
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-            {masteryFilter !== 'all' && (
-              <button
-                type="button"
-                onClick={() => setMasteryFilter('all')}
-                className="btn-primary-premium inline-flex min-h-[40px] items-center rounded-xl px-4 py-2 text-xs font-semibold"
-              >
-                Show All Statuses
-              </button>
-            )}
-            {(deckFilter !== 'all' || vocabSearch) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setDeckFilter('all');
-                  setMasteryFilter('all');
-                  setVocabSearch('');
-                }}
-                className="inline-flex min-h-[40px] items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Reset Filters
-              </button>
-            )}
-          </div>
-        </div>
-      ) : viewMode === 'list' ? (
-        /* Scannable Multi-Column Vocabulary / Flashcard Glossary View */
-        <section className="space-y-3">
-          <div className="flex items-center justify-between px-1 text-xs text-slate-500">
-            <span className="font-mono-tabular font-semibold text-slate-700">
-              Showing {activeCards.length} cards
-            </span>
-            <span>Click any item to practice in 3D card view</span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {activeCards.map((card, idx) => {
-              const mastered = reviewedSet.has(card.id);
-              return (
-                <article
-                  key={card.id}
-                  className="surface-card-interactive flex flex-col justify-between gap-3 rounded-2xl p-4"
-                >
-                  <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
-                    <div className="flex items-center gap-1.5 font-medium">
-                      <span className="font-mono-tabular font-semibold text-blue-600">
-                        Part {card.partNumber}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span>
-                        {card.isVocab
-                          ? 'Vocabulary'
-                          : card.image
-                            ? 'Visual'
-                            : 'Concept'}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onMarkFlashcardMastered(
-                          card.id,
-                          `Part ${card.partNumber} · ${card.isVocab ? 'Vocab' : `Card ${card.originalIndexInPart + 1}`}`,
-                        )
-                      }
-                      className={`inline-flex items-center gap-1 text-xs font-semibold transition-colors ${
-                        mastered
-                          ? 'text-emerald-600'
-                          : 'text-slate-400 hover:text-emerald-600'
-                      }`}
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>{mastered ? 'Mastered' : 'Mark Done'}</span>
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCurrentIndex(idx);
-                      setIsFlipped(false);
-                      setViewMode('cards');
-                      window.scrollTo({top: 0, behavior: 'smooth'});
-                    }}
-                    className="font-jp flex-1 text-left"
-                  >
-                    <p className="text-sm font-bold leading-[2.0] text-slate-900 sm:text-base">
-                      <FuriganaText
-                        text={card.question}
-                        showFurigana={showFurigana}
-                      />
-                    </p>
-                    <p className="mt-1.5 whitespace-pre-line border-t border-slate-100 pt-2 text-xs leading-[1.9] text-slate-600 sm:text-[13px]">
-                      <FuriganaText
-                        text={card.answer}
-                        showFurigana={showFurigana}
-                      />
-                    </p>
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      ) : (
-        /* Ultra-Premium 3D Active Recall Card Stage */
-        <div className="mx-auto max-w-3xl space-y-5">
-          {/* Progress Bar & Card Counter */}
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="font-mono-tabular text-sm font-bold text-slate-900">
-                  {safeIndex + 1} / {total}
-                </span>
-                <span className="text-slate-300" aria-hidden="true">
-                  ·
-                </span>
-                <span className="font-medium text-slate-500">
-                  Part {currentCard.partNumber}
-                </span>
-                {reviewedSet.has(currentCard.id) && (
-                  <>
-                    <span className="text-slate-300" aria-hidden="true">
-                      ·
-                    </span>
-                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
-                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>Mastered</span>
-                    </span>
-                  </>
-                )}
               </div>
-              <span className="hidden text-[11px] text-slate-400 sm:inline">
-                Space to flip · ← / → to navigate
-              </span>
             </div>
 
             <div
-              className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80"
+              className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80 ring-1 ring-slate-200/60"
               role="progressbar"
-              aria-valuenow={safeIndex + 1}
+              aria-valuenow={currentIndex + 1}
               aria-valuemin={1}
               aria-valuemax={total}
             >
               <div
                 className="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-200"
-                style={{width: `${((safeIndex + 1) / total) * 100}%`}}
+                style={{width: `${((currentIndex + 1) / total) * 100}%`}}
               />
             </div>
-          </div>
 
-          <div className="perspective-1200">
-            <button
-              type="button"
-              onClick={() => setIsFlipped((prev) => !prev)}
-              aria-pressed={isFlipped}
-              className="group relative block h-[370px] w-full cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 sm:h-[420px]"
-            >
+            <div className="perspective-1200">
+              <button
+                type="button"
+                onClick={() => setIsFlipped((prev) => !prev)}
+                aria-pressed={isFlipped}
+                className="group relative block h-[370px] w-full cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 sm:h-[400px]"
+              >
+                <div
+                  className={`preserve-3d relative h-full w-full transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    isFlipped ? 'rotate-y-180' : ''
+                  }`}
+                >
+                  {/* Front Face */}
+                  <div className="surface-card backface-hidden absolute inset-0 flex flex-col justify-between rounded-2xl p-6 sm:p-8">
+                    <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
+                      <span className="tracking-wide text-blue-600">Question</span>
+                      <span className="truncate">{currentCard.partTitle}</span>
+                    </div>
+
+                    <div className="my-auto flex max-h-[240px] items-center justify-center overflow-y-auto py-3">
+                      {renderMultilineTrilingual(
+                        currentCard.question,
+                        showFurigana,
+                        'front',
+                      )}
+                    </div>
+
+                    <div className="text-center text-xs font-medium text-slate-400">
+                      Tap card to reveal answer
+                    </div>
+                  </div>
+
+                  {/* Back Face */}
+                  <div className="surface-hero backface-hidden rotate-y-180 absolute inset-0 flex flex-col justify-between rounded-2xl p-6 text-white sm:p-8">
+                    <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-400">
+                      <span className="text-amber-300">Answer</span>
+                      <span className="truncate">{currentCard.partTitle}</span>
+                    </div>
+
+                    <div className="my-auto flex max-h-[250px] items-center justify-center overflow-y-auto py-3">
+                      {renderMultilineTrilingual(
+                        currentCard.answer,
+                        showFurigana,
+                        'back',
+                      )}
+                    </div>
+
+                    <div className="text-center text-xs font-medium text-slate-400">
+                      Tap card to view question
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  onMarkFlashcardMastered(
+                    currentCard.id,
+                    `Part ${currentCard.partNumber} · Card ${currentCard.originalIndexInPart + 1}`,
+                  );
+                  handleNext();
+                }}
+                className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-emerald-200/90 bg-gradient-to-b from-emerald-50 to-teal-50/70 px-5 py-3 text-sm font-semibold text-emerald-800 shadow-2xs transition-all hover:border-emerald-300 hover:brightness-98 active:scale-[0.99]"
+              >
+                <CheckCircle2
+                  className="h-4 w-4 text-emerald-600"
+                  aria-hidden="true"
+                />
+                <span>
+                  {reviewedFlashcardIds.includes(currentCard.id)
+                    ? 'Review Again (+2 XP)'
+                    : 'Got It (+10 XP)'}
+                </span>
+              </button>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  className="surface-card-interactive inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 active:scale-[0.99]"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span>Previous</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="btn-primary-premium inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold"
+                >
+                  <span>Next</span>
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </>
+        )
+      ) : (
+        /* Daily 25 Vocabulary Sprint */
+        <div className="space-y-4">
+          {/* Daily 25 Target Progress Card */}
+          <section className="surface-card rounded-2xl p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 sm:text-base">
+                  Daily {vocabDailyTarget}-Word Logistics Target
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  <span className="font-mono-tabular font-semibold text-amber-700">
+                    {dailyVocabReviewedIds.length} / {vocabDailyTarget}
+                  </span>{' '}
+                  today ·{' '}
+                  <span className="font-mono-tabular font-semibold text-slate-700">
+                    {learnedVocabIds.length} / {WAREHOUSE_VOCABULARY.length}
+                  </span>{' '}
+                  mastered · +30 XP bonus at 25/25
+                </p>
+              </div>
+
+              {dailyVocabComplete && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700">
+                  <Sparkles className="h-4 w-4 text-amber-500" aria-hidden="true" />
+                  <span>Daily 25 Target Complete</span>
+                </span>
+              )}
+            </div>
+
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/60">
               <div
-                className={`preserve-3d relative h-full w-full transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  isFlipped ? 'rotate-y-180' : ''
+                className={`h-full rounded-full transition-all duration-300 ${
+                  dailyVocabComplete
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                    : 'bg-gradient-to-r from-amber-500 to-orange-500'
+                }`}
+                style={{width: `${dailyVocabPct}%`}}
+              />
+            </div>
+
+            {/* Scope Filters */}
+            <div className="mt-3.5 flex items-center gap-1.5 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => setVocabScope('daily25')}
+                className={`min-h-[36px] rounded-xl border px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
+                  vocabScope === 'daily25'
+                    ? 'border-amber-300 bg-amber-50 text-amber-800 shadow-2xs'
+                    : 'border-slate-200 bg-white text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {/* Front Face */}
-                <div className="surface-card backface-hidden absolute inset-0 flex flex-col justify-between rounded-3xl p-6 sm:p-8">
-                  <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
-                    <span className="tracking-wide text-blue-600">
-                      {currentCard.image
-                        ? 'Visual Flashcard'
-                        : currentCard.isVocab
-                          ? 'Warehouse Vocabulary'
-                          : 'Study Prompt'}
+                Today&apos;s 25 Deck
+              </button>
+              {[1, 2, 3, 4, 5, 6].map((pNum) => (
+                <button
+                  key={pNum}
+                  type="button"
+                  onClick={() => setVocabScope(pNum)}
+                  className={`min-h-[36px] rounded-xl border px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
+                    vocabScope === pNum
+                      ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-2xs'
+                      : 'border-slate-200 bg-white text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Part {pNum} (25)
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {currentVocab && (
+            <>
+              <section className="surface-card rounded-2xl p-6 sm:p-8">
+                <div className="flex items-center justify-between gap-3 text-xs font-medium text-slate-500">
+                  <span className="font-mono-tabular font-bold text-slate-900">
+                    {safeVocabIndex + 1} / {vocabDeck.length}
+                  </span>
+                  <span>
+                    Part {currentVocab.partNumber} · {currentVocab.category}
+                  </span>
+                  {learnedVocabIds.includes(currentVocab.id) && (
+                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Learned</span>
                     </span>
-                    <span className="truncate">{currentCard.partTitle}</span>
-                  </div>
-
-                  <div className="font-jp my-auto flex flex-col items-center justify-center gap-4 overflow-y-auto py-2 text-center">
-                    {currentCard.image && (
-                      <div className="flex max-h-[155px] w-full max-w-[260px] items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-2.5 sm:max-h-[180px]">
-                        <img
-                          src={currentCard.image}
-                          alt={currentCard.imageAlt ?? 'Textbook visual flashcard'}
-                          loading="lazy"
-                          className="max-h-[135px] w-auto object-contain sm:max-h-[160px]"
-                        />
-                      </div>
-                    )}
-                    <p
-                      className={`max-w-xl font-bold leading-[2.05] tracking-tight text-slate-900 ${
-                        currentCard.image
-                          ? 'text-lg sm:text-xl'
-                          : 'text-xl sm:text-2xl'
-                      }`}
-                    >
-                      <FuriganaText
-                        text={currentCard.question}
-                        showFurigana={showFurigana}
-                      />
-                    </p>
-                  </div>
-
-                  <div className="text-center text-xs font-medium text-slate-400">
-                    Tap card or press Space to reveal Sinhala &amp; English answer
-                  </div>
+                  )}
                 </div>
 
-                {/* Back Face */}
-                <div className="surface-hero backface-hidden rotate-y-180 absolute inset-0 flex flex-col justify-between rounded-3xl p-6 text-white sm:p-8">
-                  <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-400">
-                    <span className="text-amber-300">
-                      {currentCard.isVocab ? 'Meaning & Usage' : 'Answer'}
-                    </span>
-                    <span className="truncate">{currentCard.partTitle}</span>
-                  </div>
+                <div className="my-6 text-center">
+                  <p className="font-jp text-2xl font-bold leading-[1.9] tracking-tight text-slate-900 sm:text-3xl">
+                    <FuriganaText
+                      text={currentVocab.jp}
+                      showFurigana={showFurigana}
+                    />
+                  </p>
+                  <p className="mt-2 text-sm italic text-slate-500 sm:text-base">
+                    {currentVocab.romaji}
+                  </p>
 
-                  <div className="font-jp my-auto flex items-center justify-center overflow-y-auto py-3 text-center">
-                    <p className="max-w-xl whitespace-pre-line text-base font-medium leading-[2.15] text-slate-100 sm:text-lg [&_rt]:text-slate-400">
-                      <FuriganaText
-                        text={currentCard.answer}
-                        showFurigana={showFurigana}
-                      />
-                    </p>
-                  </div>
+                  {vocabRevealed ? (
+                    <div className="mt-5 space-y-3 border-t border-slate-200/80 pt-5">
+                      <p className="text-lg font-bold text-blue-700 sm:text-xl">
+                        {currentVocab.sinhala}
+                      </p>
+                      <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3.5 text-left">
+                        <p className="font-jp text-sm font-semibold leading-[2.0] text-slate-900 sm:text-base">
+                          <FuriganaText
+                            text={currentVocab.exampleJp}
+                            showFurigana={showFurigana}
+                          />
+                        </p>
+                        <p className="mt-1 text-xs italic text-slate-500">
+                          {currentVocab.exampleRomaji}
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-slate-700 sm:text-sm">
+                          {currentVocab.exampleSinhala}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setVocabRevealed(true)}
+                      className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-700"
+                    >
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                      <span>Reveal Meaning &amp; Example</span>
+                    </button>
+                  )}
+                </div>
+              </section>
 
-                  <div className="text-center text-xs font-medium text-slate-400">
-                    Tap card to view front
-                  </div>
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onMarkVocabReviewed(
+                      currentVocab.id,
+                      `${currentVocab.romaji} (Part ${currentVocab.partNumber})`,
+                    );
+                    handleNextVocab();
+                  }}
+                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-emerald-200/90 bg-gradient-to-b from-emerald-50 to-teal-50/70 px-5 py-3 text-sm font-semibold text-emerald-800 shadow-2xs transition-all hover:border-emerald-300 hover:brightness-98 active:scale-[0.99]"
+                >
+                  <CheckCircle2
+                    className="h-4 w-4 text-emerald-600"
+                    aria-hidden="true"
+                  />
+                  <span>
+                    {learnedVocabIds.includes(currentVocab.id)
+                      ? 'Practice Word (+2 XP) & Next'
+                      : 'Mark Learned (+5 XP) & Next'}
+                  </span>
+                </button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={handlePrevVocab}
+                    className="surface-card-interactive inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 active:scale-[0.99]"
+                  >
+                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                    <span>Previous</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleNextVocab}
+                    className="btn-primary-premium inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold"
+                  >
+                    <span>Skip / Next</span>
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
                 </div>
               </div>
-            </button>
-          </div>
-
-          {/* Action Bar */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <button
-              type="button"
-              onClick={handlePrev}
-              className="surface-card-interactive inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 active:scale-[0.99]"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              <span>Previous</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleMasteredClick}
-              className="col-span-2 order-first inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-5 py-3 text-sm font-semibold text-emerald-800 transition-all hover:bg-emerald-100/80 active:scale-[0.99] sm:col-span-1 sm:order-none"
-            >
-              <CheckCircle2
-                className="h-4 w-4 text-emerald-600"
-                aria-hidden="true"
-              />
-              <span>
-                {reviewedSet.has(currentCard.id)
-                  ? 'Review Again (+2 XP)'
-                  : 'Got It (+10 XP)'}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleNext}
-              className="btn-primary-premium inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold"
-            >
-              <span>Next</span>
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
+            </>
+          )}
         </div>
       )}
     </div>

@@ -247,12 +247,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           {!query.trim() ? (
             <div className="py-10 text-center">
               <p className="text-sm font-semibold tracking-tight text-slate-900">
-                Search across all {parts.length} uploaded PDF{' '}
-                {parts.length === 1 ? 'part' : 'parts'}
+                Search across all {parts.length} SSW Logistics{' '}
+                {parts.length === 1 ? 'module' : 'modules'}
               </p>
               <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                Type any concept, formula, keyword, or question to jump straight
-                to matching notes or flashcards.
+                Type Japanese, Romaji, Sinhala, or English terms to jump
+                straight to matching study notes or flashcards.
               </p>
             </div>
           ) : filteredResults.length === 0 ? (

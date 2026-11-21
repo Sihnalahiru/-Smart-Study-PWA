@@ -119,7 +119,9 @@ export function createInitialProgressState(): StudyProgressState {
     readPartNumbers: [],
     correctQuizIds: [],
     attemptedQuizIds: [],
+    wrongQuizIds: [],
     completedQuizParts: [],
+    learnedVocabIds: [],
     quizQuestionStats: {},
     cbtExamHistory: [],
     activities: [],
@@ -129,6 +131,9 @@ export function createInitialProgressState(): StudyProgressState {
       quizAnswered: 0,
       notesCompleted: 0,
       xpEarnedToday: 0,
+      vocabReviewedIds: [],
+      vocabReviewedCount: 0,
+      dailyWrongQuizIds: [],
     },
   };
 }
@@ -160,6 +165,9 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
       validStreak = 0;
     }
 
+    const parsedVocabIds = Array.isArray(parsed.daily?.vocabReviewedIds)
+      ? parsed.daily!.vocabReviewedIds
+      : [];
     const daily =
       parsed.daily && parsed.daily.date === today
         ? {
@@ -180,6 +188,14 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
               typeof parsed.daily.xpEarnedToday === 'number'
                 ? parsed.daily.xpEarnedToday
                 : 0,
+            vocabReviewedIds: parsedVocabIds,
+            vocabReviewedCount:
+              typeof parsed.daily.vocabReviewedCount === 'number'
+                ? Math.max(parsed.daily.vocabReviewedCount, parsedVocabIds.length)
+                : parsedVocabIds.length,
+            dailyWrongQuizIds: Array.isArray(parsed.daily.dailyWrongQuizIds)
+              ? parsed.daily.dailyWrongQuizIds
+              : [],
           }
         : {
             date: today,
@@ -187,6 +203,9 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
             quizAnswered: 0,
             notesCompleted: 0,
             xpEarnedToday: 0,
+            vocabReviewedIds: [],
+            vocabReviewedCount: 0,
+            dailyWrongQuizIds: [],
           };
 
     const sanitizedAttempted = Array.isArray(parsed.attemptedQuizIds)
@@ -195,6 +214,9 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
     const sanitizedCorrect = Array.isArray(parsed.correctQuizIds)
       ? parsed.correctQuizIds
       : [];
+    const sanitizedWrong = Array.isArray(parsed.wrongQuizIds)
+      ? parsed.wrongQuizIds
+      : sanitizedAttempted.filter((id) => !sanitizedCorrect.includes(id));
 
     const hydratedStats: Record<string, QuizQuestionStat> = {};
     if (
@@ -256,8 +278,12 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
         : [],
       correctQuizIds: sanitizedCorrect,
       attemptedQuizIds: sanitizedAttempted,
+      wrongQuizIds: sanitizedWrong,
       completedQuizParts: Array.isArray(parsed.completedQuizParts)
         ? parsed.completedQuizParts
+        : [],
+      learnedVocabIds: Array.isArray(parsed.learnedVocabIds)
+        ? parsed.learnedVocabIds
         : [],
       quizQuestionStats: hydratedStats,
       cbtExamHistory,
@@ -278,12 +304,12 @@ export function getLevelInfo(xp: number) {
   );
 
   const ranks = [
-    'Apprentice',
-    'Scholar',
-    'Researcher',
-    'Fellow',
-    'Analyst',
-    'Polymath',
+    'Trainee Picker',
+    'Dock Specialist',
+    'Inventory Lead',
+    'Safety Officer',
+    'Shift Supervisor',
+    'Logistics Master',
   ];
   const rank = ranks[Math.min(level - 1, ranks.length - 1)];
 
@@ -370,6 +396,9 @@ export function useStudyProgress(userId: UserId | null) {
             quizAnswered: 0,
             notesCompleted: 0,
             xpEarnedToday: 0,
+            vocabReviewedIds: [],
+            vocabReviewedCount: 0,
+            dailyWrongQuizIds: [],
           };
 
     return {
@@ -526,6 +555,89 @@ export function useStudyProgress(userId: UserId | null) {
     [updateForActiveUser, showToast],
   );
 
+  const markVocabReviewed = useCallback(
+    (vocabId: string, termLabel: string) => {
+      let earned = 0;
+      let hitTarget = false;
+      updateForActiveUser((prev) => {
+        const alreadyLearned = prev.learnedVocabIds.includes(vocabId);
+        const baseXp = alreadyLearned ? 2 : 5;
+        const {
+          today,
+          nextStreak,
+          nextBestStreak,
+          nextActiveDates,
+          streakBonus,
+          nextDaily,
+        } = computeStreakAndDaily(prev, baseXp);
+
+        const prevDailyIds = nextDaily.vocabReviewedIds ?? [];
+        const isNewToday = !prevDailyIds.includes(vocabId);
+        const updatedDailyIds = isNewToday
+          ? [...prevDailyIds, vocabId]
+          : prevDailyIds;
+        const nextDailyCount = updatedDailyIds.length;
+        const targetBonus =
+          isNewToday && nextDailyCount === 25 ? 30 : 0;
+        if (targetBonus > 0) hitTarget = true;
+
+        earned = baseXp + targetBonus + streakBonus;
+        const activities = [
+          makeActivity(
+            alreadyLearned ? 'Practiced Vocabulary' : 'Learned New Term',
+            baseXp,
+            termLabel,
+          ),
+          ...prev.activities,
+        ];
+        if (targetBonus > 0) {
+          activities.unshift(
+            makeActivity(
+              'Daily 25 Vocab Target Clear',
+              targetBonus,
+              '25 words reviewed today',
+            ),
+          );
+        }
+        if (streakBonus > 0) {
+          activities.unshift(
+            makeActivity(
+              'Streak Milestone Bonus',
+              streakBonus,
+              `${nextStreak}-Day Streak Badge`,
+            ),
+          );
+        }
+
+        return {
+          ...prev,
+          xp: prev.xp + earned,
+          streakDays: nextStreak,
+          bestStreak: nextBestStreak,
+          lastActiveDate: today,
+          activeDates: nextActiveDates,
+          learnedVocabIds: alreadyLearned
+            ? prev.learnedVocabIds
+            : [...prev.learnedVocabIds, vocabId],
+          daily: {
+            ...nextDaily,
+            xpEarnedToday: nextDaily.xpEarnedToday + targetBonus,
+            vocabReviewedIds: updatedDailyIds,
+            vocabReviewedCount: nextDailyCount,
+          },
+          activities: activities.slice(0, 30),
+        };
+      });
+      if (earned > 0) {
+        showToast(
+          earned,
+          hitTarget ? 'Daily 25 Vocab Target Cleared!' : 'Vocabulary practiced',
+        );
+      }
+    },
+    [updateForActiveUser, showToast],
+  );
+
   const recordQuizAnswer = useCallback(
     (
       questionId: string,
@@ -538,12 +650,20 @@ export function useStudyProgress(userId: UserId | null) {
       updateForActiveUser((prev) => {
         const alreadyCorrect = prev.correctQuizIds.includes(questionId);
         const alreadyAttempted = prev.attemptedQuizIds.includes(questionId);
+        const wasWrong = prev.wrongQuizIds.includes(questionId);
         const alreadyCompletedPart =
           prev.completedQuizParts.includes(partNumber);
 
         let delta = 0;
-        if (isCorrect && !alreadyCorrect) {
-          delta += 25;
+        let resolvedMistakeBonus = 0;
+        if (isCorrect) {
+          if (!alreadyCorrect) {
+            delta += 25;
+          }
+          if (wasWrong) {
+            resolvedMistakeBonus = 15;
+            delta += resolvedMistakeBonus;
+          }
         } else if (!alreadyAttempted) {
           delta += 5;
         }
@@ -563,6 +683,8 @@ export function useStudyProgress(userId: UserId | null) {
 
         if (partBonus > 0) {
           toastText = `Quiz completed (+${partBonus} bonus)`;
+        } else if (resolvedMistakeBonus > 0) {
+          toastText = 'Mistake cleared! (+15 XP)';
         } else if (isCorrect && !alreadyCorrect) {
           toastText = 'Correct quiz answer';
         } else if (delta > 0) {
@@ -575,9 +697,11 @@ export function useStudyProgress(userId: UserId | null) {
             makeActivity(
               partBonus > 0
                 ? 'Quiz Completed'
-                : isCorrect
-                  ? 'Correct Answer'
-                  : 'Quiz Practice',
+                : resolvedMistakeBonus > 0
+                  ? 'Mistake Review Cleared'
+                  : isCorrect
+                    ? 'Correct Answer'
+                    : 'Quiz Practice',
               delta,
               `Part ${partNumber}`,
             ),
@@ -606,6 +730,19 @@ export function useStudyProgress(userId: UserId | null) {
           },
         };
 
+        const nextWrongQuizIds = isCorrect
+          ? prev.wrongQuizIds.filter((id) => id !== questionId)
+          : prev.wrongQuizIds.includes(questionId)
+            ? prev.wrongQuizIds
+            : [...prev.wrongQuizIds, questionId];
+
+        const prevDailyWrong = nextDaily.dailyWrongQuizIds ?? [];
+        const nextDailyWrong = isCorrect
+          ? prevDailyWrong
+          : prevDailyWrong.includes(questionId)
+            ? prevDailyWrong
+            : [...prevDailyWrong, questionId];
+
         return {
           ...prev,
           xp: prev.xp + earned,
@@ -620,6 +757,7 @@ export function useStudyProgress(userId: UserId | null) {
           attemptedQuizIds: alreadyAttempted
             ? prev.attemptedQuizIds
             : [...prev.attemptedQuizIds, questionId],
+          wrongQuizIds: nextWrongQuizIds,
           completedQuizParts:
             partFinished && !alreadyCompletedPart
               ? [...prev.completedQuizParts, partNumber]
@@ -628,6 +766,7 @@ export function useStudyProgress(userId: UserId | null) {
           daily: {
             ...nextDaily,
             quizAnswered: nextDaily.quizAnswered + 1,
+            dailyWrongQuizIds: nextDailyWrong,
           },
           activities: nextActivities.slice(0, 30),
         };
@@ -769,6 +908,7 @@ export function useStudyProgress(userId: UserId | null) {
     xpToast,
     markPartRead,
     markFlashcardMastered,
+    markVocabReviewed,
     recordQuizAnswer,
     recordCbtExamAttempt,
     resetProgress,

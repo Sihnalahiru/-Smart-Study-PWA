@@ -87,7 +87,7 @@ export const SSW_TOPIC_MAP: Record<SswExamTopic, SswTopicMeta> =
     {} as Record<SswExamTopic, SswTopicMeta>,
   );
 
-function inferTopicForAcademicQuestion(
+export function inferTopicForAcademicQuestion(
   partNumber: number,
   questionText: string,
   noteTopic?: string,

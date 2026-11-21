@@ -67,7 +67,7 @@ export default defineConfig(() => {
                 url.pathname.endsWith('.json'),
               handler: 'CacheFirst',
               options: {
-                cacheName: 'study-assets-cache',
+                cacheName: 'study-assets-cache-v2',
                 expiration: {
                   maxEntries: 500,
                   maxAgeSeconds: 60 * 60 * 24 * 365,

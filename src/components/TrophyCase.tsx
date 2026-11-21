@@ -6,7 +6,11 @@ import {computeTrophyBadges, type TrophyBadge} from '../utils/trophyBadges';
 interface TrophyCaseProps {
   allParts: StudyPart[];
   progress: StudyProgressState;
-  onSelectPartAndTab: (partNumber: number, tab: ActiveTab) => void;
+  onSelectPartAndTab: (
+    partNumber: number,
+    tab: ActiveTab,
+    actionMode?: 'vocab' | 'mistakes',
+  ) => void;
 }
 
 type TrophyFilter = 'all' | 'unlocked' | 'locked';
@@ -49,10 +53,10 @@ export const TrophyCase: React.FC<TrophyCaseProps> = ({
                 id="trophy-case-heading"
                 className="text-base font-bold tracking-tight text-slate-900"
               >
-                Trophy Case
+                Warehouse Trophy Case
               </h2>
               <p className="mt-0.5 text-xs text-slate-500">
-                Unlock milestone badges by completing exam modules
+                Earn SSW certifications across docks, daily 25 vocab &amp; zero-defect checks
               </p>
             </div>
           </div>
@@ -91,7 +95,7 @@ export const TrophyCase: React.FC<TrophyCaseProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => setFilter(tab.id)}
-                className={`min-h-[34px] rounded-lg px-2 py-1 text-xs font-semibold transition-all whitespace-nowrap ${
+                className={`min-h-[36px] rounded-lg px-2 py-1 text-xs font-semibold transition-all whitespace-nowrap ${
                   filter === tab.id
                     ? 'bg-white text-slate-900 shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -110,16 +114,16 @@ export const TrophyCase: React.FC<TrophyCaseProps> = ({
           <p className="text-sm font-semibold tracking-tight text-slate-700">
             {filter === 'unlocked'
               ? 'No badges unlocked yet'
-              : 'All syllabus badges unlocked!'}
+              : 'All warehouse badges unlocked!'}
           </p>
           <p className="mt-1 text-xs text-slate-500">
             {filter === 'unlocked'
-              ? 'Complete a module’s notes, flashcards, and quiz to earn your first trophy.'
-              : 'You have mastered every module in the trophy case.'}
+              ? 'Complete a module’s notes, flashcards, and quiz to earn your first badge.'
+              : 'You have mastered every badge in the warehouse trophy case.'}
           </p>
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {visibleBadges.map((badge) => {
             const Icon = badge.icon;
             return (
@@ -127,7 +131,11 @@ export const TrophyCase: React.FC<TrophyCaseProps> = ({
                 key={badge.id}
                 type="button"
                 onClick={() =>
-                  onSelectPartAndTab(badge.targetPartNumber, badge.targetTab)
+                  onSelectPartAndTab(
+                    badge.targetPartNumber,
+                    badge.targetTab,
+                    badge.actionMode,
+                  )
                 }
                 className={`group flex min-h-[144px] flex-col justify-between rounded-xl border p-3.5 text-left transition-all hover:-translate-y-0.5 active:scale-[0.99] ${
                   badge.unlocked

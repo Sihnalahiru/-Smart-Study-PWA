@@ -15,11 +15,11 @@ export const CORE_SYLLABUS: SyllabusDefinition[] = [
   {
     code: 'A',
     title: 'Warehouse Types, Facilities & Vehicles',
-    subtitle: 'Part 1 · 13 Temp Zones, Racks, Conveyors & Containers',
+    subtitle: '第1編(前) · 13 Temp Zones, Racks, Conveyors & Containers',
     examWeight: 'p.1–34',
     topics: [
       'Exam Formats, Commercial vs Private, 13 Temperature Zones',
-      'Building Floors, Walls, Fire Doors, Nesters & Automated Warehouses',
+      'Building Floors/Walls/Fire/Nester & Automated Warehouses',
       'Material Handling Licenses, Tools, Sea/Rail Containers & Tail-Lifts',
     ],
     partNumber: 1,
@@ -29,12 +29,12 @@ export const CORE_SYLLABUS: SyllabusDefinition[] = [
   {
     code: 'B',
     title: 'Warehouse Operations, Quality & Disasters',
-    subtitle: 'Part 2 · Contracts, Fees, Odors, Stocktaking & Pallets',
+    subtitle: '第1編(後) · Contracts, Fees, Odors, Stocktaking & Pallets',
     examWeight: 'p.35–53',
     topics: [
-      'Warehousing Clauses, 2/3-Period Fees, Good Faith & Confidentiality',
+      'Warehousing Clauses, 2/3-Period Fees, Good Faith & Secrecy',
       'Quality Checks, Odor Cargo, Stocktaking & 9-Step Sampling',
-      'Battery Charging Safety, Quake/Fire/Outage & T11/12/14/9 Pallets',
+      'H₂/O₂ Charging Safety, Quake/Fire/Outage & T11/12/14/9 Pallets',
     ],
     partNumber: 2,
     flashcardIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
@@ -43,12 +43,12 @@ export const CORE_SYLLABUS: SyllabusDefinition[] = [
   {
     code: 'C',
     title: 'Work Gear, Docs, Units & 35 Counters',
-    subtitle: 'Part 3 · PPE, JAN/QR/RFID, Conversions & 35 Counters',
+    subtitle: '第2編(前) · PPE, JAN/QR/RFID, Conversions & 助数詞 35種',
     examWeight: 'p.54–63',
     topics: [
-      'PPE Gear, 4 Inbound/Outbound Docs, JAN 12-Digit, QR & RFID',
+      'PPE Gear, 4 Inbound/Outbound Docs, JAN 12-digit, QR & RFID',
       'Length/Area/Volume/Weight, Measurement Ton & Equipment Ton',
-      '150 lx Lighting, Era Calendar & All 35 Warehouse Counters',
+      '150lx Lighting, Era Calendar & All 35 Warehouse Counters',
     ],
     partNumber: 3,
     flashcardIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
@@ -57,11 +57,11 @@ export const CORE_SYLLABUS: SyllabusDefinition[] = [
   {
     code: 'D',
     title: 'Inbound/Outbound, 17 Tasks & Care Marks',
-    subtitle: 'Part 4 · Remarks, Locations, Packing & 11 Care Marks',
+    subtitle: '第2編(後) · Remarks, Locations, Packing & 11 Care Marks',
     examWeight: 'p.64–89',
     topics: [
       '8-Point Inbound Inspection, 10 Remarks, Locations & Stock Cards',
-      '3 Picking Modes, Overhang Ban & 4 Pallet Stacking Patterns',
+      '3 Picking Modes, Overhang Ban & 4 Pallet Patterns',
       '17 Distribution Processing Tasks, Tape Strengths & 11 Care Marks',
     ],
     partNumber: 4,
@@ -71,7 +71,7 @@ export const CORE_SYLLABUS: SyllabusDefinition[] = [
   {
     code: 'E',
     title: 'Safety, Health, KYT, 5S & 9 GHS Labels',
-    subtitle: 'Part 5 · Labor Law, 2024 Accidents, Roll Cage & KYT',
+    subtitle: '第3編 · Labor Law, 2024 Accidents, Roll Cage & KYT',
     examWeight: 'p.90–113',
     topics: [
       'Work Hours, 2024 Top-5 Accidents (909 Cases) & Heatstroke Care',
@@ -85,7 +85,7 @@ export const CORE_SYLLABUS: SyllabusDefinition[] = [
   {
     code: 'F',
     title: 'Forklift Work Standards & Containers',
-    subtitle: 'Part 6 · Pre-Checks, 8-Step Handling, 5 Stops & Cargo Rules',
+    subtitle: '第4編 · Pre-Checks, 8-Step Handling, 5 Stops & Cargo Rules',
     examWeight: 'p.114–122',
     topics: [
       '4-Liquid & 5-Mechanical Pre-Checks, Head Guard Exception',
@@ -148,10 +148,10 @@ export function computeSyllabusNodes(
 
     const notesRead = progress.readPartNumbers.includes(def.partNumber);
     const validCardIds = part.flashcards.map(
-      (fc, idx) => fc.id ?? `part-${def.partNumber}-fc-${idx}`,
+      (_, idx) => `part-${def.partNumber}-fc-${idx}`,
     );
     const validQuizIds = part.quiz.map(
-      (q, idx) => q.id ?? `part-${def.partNumber}-q-${idx}`,
+      (_, idx) => `part-${def.partNumber}-q-${idx}`,
     );
 
     const cardsDone = validCardIds.filter((id) =>
@@ -191,10 +191,10 @@ export function computeSyllabusNodes(
     const code = String.fromCharCode(71 + idx);
     const notesRead = progress.readPartNumbers.includes(part.part_number);
     const cardIds = part.flashcards.map(
-      (fc, cIdx) => fc.id ?? `part-${part.part_number}-fc-${cIdx}`,
+      (_, cIdx) => `part-${part.part_number}-fc-${cIdx}`,
     );
     const quizIds = part.quiz.map(
-      (q, qIdx) => q.id ?? `part-${part.part_number}-q-${qIdx}`,
+      (_, qIdx) => `part-${part.part_number}-q-${qIdx}`,
     );
 
     const cardsDone = cardIds.filter((id) =>
@@ -215,12 +215,12 @@ export function computeSyllabusNodes(
 
     return {
       code,
-      title: part.english_title ?? part.title,
+      title: part.title,
       subtitle: part.source_pdf,
       examWeight: `Part ${part.part_number}`,
       topics: [
         `${part.flashcards.length} Flashcards`,
-        `${part.quiz.length} Quiz Questions`,
+        `${part.quiz.length} Japanese Quiz Questions`,
       ],
       partNumber: part.part_number,
       partAvailable: true,

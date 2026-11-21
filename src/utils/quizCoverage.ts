@@ -135,6 +135,14 @@ function tokenizeForMatch(text: string): string[] {
   return Array.from(tokens);
 }
 
+function hasJapaneseChars(text: string): boolean {
+  return /[\u3040-\u30ff\u4e00-\u9faf]/.test(text);
+}
+
+function hasSinhalaChars(text: string): boolean {
+  return /[\u0D80-\u0DFF]/.test(text);
+}
+
 /**
  * Extracts leaf study note topics (headings without bullet children + bold bullet concepts)
  * so quiz coverage can be audited against every substantive topic in notes_markdown.
@@ -157,7 +165,12 @@ export function extractStudyNoteTopics(
     if (headingMatch) {
       const rawHeading = headingMatch[1].trim();
       const plainHeading = stripFurigana(rawHeading);
-      if (/主要シラバス/.test(plainHeading) && !/目的別/.test(plainHeading)) {
+      if (
+        (/主要シラバス/.test(plainHeading) && !/目的別/.test(plainHeading)) ||
+        /原本PDF図解/.test(plainHeading) ||
+        /Original Textbook Visuals/i.test(plainHeading)
+      ) {
+        currentHeadingIdx = -1;
         continue;
       }
       currentSection = rawHeading;
@@ -165,13 +178,15 @@ export function extractStudyNoteTopics(
       if (key && !seenKeys.has(key)) {
         seenKeys.add(key);
         const nextContent: string[] = [];
-        for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+        for (let j = i + 1; j < Math.min(i + 8, lines.length); j++) {
           const candidate = lines[j].trim();
           if (
             candidate &&
             !candidate.startsWith('#') &&
             !candidate.startsWith('---') &&
-            !/සිංහල/.test(candidate)
+            !candidate.startsWith('![') &&
+            !hasSinhalaChars(candidate) &&
+            hasJapaneseChars(candidate)
           ) {
             nextContent.push(candidate.replace(/^[-*>\s]+/, ''));
           }
@@ -196,7 +211,12 @@ export function extractStudyNoteTopics(
     if (bulletMatch) {
       const boldTitle = bulletMatch[1].replace(/[:：]\s*$/, '').trim();
       const plainTitle = stripFurigana(boldTitle);
-      if (!plainTitle || /සිංහල|sinhala/i.test(plainTitle)) {
+      if (
+        !plainTitle ||
+        hasSinhalaChars(plainTitle) ||
+        !hasJapaneseChars(plainTitle) ||
+        /සිංහල|sinhala|romaji|jp/i.test(plainTitle)
+      ) {
         continue;
       }
       if (currentHeadingIdx >= 0) {
@@ -304,12 +324,18 @@ function isTopicCoveredByQuestions(
 }
 
 function buildJapaneseSnippetForCard(rawText: string): string {
-  const withoutSinhala = rawText
+  const japaneseLines = rawText
     .split('\n')
-    .filter((line) => !/සිංහල|sinhala/i.test(line))
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line.length > 0 &&
+        !hasSinhalaChars(line) &&
+        hasJapaneseChars(line),
+    )
     .join(' ')
     .trim();
-  return withoutSinhala || rawText.trim();
+  return japaneseLines || rawText.trim();
 }
 
 function truncateFuriganaSafe(text: string, maxLen: number): string {

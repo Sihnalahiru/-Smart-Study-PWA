@@ -154,7 +154,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div className="mx-auto max-w-4xl space-y-5">
       {/* Clean Minimal Textbook Toolbar (No Language Tag Clutter) */}
       <div className="surface-glass flex flex-wrap items-center justify-between gap-2.5 rounded-2xl px-4 py-3">
         <div>
@@ -326,7 +326,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                       </strong>
                     ),
                     blockquote: ({children}) => (
-                      <blockquote className="my-2.5 rounded-xl border border-slate-200/80 border-l-[3px] border-l-blue-400/80 bg-slate-50/85 px-4 py-2.5 text-[13.5px] leading-[1.9] text-slate-700 sm:text-sm">
+                      <blockquote className="my-2.5 rounded-xl border border-slate-200/80 bg-slate-50/85 px-4 py-2.5 text-[13.5px] leading-[1.9] text-slate-700 sm:text-sm">
                         {renderChildrenWithFurigana(children, showFurigana)}
                       </blockquote>
                     ),

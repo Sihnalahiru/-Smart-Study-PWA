@@ -81,7 +81,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLogin}) => {
   ) => {
     e.stopPropagation();
     if (hasPin) {
-      // Require current PIN before removing or changing, or prompt unlock first
       setPinModalUser(profile);
       setPinMode('unlock');
       setPinInput('');
@@ -134,36 +133,45 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLogin}) => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md space-y-6">
-        {/* Brand Header */}
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <div className="w-full max-w-2xl space-y-8">
+        {/* Executive Brand Header */}
         <div className="text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200/80 bg-white shadow-sm">
             <img src="/icon.svg" alt="" className="h-9 w-9 rounded-xl" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
+          <p className="mt-4 text-xs font-semibold text-blue-600">
+            SSW Logistics Warehousing CBT Study Suite
+          </p>
+          <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             Smart Study PWA
           </h1>
-          <p className="mt-1.5 text-sm text-slate-600">
-            Select your study profile to continue your warehouse exam prep
+          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600">
+            Select your personal profile to access illustrated textbook notes,
+            360 flashcards, and 16 timed CBT exam papers.
           </p>
         </div>
 
-        {/* 2-Person Profile Login Cards: Haruto (Boy) & Sakura (Lady) */}
-        <div className="space-y-3.5">
+        {/* 2-Column Executive Profile Studio Cards */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {previews.map(({profile, progress, level, hasPin}) => (
             <div
               key={profile.id}
-              className="surface-card-interactive relative overflow-hidden rounded-2xl p-4.5 sm:p-5"
+              className="surface-card-interactive group relative flex flex-col justify-between overflow-hidden rounded-3xl p-5 sm:p-6"
             >
               <button
                 type="button"
                 onClick={() => handleCardClick(profile, hasPin)}
-                className="flex w-full items-center gap-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                className="flex w-full flex-col gap-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
-                <ProfileAvatar profile={profile} sizeClass="h-16 w-16" />
+                <div className="flex items-start justify-between gap-3">
+                  <ProfileAvatar profile={profile} sizeClass="h-16 w-16" />
+                  <span className="btn-dark-premium flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:translate-x-0.5">
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                </div>
 
-                <div className="min-w-0 flex-1">
+                <div>
                   <div className="flex items-center gap-2 text-xs text-slate-500">
                     <span className="font-semibold text-slate-700">
                       {profile.genderLabel}
@@ -181,11 +189,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLogin}) => {
                     )}
                   </div>
 
-                  <h2 className="mt-0.5 text-lg font-bold tracking-tight text-slate-900">
+                  <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">
                     {profile.name}
                   </h2>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-600">
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-600">
                     <span className="inline-flex items-center gap-1">
                       <Award
                         className="h-3.5 w-3.5 text-amber-500"
@@ -210,16 +218,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLogin}) => {
                     </span>
                   </div>
                 </div>
-
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-xs transition-transform group-hover:translate-x-0.5">
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </span>
               </button>
 
-              <div className="mt-3.5 flex items-center justify-between border-t border-slate-200/70 pt-3 text-xs">
+              <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3.5 text-xs">
                 <span className="font-mono-tabular text-slate-500">
                   {progress.readPartNumbers.length} notes ·{' '}
-                  {progress.correctQuizIds.length} quiz solved
+                  {progress.correctQuizIds.length} solved
                 </span>
                 <button
                   type="button"
@@ -227,7 +231,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLogin}) => {
                   className="inline-flex items-center gap-1 font-semibold text-slate-600 transition-colors hover:text-blue-600"
                 >
                   <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>{hasPin ? 'PIN Active' : 'Set 4-Digit PIN'}</span>
+                  <span>{hasPin ? 'PIN Active' : 'Set PIN'}</span>
                 </button>
               </div>
             </div>
@@ -235,7 +239,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({onLogin}) => {
         </div>
 
         <p className="flex items-center justify-center gap-1.5 text-center text-xs text-slate-500">
-          <ShieldCheck className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+          <ShieldCheck
+            className="h-3.5 w-3.5 text-slate-400"
+            aria-hidden="true"
+          />
           <span>
             Each profile keeps separate XP, streaks, quiz scores, and trophies
             offline.

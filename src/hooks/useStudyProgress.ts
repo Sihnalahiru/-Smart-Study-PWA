@@ -124,6 +124,12 @@ export function createInitialProgressState(): StudyProgressState {
     learnedVocabIds: [],
     quizQuestionStats: {},
     cbtExamHistory: [],
+    alphabetTotalSessions: 0,
+    alphabetTotalAttempts: 0,
+    alphabetTotalCorrect: 0,
+    masteredKanaIds: [],
+    masteredKanjiIds: [],
+    lastDailyPlanPopupDate: undefined,
     activities: [],
     daily: {
       date: today,
@@ -134,6 +140,11 @@ export function createInitialProgressState(): StudyProgressState {
       vocabReviewedIds: [],
       vocabReviewedCount: 0,
       dailyWrongQuizIds: [],
+      alphabetSessionsToday: 0,
+      alphabetCharsPracticedToday: 0,
+      kanjiPracticedToday: 0,
+      studySecondsToday: 0,
+      completedHomeworkIdsToday: [],
     },
   };
 }
@@ -196,6 +207,27 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
             dailyWrongQuizIds: Array.isArray(parsed.daily.dailyWrongQuizIds)
               ? parsed.daily.dailyWrongQuizIds
               : [],
+            alphabetSessionsToday:
+              typeof parsed.daily.alphabetSessionsToday === 'number'
+                ? parsed.daily.alphabetSessionsToday
+                : 0,
+            alphabetCharsPracticedToday:
+              typeof parsed.daily.alphabetCharsPracticedToday === 'number'
+                ? parsed.daily.alphabetCharsPracticedToday
+                : 0,
+            kanjiPracticedToday:
+              typeof parsed.daily.kanjiPracticedToday === 'number'
+                ? parsed.daily.kanjiPracticedToday
+                : 0,
+            studySecondsToday:
+              typeof parsed.daily.studySecondsToday === 'number'
+                ? parsed.daily.studySecondsToday
+                : 0,
+            completedHomeworkIdsToday: Array.isArray(
+              parsed.daily.completedHomeworkIdsToday,
+            )
+              ? parsed.daily.completedHomeworkIdsToday
+              : [],
           }
         : {
             date: today,
@@ -206,6 +238,11 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
             vocabReviewedIds: [],
             vocabReviewedCount: 0,
             dailyWrongQuizIds: [],
+            alphabetSessionsToday: 0,
+            alphabetCharsPracticedToday: 0,
+            kanjiPracticedToday: 0,
+            studySecondsToday: 0,
+            completedHomeworkIdsToday: [],
           };
 
     const sanitizedAttempted = Array.isArray(parsed.attemptedQuizIds)
@@ -287,6 +324,28 @@ export function loadProgressForUser(userId: UserId): StudyProgressState {
         : [],
       quizQuestionStats: hydratedStats,
       cbtExamHistory,
+      alphabetTotalSessions:
+        typeof parsed.alphabetTotalSessions === 'number'
+          ? parsed.alphabetTotalSessions
+          : 0,
+      alphabetTotalAttempts:
+        typeof parsed.alphabetTotalAttempts === 'number'
+          ? parsed.alphabetTotalAttempts
+          : 0,
+      alphabetTotalCorrect:
+        typeof parsed.alphabetTotalCorrect === 'number'
+          ? parsed.alphabetTotalCorrect
+          : 0,
+      masteredKanaIds: Array.isArray(parsed.masteredKanaIds)
+        ? parsed.masteredKanaIds
+        : [],
+      masteredKanjiIds: Array.isArray(parsed.masteredKanjiIds)
+        ? parsed.masteredKanjiIds
+        : [],
+      lastDailyPlanPopupDate:
+        typeof parsed.lastDailyPlanPopupDate === 'string'
+          ? parsed.lastDailyPlanPopupDate
+          : undefined,
       activities: Array.isArray(parsed.activities) ? parsed.activities : [],
     };
   } catch {
@@ -399,6 +458,11 @@ export function useStudyProgress(userId: UserId | null) {
             vocabReviewedIds: [],
             vocabReviewedCount: 0,
             dailyWrongQuizIds: [],
+            alphabetSessionsToday: 0,
+            alphabetCharsPracticedToday: 0,
+            kanjiPracticedToday: 0,
+            studySecondsToday: 0,
+            completedHomeworkIdsToday: [],
           };
 
     return {
@@ -877,6 +941,240 @@ export function useStudyProgress(userId: UserId | null) {
     [updateForActiveUser, showToast],
   );
 
+  const recordAlphabetPractice = useCallback(
+    (
+      charsCount: number,
+      correctCount: number,
+      attemptCount: number,
+      sessionCompleted: boolean,
+      newlyMasteredKanaIds: string[] = [],
+    ) => {
+      let earned = 0;
+      let hitDailyTwice = false;
+      updateForActiveUser((prev) => {
+        const baseXp =
+          correctCount * 2 + (sessionCompleted ? 25 : 0);
+        const {
+          today,
+          nextStreak,
+          nextBestStreak,
+          nextActiveDates,
+          streakBonus,
+          nextDaily,
+        } = computeStreakAndDaily(prev, baseXp);
+
+        const nextSessionsToday =
+          nextDaily.alphabetSessionsToday + (sessionCompleted ? 1 : 0);
+        const twiceBonus =
+          sessionCompleted && nextSessionsToday === 2 ? 25 : 0;
+        if (twiceBonus > 0) hitDailyTwice = true;
+
+        earned = baseXp + twiceBonus + streakBonus;
+        const mergedKana = Array.from(
+          new Set([...prev.masteredKanaIds, ...newlyMasteredKanaIds]),
+        );
+
+        const nextActivities = [...prev.activities];
+        if (sessionCompleted) {
+          nextActivities.unshift(
+            makeActivity(
+              'Alphabet Shift Complete',
+              baseXp + twiceBonus,
+              `Shift ${nextSessionsToday}/2 today · ${charsCount} Kana practiced`,
+            ),
+          );
+        } else if (baseXp > 0) {
+          nextActivities.unshift(
+            makeActivity(
+              'Kana Drill',
+              baseXp,
+              `${correctCount}/${attemptCount} accurate`,
+            ),
+          );
+        }
+
+        if (streakBonus > 0) {
+          nextActivities.unshift(
+            makeActivity(
+              'Streak Milestone Bonus',
+              streakBonus,
+              `${nextStreak}-Day Streak Badge`,
+            ),
+          );
+        }
+
+        return {
+          ...prev,
+          xp: prev.xp + earned,
+          streakDays: nextStreak,
+          bestStreak: nextBestStreak,
+          lastActiveDate: today,
+          activeDates: nextActiveDates,
+          alphabetTotalSessions:
+            prev.alphabetTotalSessions + (sessionCompleted ? 1 : 0),
+          alphabetTotalAttempts: prev.alphabetTotalAttempts + attemptCount,
+          alphabetTotalCorrect: prev.alphabetTotalCorrect + correctCount,
+          masteredKanaIds: mergedKana,
+          daily: {
+            ...nextDaily,
+            xpEarnedToday: nextDaily.xpEarnedToday + twiceBonus,
+            alphabetSessionsToday: nextSessionsToday,
+            alphabetCharsPracticedToday:
+              nextDaily.alphabetCharsPracticedToday + charsCount,
+          },
+          activities: nextActivities.slice(0, 30),
+        };
+      });
+      if (earned > 0) {
+        showToast(
+          earned,
+          hitDailyTwice
+            ? '2× Daily Alphabet Goal Complete!'
+            : sessionCompleted
+              ? 'Alphabet shift completed'
+              : 'Kana practiced',
+        );
+      }
+    },
+    [updateForActiveUser, showToast],
+  );
+
+  const recordKanjiPractice = useCallback(
+    (kanjiId: string, isCorrect: boolean, label?: string) => {
+      let earned = 0;
+      updateForActiveUser((prev) => {
+        const alreadyMastered = prev.masteredKanjiIds.includes(kanjiId);
+        const baseXp = isCorrect ? (alreadyMastered ? 2 : 6) : 1;
+        const {
+          today,
+          nextStreak,
+          nextBestStreak,
+          nextActiveDates,
+          streakBonus,
+          nextDaily,
+        } = computeStreakAndDaily(prev, baseXp);
+        earned = baseXp + streakBonus;
+
+        const nextMastered =
+          isCorrect && !alreadyMastered
+            ? [...prev.masteredKanjiIds, kanjiId]
+            : prev.masteredKanjiIds;
+
+        const nextActivities = [...prev.activities];
+        if (!alreadyMastered && isCorrect) {
+          nextActivities.unshift(
+            makeActivity('Mastered Main Kanji', baseXp, label || kanjiId),
+          );
+        }
+
+        return {
+          ...prev,
+          xp: prev.xp + earned,
+          streakDays: nextStreak,
+          bestStreak: nextBestStreak,
+          lastActiveDate: today,
+          activeDates: nextActiveDates,
+          masteredKanjiIds: nextMastered,
+          daily: {
+            ...nextDaily,
+            kanjiPracticedToday: nextDaily.kanjiPracticedToday + 1,
+          },
+          activities: nextActivities.slice(0, 30),
+        };
+      });
+      if (earned >= 6) {
+        showToast(earned, 'Main Kanji mastered');
+      }
+    },
+    [updateForActiveUser, showToast],
+  );
+
+  const addStudySeconds = useCallback(
+    (seconds: number) => {
+      if (seconds <= 0) return;
+      updateForActiveUser((prev) => {
+        const today = getTodayKey();
+        const baseDaily =
+          prev.daily.date === today
+            ? prev.daily
+            : {
+                date: today,
+                flashcardsReviewed: 0,
+                quizAnswered: 0,
+                notesCompleted: 0,
+                xpEarnedToday: 0,
+                vocabReviewedIds: [],
+                vocabReviewedCount: 0,
+                dailyWrongQuizIds: [],
+                alphabetSessionsToday: 0,
+                alphabetCharsPracticedToday: 0,
+                kanjiPracticedToday: 0,
+                studySecondsToday: 0,
+                completedHomeworkIdsToday: [],
+              };
+        return {
+          ...prev,
+          daily: {
+            ...baseDaily,
+            studySecondsToday: baseDaily.studySecondsToday + seconds,
+          },
+        };
+      });
+    },
+    [updateForActiveUser],
+  );
+
+  const toggleHomeworkTask = useCallback(
+    (taskId: string) => {
+      updateForActiveUser((prev) => {
+        const today = getTodayKey();
+        const baseDaily =
+          prev.daily.date === today
+            ? prev.daily
+            : {
+                date: today,
+                flashcardsReviewed: 0,
+                quizAnswered: 0,
+                notesCompleted: 0,
+                xpEarnedToday: 0,
+                vocabReviewedIds: [],
+                vocabReviewedCount: 0,
+                dailyWrongQuizIds: [],
+                alphabetSessionsToday: 0,
+                alphabetCharsPracticedToday: 0,
+                kanjiPracticedToday: 0,
+                studySecondsToday: 0,
+                completedHomeworkIdsToday: [],
+              };
+        const exists = baseDaily.completedHomeworkIdsToday.includes(taskId);
+        const nextTasks = exists
+          ? baseDaily.completedHomeworkIdsToday.filter((id) => id !== taskId)
+          : [...baseDaily.completedHomeworkIdsToday, taskId];
+        return {
+          ...prev,
+          daily: {
+            ...baseDaily,
+            completedHomeworkIdsToday: nextTasks,
+          },
+        };
+      });
+    },
+    [updateForActiveUser],
+  );
+
+  const markDailyPlanPopupShown = useCallback(
+    (dateKey: string) => {
+      updateForActiveUser((prev) => {
+        if (prev.lastDailyPlanPopupDate === dateKey) return null;
+        return {
+          ...prev,
+          lastDailyPlanPopupDate: dateKey,
+        };
+      });
+    },
+    [updateForActiveUser],
+  );
+
   const resetProgress = useCallback(() => {
     if (!userId) return;
     const fresh = createInitialProgressState();
@@ -911,6 +1209,11 @@ export function useStudyProgress(userId: UserId | null) {
     markVocabReviewed,
     recordQuizAnswer,
     recordCbtExamAttempt,
+    recordAlphabetPractice,
+    recordKanjiPractice,
+    addStudySeconds,
+    toggleHomeworkTask,
+    markDailyPlanPopupShown,
     resetProgress,
   };
 }

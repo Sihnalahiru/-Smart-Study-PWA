@@ -15,10 +15,12 @@ import {
   Languages,
   Maximize2,
   Search,
+  Volume2,
   X,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
+import {playSfx, speakJapanese} from '../utils/soundEffects';
 import {
   extractSearchableText,
   FuriganaText,
@@ -70,12 +72,14 @@ interface ParsedPartNotes {
 }
 
 function getPageLabelFromSrc(src: string): string {
-  const match = src.match(/page-0*(\d+)\./i);
-  if (match) return `p.${match[1]}`;
+  const figMatch = src.match(/fig-p0*(\d+)-obj(\d+)\./i);
+  if (figMatch) return `p.${figMatch[1]} Fig`;
+  const pageMatch = src.match(/page-0*(\d+)\./i);
+  if (pageMatch) return `p.${pageMatch[1]}`;
   if (src.includes('diagram-')) {
     return 'Diagram';
   }
-  return src.split('/').pop() || 'PDF Visual';
+  return src.split('/').pop() || 'Textbook Figure';
 }
 
 function countMarkdownImages(md: string): number {
@@ -425,12 +429,12 @@ const ResilientNoteImage: React.FC<ResilientImageProps> = ({
 
   if (!src || hasError) {
     return (
-      <figure className="my-3 rounded-xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-slate-100/60 p-4 text-center">
-        <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-slate-200/70 text-slate-500">
+      <figure className="my-2 rounded-xl border border-slate-200/80 bg-gradient-to-b from-slate-50 to-slate-100/60 p-3 text-center">
+        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200/70 text-slate-500">
           <ImageOff className="h-4 w-4" aria-hidden="true" />
         </div>
-        <figcaption className="mt-2 text-xs text-slate-600">
-          {alt || 'Extracted PDF diagram'} {src ? `(${src})` : ''}
+        <figcaption className="mt-1.5 text-[11px] text-slate-600">
+          {alt || 'Textbook figure'} {src ? `(${src})` : ''}
         </figcaption>
       </figure>
     );
@@ -439,30 +443,33 @@ const ResilientNoteImage: React.FC<ResilientImageProps> = ({
   const pageLabel = getPageLabelFromSrc(src);
 
   return (
-    <figure className="group my-3 overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-2xs">
-      <div className="relative bg-gradient-to-b from-slate-50/90 to-slate-100/40 p-2 sm:p-2.5">
+    <figure className="group my-2.5 flex flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-2xs">
+      <div className="relative bg-gradient-to-b from-slate-50/90 to-slate-100/40 p-2">
         <button
           type="button"
-          onClick={() => onZoom?.(src, alt || pageLabel)}
-          className="relative block w-full cursor-zoom-in overflow-hidden rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          onClick={() => {
+            playSfx('click');
+            onZoom?.(src, alt || pageLabel);
+          }}
+          className="relative flex w-full cursor-zoom-in items-center justify-center overflow-hidden rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           aria-label={`Zoom ${alt || pageLabel}`}
         >
           <img
             src={src}
-            alt={alt || `Original PDF ${pageLabel}`}
+            alt={alt || `Textbook ${pageLabel}`}
             loading="lazy"
             referrerPolicy="no-referrer"
             onError={() => setHasError(true)}
-            className="mx-auto max-h-[380px] w-auto max-w-full rounded-lg border border-slate-200/70 bg-white object-contain shadow-2xs transition-transform duration-200 group-hover:scale-[1.01]"
+            className="mx-auto max-h-[280px] w-auto max-w-full rounded-lg border border-slate-200/70 bg-white object-contain shadow-2xs transition-transform duration-200 group-hover:scale-[1.01]"
           />
-          <span className="font-mono-tabular absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-lg border border-slate-200/90 bg-white/95 px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-xs backdrop-blur-xs">
-            <Maximize2 className="h-3 w-3 text-blue-600" aria-hidden="true" />
+          <span className="font-mono-tabular absolute right-1.5 bottom-1.5 inline-flex items-center gap-1 rounded-md border border-slate-200/90 bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 shadow-xs backdrop-blur-xs">
+            <Maximize2 className="h-2.5 w-2.5 text-blue-600" aria-hidden="true" />
             <span>{pageLabel}</span>
           </span>
         </button>
       </div>
       {alt && (
-        <figcaption className="border-t border-slate-200/80 bg-white px-3.5 py-2 text-xs font-medium text-slate-600">
+        <figcaption className="border-t border-slate-200/80 bg-white px-2.5 py-1.5 text-[11px] font-medium leading-snug text-slate-600">
           <FuriganaText text={alt} showFurigana={showFurigana} />
         </figcaption>
       )}
@@ -549,7 +556,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
             ...prev,
             index: nextIdx,
             src: nextSrc,
-            alt: `Original PDF ${getPageLabelFromSrc(nextSrc)}`,
+            alt: `Textbook ${getPageLabelFromSrc(nextSrc)}`,
           };
         });
       } else if (e.key === 'ArrowLeft' && lightbox.gallery.length > 1) {
@@ -562,7 +569,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
             ...prev,
             index: nextIdx,
             src: nextSrc,
-            alt: `Original PDF ${getPageLabelFromSrc(nextSrc)}`,
+            alt: `Textbook ${getPageLabelFromSrc(nextSrc)}`,
           };
         });
       }
@@ -597,7 +604,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
         ...prev,
         index: nextIdx,
         src: nextSrc,
-        alt: `Original PDF ${getPageLabelFromSrc(nextSrc)}`,
+        alt: `Textbook ${getPageLabelFromSrc(nextSrc)}`,
       };
     });
   };
@@ -650,13 +657,29 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
           </h4>
         ),
         p: ({children}) => {
-          const childArr = React.Children.toArray(children);
-          const isOnlyImage =
-            childArr.length === 1 &&
-            React.isValidElement(childArr[0]) &&
-            childArr[0].type === 'img';
-          if (isOnlyImage) {
-            return <div className="my-2">{children}</div>;
+          const childArr = React.Children.toArray(children).filter(
+            (c) => typeof c !== 'string' || c.trim().length > 0,
+          );
+          const isImageOnly =
+            childArr.length > 0 &&
+            childArr.every(
+              (c) =>
+                React.isValidElement(c) &&
+                (c.type === 'img' ||
+                  (typeof c.props === 'object' &&
+                    c.props !== null &&
+                    'src' in (c.props as Record<string, unknown>) &&
+                    !('href' in (c.props as Record<string, unknown>)))),
+            );
+          if (isImageOnly) {
+            if (childArr.length >= 2) {
+              return (
+                <div className="my-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 [&>figure]:my-0 [&>figure_img]:max-h-[145px]">
+                  {childArr}
+                </div>
+              );
+            }
+            return <div className="my-2.5">{childArr}</div>;
           }
           return (
             <div className="my-2.5 rounded-xl border border-slate-200/70 bg-slate-50/50 px-3.5 py-3 sm:px-4">
@@ -857,14 +880,10 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                     <span className="truncate">{part.source_pdf}</span>
                   </span>
                   {partImages.length > 0 && (() => {
-                    const pageScans = partImages.filter((src) =>
-                      /page-0*\d+/i.test(src),
-                    );
-                    const diagramsCount = partImages.length - pageScans.length;
-                    const rangeText =
-                      pageScans.length > 0
-                        ? `${getPageLabelFromSrc(pageScans[0])}–${getPageLabelFromSrc(pageScans[pageScans.length - 1])}`
-                        : `${partImages.length} visuals`;
+                    const diagramsCount = partImages.filter((src) =>
+                      src.includes('diagram-'),
+                    ).length;
+                    const figuresCount = partImages.length - diagramsCount;
                     return (
                       <>
                         <span aria-hidden="true">·</span>
@@ -874,8 +893,8 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                             aria-hidden="true"
                           />
                           <span>
-                            {pageScans.length} PDF Pages ({rangeText})
-                            {diagramsCount > 0 ? ` + ${diagramsCount} Diagrams` : ''}
+                            {figuresCount} Figures
+                            {diagramsCount > 0 ? ` · ${diagramsCount} Diagrams` : ''}
                           </span>
                         </span>
                       </>
@@ -891,7 +910,10 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                   <button
                     type="button"
                     disabled={isCompleted}
-                    onClick={() => onMarkPartRead(part.part_number, part.title)}
+                    onClick={() => {
+                      playSfx('complete');
+                      onMarkPartRead(part.part_number, part.title);
+                    }}
                     className={`inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
                       isCompleted
                         ? 'border border-emerald-200 bg-gradient-to-b from-emerald-50 to-teal-50/70 text-emerald-700'
@@ -907,12 +929,13 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                   {totalSubtopics > 0 && (
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        playSfx('click');
                         setAllSubtopicsForTopics(
                           visibleTopics,
                           !allVisibleExpanded,
-                        )
-                      }
+                        );
+                      }}
                       className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                     >
                       {allVisibleExpanded ? (
@@ -929,12 +952,13 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                   {partImages.length > 0 && (
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        playSfx('click');
                         setShowAllScansDrawer((prev) => ({
                           ...prev,
                           [part.part_number]: !prev[part.part_number],
-                        }))
-                      }
+                        }));
+                      }}
                       className={`inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors ${
                         isAllScansOpen
                           ? 'border-blue-300 bg-blue-50/70 text-blue-700'
@@ -943,29 +967,29 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                     >
                       <Images className="h-3.5 w-3.5" aria-hidden="true" />
                       <span>
-                        {isAllScansOpen ? 'Hide Full Scans' : `Browse All ${partImages.length} Visuals`}
+                        {isAllScansOpen ? 'Hide Figures' : `All Chapter Figures (${partImages.length})`}
                       </span>
                     </button>
                   )}
                 </div>
               </header>
 
-              {/* Optional On-Demand Full Visual Gallery (Collapsed by Default to Prevent Bloat) */}
+              {/* Optional On-Demand Chapter Figures Gallery */}
               {isAllScansOpen && partImages.length > 0 && (
                 <section
-                  aria-label={`Original PDF pages for Part ${part.part_number}`}
+                  aria-label={`Textbook figures for Part ${part.part_number}`}
                   className="mt-4 rounded-xl border border-slate-200/90 bg-gradient-to-b from-slate-50/90 to-white p-3.5"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="text-xs font-bold text-slate-900">
                         <FuriganaText
-                          text="{原本|げんぽん}PDF{全|ぜん}ページ{一覧|いちらん} (Original Scans & Diagrams)"
+                          text="{教科書|きょうかしょ}{図解|ずかい}・{図表|ずひょう}{一覧|いちらん} (Textbook Figures & Diagrams)"
                           showFurigana={showFurigana}
                         />
                       </p>
                       <p className="text-[11px] text-slate-500">
-                        Tap any scan to zoom &amp; swipe across pages
+                        Tap any extracted figure to zoom &amp; swipe
                       </p>
                     </div>
 
@@ -1000,7 +1024,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                           onClick={() =>
                             openLightbox(
                               imgSrc,
-                              `Part ${part.part_number} · Original PDF ${pageLabel}`,
+                              `Part ${part.part_number} · ${pageLabel}`,
                               partImages,
                             )
                           }
@@ -1009,14 +1033,14 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                               ? 'w-full'
                               : 'w-24 shrink-0 sm:w-28'
                           }`}
-                          aria-label={`View original textbook ${pageLabel}`}
+                          aria-label={`View textbook ${pageLabel}`}
                         >
-                          <div className="aspect-[3/4] w-full overflow-hidden rounded-md bg-slate-100">
+                          <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-slate-50 p-1">
                             <img
                               src={imgSrc}
-                              alt={`Original textbook ${pageLabel}`}
+                              alt={`Textbook ${pageLabel}`}
                               loading="lazy"
-                              className="h-full w-full object-cover object-top transition-transform duration-200 group-hover:scale-105"
+                              className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
                             />
                           </div>
                           <div className="mt-1 flex items-center justify-between px-1">
@@ -1194,6 +1218,31 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
 
                                 {isOpen && (
                                   <div className="border-t border-slate-100 bg-white px-3.5 py-3.5 sm:px-5 sm:py-4">
+                                    <div className="mb-2 flex justify-end">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          playSfx('click');
+                                          const jpLines = sub.markdown
+                                            .split(/\r?\n/)
+                                            .filter(
+                                              (l) =>
+                                                l.trim() &&
+                                                !l.trim().startsWith('![') &&
+                                                !l.trim().startsWith('|') &&
+                                                !/[\u0D80-\u0DFF]/.test(l) &&
+                                                /[\u3040-\u30ff\u4e00-\u9faf]/.test(l),
+                                            )
+                                            .slice(0, 4)
+                                            .join('。');
+                                          speakJapanese(jpLines || sub.title);
+                                        }}
+                                        className="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border border-slate-200/90 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                                      >
+                                        <Volume2 className="h-3.5 w-3.5 text-blue-600" aria-hidden="true" />
+                                        <span>Listen (JP)</span>
+                                      </button>
+                                    </div>
                                     {renderMarkdownBlock(sub.markdown, partImages)}
                                   </div>
                                 )}
@@ -1211,12 +1260,12 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
         })}
       </div>
 
-      {/* Interactive Fullscreen Original PDF Image Lightbox */}
+      {/* Interactive Fullscreen Figure Lightbox */}
       {lightbox && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Original PDF Page Viewer"
+          aria-label="Textbook Figure Viewer"
           className="fixed inset-0 z-50 flex flex-col bg-slate-950/90 backdrop-blur-md"
           onClick={() => setLightbox(null)}
         >
@@ -1295,7 +1344,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                 className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-4 text-xs font-semibold text-white hover:bg-white/20"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                <span>Prev Page</span>
+                <span>Prev Figure</span>
               </button>
 
               <span className="font-mono-tabular text-xs font-semibold text-slate-300">
@@ -1307,7 +1356,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                 onClick={() => stepLightbox(1)}
                 className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-4 text-xs font-semibold text-white hover:bg-white/20"
               >
-                <span>Next Page</span>
+                <span>Next Figure</span>
                 <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>

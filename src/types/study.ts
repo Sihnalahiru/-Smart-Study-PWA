@@ -149,6 +149,7 @@ export type ActiveTab =
   | 'library'
   | 'notes'
   | 'flashcards'
+  | 'kana'
   | 'quiz';
 
 export interface VocabItem {
@@ -180,6 +181,11 @@ export interface DailyProgress {
   vocabReviewedIds: string[];
   vocabReviewedCount: number;
   dailyWrongQuizIds: string[];
+  alphabetSessionsToday: number;
+  alphabetCharsPracticedToday: number;
+  kanjiPracticedToday: number;
+  studySecondsToday: number;
+  completedHomeworkIdsToday: string[];
 }
 
 export interface QuizQuestionStat {
@@ -202,6 +208,12 @@ export interface StudyProgressState {
   learnedVocabIds: string[];
   quizQuestionStats?: Record<string, QuizQuestionStat>;
   cbtExamHistory?: CbtExamAttempt[];
+  alphabetTotalSessions: number;
+  alphabetTotalAttempts: number;
+  alphabetTotalCorrect: number;
+  masteredKanaIds: string[];
+  masteredKanjiIds: string[];
+  lastDailyPlanPopupDate?: string;
   activities: XpActivity[];
   daily: DailyProgress;
 }

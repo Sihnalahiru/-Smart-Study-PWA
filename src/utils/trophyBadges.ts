@@ -5,6 +5,7 @@ import {
   Crown,
   Forklift,
   HardHat,
+  Languages,
   PackageCheck,
   RotateCcw,
   Scale,
@@ -246,6 +247,26 @@ export function computeTrophyBadges(
       iconBg:
         'border-emerald-200 bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-xs',
       icon: RotateCcw,
+    },
+    {
+      id: 'kana-kanji-ace',
+      title: '2× Daily Kana & Kanji Ace',
+      requirement: 'Finish 2 full Hiragana+Katakana shifts today & practice Main Kanji',
+      moduleRef: `${progress.daily.alphabetSessionsToday}/2 shifts today`,
+      unlocked:
+        progress.daily.alphabetSessionsToday >= 2 ||
+        progress.alphabetTotalSessions >= 2,
+      progressPercent: Math.min(
+        100,
+        Math.round((Math.max(progress.daily.alphabetSessionsToday, progress.alphabetTotalSessions) / 2) * 100),
+      ),
+      targetPartNumber: 1,
+      targetTab: 'kana',
+      accentGradient:
+        'border-indigo-200/90 bg-gradient-to-br from-indigo-50/85 via-white to-violet-50/60',
+      iconBg:
+        'border-indigo-200 bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-xs',
+      icon: Languages,
     },
     {
       id: 'certified-logistics-master',

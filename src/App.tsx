@@ -4,7 +4,9 @@ import {
   BookOpen,
   CheckSquare,
   ChevronDown,
+  Clock,
   Flame,
+  Languages,
   Layers,
   LayoutDashboard,
   Library,
@@ -14,10 +16,17 @@ import {
   Search,
   ShieldCheck,
   Users,
+  Volume2,
+  VolumeX,
   X,
 } from 'lucide-react';
 import manifestData from './data/manifest.json';
 import {VOCAB_DAILY_TARGET} from './data/vocabulary';
+import {
+  DailyStudyPlanModal,
+  type DailyPlanLaunchAction,
+  formatStudyDuration,
+} from './components/DailyStudyPlanModal';
 import {DashboardTab} from './components/DashboardTab';
 import {EmptyStudyState} from './components/EmptyStudyState';
 import {
@@ -25,13 +34,14 @@ import {
   type FlashcardViewMode,
 } from './components/FlashcardsTab';
 import {GlobalSearchModal} from './components/GlobalSearchModal';
+import {KanaKanjiTab} from './components/KanaKanjiTab';
 import {LoginScreen} from './components/LoginScreen';
 import {OfflineIndicator} from './components/OfflineIndicator';
 import {PWAInstallButton} from './components/PWAInstallButton';
 import {QuizTab, type QuizFilter} from './components/QuizTab';
 import {StudyLibraryTab} from './components/StudyLibraryTab';
 import {StudyNotesTab} from './components/StudyNotesTab';
-import {useStudyProgress} from './hooks/useStudyProgress';
+import {getTodayKey, useStudyProgress} from './hooks/useStudyProgress';
 import type {
   ActiveTab,
   SearchNavigationTarget,
@@ -39,6 +49,7 @@ import type {
   StudyPart,
   UserId,
 } from './types/study';
+import {isSoundEnabled, playSfx, setSoundEnabled} from './utils/soundEffects';
 import {
   getStoredActiveUserId,
   getUserProfile,
@@ -89,6 +100,13 @@ const NAV_ITEMS: NavItem[] = [
     icon: Layers,
   },
   {
+    id: 'kana',
+    label: 'Kana & Kanji',
+    shortLabel: 'Kana',
+    section: 'study',
+    icon: Languages,
+  },
+  {
     id: 'quiz',
     label: 'Quiz (日本語)',
     shortLabel: 'Quiz',
@@ -119,6 +137,8 @@ export default function App() {
   const [flashcardModeKey, setFlashcardModeKey] = useState(0);
   const [quizInitialFilter, setQuizInitialFilter] = useState<QuizFilter>('all');
   const [quizFilterKey, setQuizFilterKey] = useState(0);
+  const [isDailyPlanOpen, setIsDailyPlanOpen] = useState(false);
+  const [isSoundOn, setIsSoundOn] = useState<boolean>(() => isSoundEnabled());
 
   const activeUser = useMemo(
     () => (activeUserId ? getUserProfile(activeUserId) : null),
@@ -138,6 +158,12 @@ export default function App() {
     markFlashcardMastered,
     markVocabReviewed,
     recordQuizAnswer,
+    recordCbtExamAttempt,
+    recordAlphabetPractice,
+    recordKanjiPractice,
+    addStudySeconds,
+    toggleHomeworkTask,
+    markDailyPlanPopupShown,
   } = useStudyProgress(activeUserId);
 
   const manifest = manifestData as StudyManifest;
@@ -235,6 +261,36 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleGlobalKey);
   }, [isFocusMode, isSearchOpen, exitFocusMode]);
 
+  useEffect(() => {
+    if (!activeUserId) return;
+    const todayKey = getTodayKey();
+    if (progress.lastDailyPlanPopupDate !== todayKey) {
+      setIsDailyPlanOpen(true);
+      markDailyPlanPopupShown(todayKey);
+    }
+  }, [activeUserId, progress.lastDailyPlanPopupDate, markDailyPlanPopupShown]);
+
+  useEffect(() => {
+    if (!activeUserId) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        addStudySeconds(5);
+      }
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [activeUserId, addStudySeconds]);
+
+  const toggleSound = useCallback(() => {
+    setIsSoundOn((prev) => {
+      const next = !prev;
+      setSoundEnabled(next);
+      if (next) {
+        playSfx('click');
+      }
+      return next;
+    });
+  }, []);
+
   const handleLogin = (userId: UserId) => {
     setStoredActiveUserId(userId);
     setActiveUserId(userId);
@@ -246,6 +302,7 @@ export default function App() {
     if (isFocusMode) {
       exitFocusMode();
     }
+    setIsDailyPlanOpen(false);
     setIsAccountMenuOpen(false);
     setStoredActiveUserId(null);
     setActiveUserId(null);
@@ -311,6 +368,30 @@ export default function App() {
     }
     setActiveTab(tab);
   };
+
+  const handleLaunchDailyPlanAction = useCallback(
+    (action: DailyPlanLaunchAction) => {
+      setIsDailyPlanOpen(false);
+      if (action === 'vocab') {
+        handleOpenVocabSprint();
+      } else if (action === 'mistakes') {
+        handleOpenMistakeReview();
+      } else if (action === 'kana') {
+        setActiveTab('kana');
+      } else if (action === 'notes') {
+        setActiveTab('notes');
+      } else if (action === 'flashcards') {
+        setFlashcardInitialMode('cards');
+        setFlashcardModeKey((prev) => prev + 1);
+        setActiveTab('flashcards');
+      } else if (action === 'quiz') {
+        setQuizInitialFilter('all');
+        setQuizFilterKey((prev) => prev + 1);
+        setActiveTab('quiz');
+      }
+    },
+    [handleOpenVocabSprint, handleOpenMistakeReview],
+  );
 
   if (!activeUserId || !activeUser) {
     return (
@@ -656,6 +737,35 @@ export default function App() {
                     />
                   </div>
 
+                  {/* Daily 3-Hour Tasks Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playSfx('click');
+                      setIsDailyPlanOpen(true);
+                    }}
+                    title={`Today's 3-Hour Tasks (${formatStudyDuration(progress.daily.studySecondsToday ?? 0)})`}
+                    className="inline-flex min-h-[38px] items-center gap-1 rounded-xl border border-blue-200/90 bg-blue-50/80 px-2.5 py-1.5 text-xs font-semibold text-blue-700 shadow-xs transition-colors hover:bg-blue-100 whitespace-nowrap shrink-0"
+                  >
+                    <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span className="hidden sm:inline">Tasks</span>
+                  </button>
+
+                  {/* Sound Effects Mute/Unmute Toggle */}
+                  <button
+                    type="button"
+                    onClick={toggleSound}
+                    aria-label={isSoundOn ? 'Mute study sounds' : 'Unmute study sounds'}
+                    title={isSoundOn ? 'Sounds On' : 'Sounds Muted'}
+                    className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-white/85 text-slate-700 shadow-xs transition-colors hover:border-slate-300 hover:bg-white"
+                  >
+                    {isSoundOn ? (
+                      <Volume2 className="h-4 w-4 text-blue-600" aria-hidden="true" />
+                    ) : (
+                      <VolumeX className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                    )}
+                  </button>
+
                   {/* Focus Mode Button */}
                   <button
                     type="button"
@@ -665,7 +775,7 @@ export default function App() {
                     className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/85 px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-700 whitespace-nowrap shrink-0"
                   >
                     <Maximize2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    <span>Focus Mode</span>
+                    <span className="hidden sm:inline">Focus Mode</span>
                   </button>
 
                   {/* Active Profile Avatar / Switcher Trigger */}
@@ -763,6 +873,7 @@ export default function App() {
               }}
               onOpenVocabSprint={handleOpenVocabSprint}
               onOpenMistakeReview={handleOpenMistakeReview}
+              onOpenDailyPlan={() => setIsDailyPlanOpen(true)}
               onEnterFocusMode={() => enterFocusMode()}
             />
           ) : activeTab === 'library' ? (
@@ -772,6 +883,19 @@ export default function App() {
               onSelectPartAndTab={handleSelectPartAndTab}
               onOpenVocabSprint={handleOpenVocabSprint}
               onOpenSearch={() => setIsSearchOpen(true)}
+              onNavigateKana={() => setActiveTab('kana')}
+            />
+          ) : activeTab === 'kana' ? (
+            <KanaKanjiTab
+              alphabetSessionsToday={progress.daily.alphabetSessionsToday ?? 0}
+              alphabetTotalSessions={progress.alphabetTotalSessions}
+              alphabetTotalCorrect={progress.alphabetTotalCorrect}
+              alphabetTotalAttempts={progress.alphabetTotalAttempts}
+              masteredKanaIds={progress.masteredKanaIds}
+              masteredKanjiIds={progress.masteredKanjiIds}
+              kanjiPracticedToday={progress.daily.kanjiPracticedToday ?? 0}
+              onRecordAlphabetPractice={recordAlphabetPractice}
+              onRecordKanjiPractice={recordKanjiPractice}
             />
           ) : allParts.length === 0 ? (
             <EmptyStudyState onGoToLibrary={() => setActiveTab('library')} />
@@ -811,6 +935,7 @@ export default function App() {
               initialFilter={quizInitialFilter}
               filterTriggerKey={quizFilterKey}
               onRecordQuizAnswer={recordQuizAnswer}
+              onRecordCbtExamAttempt={recordCbtExamAttempt}
             />
           )}
 
@@ -843,7 +968,7 @@ export default function App() {
       {!isFocusMode && (
         <nav
           aria-label="Mobile study navigation"
-          className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-5 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
+          className="surface-nav-glass fixed inset-x-0 bottom-0 z-30 grid h-14 grid-cols-6 border-t border-slate-200/80 shadow-[0_-6px_24px_-12px_rgba(15,23,42,0.12)] md:hidden"
         >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -968,6 +1093,16 @@ export default function App() {
         onClose={() => setIsSearchOpen(false)}
         parts={allParts}
         onNavigate={handleSearchNavigate}
+      />
+
+      {/* Daily 3-Hour Study Plan & Homework Popup */}
+      <DailyStudyPlanModal
+        isOpen={isDailyPlanOpen}
+        onClose={() => setIsDailyPlanOpen(false)}
+        activeUser={activeUser}
+        progress={progress}
+        onToggleHomeworkTask={toggleHomeworkTask}
+        onLaunchAction={handleLaunchDailyPlanAction}
       />
 
       {/* Premium XP Reward Toast */}

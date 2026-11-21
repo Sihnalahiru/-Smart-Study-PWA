@@ -7,17 +7,22 @@ import {
   Eye,
   Languages,
   Layers,
+  RefreshCw,
   RotateCcw,
   Shuffle,
   Sparkles,
+  Volume2,
 } from 'lucide-react';
 import {FuriganaText} from './FuriganaText';
 import {
   buildDailyVocabDeck,
-  getVocabByPart,
+  getVocabBySubtopic,
   VOCAB_DAILY_TARGET,
+  VOCAB_SUBTOPICS,
   WAREHOUSE_VOCABULARY,
+  type VocabSubtopicId,
 } from '../data/vocabulary';
+import {playSfx, speakJapanese} from '../utils/soundEffects';
 import type {FlashcardItem, StudyPart, VocabItem} from '../types/study';
 
 export type FlashcardViewMode = 'cards' | 'vocab';
@@ -206,22 +211,35 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
     setIsFlipped(false);
   };
 
-  // --- Daily 25 Vocab Sprint State ---
+  // --- Unlimited Auto-Renewing Daily Vocab Sprint State ---
   const [vocabScope, setVocabScope] = useState<'daily25' | number>('daily25');
+  const [vocabSubtopic, setVocabSubtopic] = useState<VocabSubtopicId>('all');
+  const [batchSeed, setBatchSeed] = useState<number>(0);
   const [vocabIndex, setVocabIndex] = useState(0);
   const [vocabRevealed, setVocabRevealed] = useState(false);
 
-  const vocabDeck = useMemo<VocabItem[]>(() => {
-    if (vocabScope === 'daily25') {
-      return buildDailyVocabDeck(learnedVocabIds, undefined, vocabDailyTarget);
+  const subtopicPoolCount = useMemo(() => {
+    let list = getVocabBySubtopic(vocabSubtopic);
+    if (typeof vocabScope === 'number') {
+      list = list.filter((v) => v.partNumber === vocabScope);
     }
-    return getVocabByPart(vocabScope);
-  }, [vocabScope, learnedVocabIds, vocabDailyTarget]);
+    return list.length;
+  }, [vocabSubtopic, vocabScope]);
+
+  const vocabDeck = useMemo<VocabItem[]>(() => {
+    return buildDailyVocabDeck(
+      learnedVocabIds,
+      typeof vocabScope === 'number' ? vocabScope : undefined,
+      vocabDailyTarget,
+      vocabSubtopic,
+      batchSeed,
+    );
+  }, [vocabScope, vocabSubtopic, batchSeed, learnedVocabIds, vocabDailyTarget]);
 
   useEffect(() => {
     setVocabIndex(0);
     setVocabRevealed(false);
-  }, [vocabScope]);
+  }, [vocabScope, vocabSubtopic, batchSeed]);
 
   const safeVocabIndex =
     vocabDeck.length > 0 ? Math.min(vocabIndex, vocabDeck.length - 1) : 0;
@@ -412,9 +430,20 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
             </div>
 
             <div className="perspective-1200">
-              <button
-                type="button"
-                onClick={() => setIsFlipped((prev) => !prev)}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  playSfx('flip');
+                  setIsFlipped((prev) => !prev);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    playSfx('flip');
+                    setIsFlipped((prev) => !prev);
+                  }
+                }}
                 aria-pressed={isFlipped}
                 className="group relative block h-[370px] w-full cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 sm:h-[400px]"
               >
@@ -427,7 +456,20 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                   <div className="surface-card backface-hidden absolute inset-0 flex flex-col justify-between rounded-2xl p-6 sm:p-8">
                     <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
                       <span className="tracking-wide text-blue-600">Question</span>
-                      <span className="truncate">{currentCard.partTitle}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate">{currentCard.partTitle}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            speakJapanese(currentCard.question);
+                          }}
+                          aria-label="Listen to question in Japanese"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                        >
+                          <Volume2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="my-auto flex max-h-[240px] items-center justify-center overflow-y-auto py-3">
@@ -447,7 +489,20 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                   <div className="surface-hero backface-hidden rotate-y-180 absolute inset-0 flex flex-col justify-between rounded-2xl p-6 text-white sm:p-8">
                     <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-400">
                       <span className="text-amber-300">Answer</span>
-                      <span className="truncate">{currentCard.partTitle}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate">{currentCard.partTitle}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            speakJapanese(currentCard.answer);
+                          }}
+                          aria-label="Listen to answer in Japanese"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                        >
+                          <Volume2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="my-auto flex max-h-[250px] items-center justify-center overflow-y-auto py-3">
@@ -463,13 +518,14 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                     </div>
                   </div>
                 </div>
-              </button>
+              </div>
             </div>
 
             <div className="space-y-2.5">
               <button
                 type="button"
                 onClick={() => {
+                  playSfx('complete');
                   onMarkFlashcardMastered(
                     currentCard.id,
                     `Part ${currentCard.partNumber} · Card ${currentCard.originalIndexInPart + 1}`,
@@ -512,14 +568,14 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
           </>
         )
       ) : (
-        /* Daily 25 Vocabulary Sprint */
+        /* Unlimited Auto-Renewing Daily Vocab Sprint */
         <div className="space-y-4">
           {/* Daily 25 Target Progress Card */}
           <section className="surface-card rounded-2xl p-4 sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-sm font-bold text-slate-900 sm:text-base">
-                  Daily {vocabDailyTarget}-Word Logistics Target
+                  Unlimited Daily {vocabDailyTarget}-Word Sprint · Batch #{batchSeed + 1}
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-500">
                   <span className="font-mono-tabular font-semibold text-amber-700">
@@ -529,16 +585,29 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                   <span className="font-mono-tabular font-semibold text-slate-700">
                     {learnedVocabIds.length} / {WAREHOUSE_VOCABULARY.length}
                   </span>{' '}
-                  mastered · +30 XP bonus at 25/25
+                  mastered · Auto-renews daily (+30 XP bonus at 25/25)
                 </p>
               </div>
 
-              {dailyVocabComplete && (
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700">
-                  <Sparkles className="h-4 w-4 text-amber-500" aria-hidden="true" />
-                  <span>Daily 25 Target Complete</span>
-                </span>
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {dailyVocabComplete && (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700">
+                    <Sparkles className="h-4 w-4 text-amber-500" aria-hidden="true" />
+                    <span>Daily 25 Target Complete</span>
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playSfx('click');
+                    setBatchSeed((prev) => prev + 1);
+                  }}
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100 whitespace-nowrap"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>Load Next 25 Fresh Words</span>
+                </button>
+              </div>
             </div>
 
             <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/60">
@@ -552,37 +621,72 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
               />
             </div>
 
-            {/* Scope Filters */}
+            {/* Scope Filters (Today Deck vs Parts 1-6) */}
             <div className="mt-3.5 flex items-center gap-1.5 overflow-x-auto pb-1">
               <button
                 type="button"
-                onClick={() => setVocabScope('daily25')}
+                onClick={() => {
+                  setVocabScope('daily25');
+                  setBatchSeed(0);
+                }}
                 className={`min-h-[36px] rounded-xl border px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
                   vocabScope === 'daily25'
                     ? 'border-amber-300 bg-amber-50 text-amber-800 shadow-2xs'
                     : 'border-slate-200 bg-white text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Today&apos;s 25 Deck
+                Auto-Daily Deck ({subtopicPoolCount})
               </button>
               {[1, 2, 3, 4, 5, 6].map((pNum) => (
                 <button
                   key={pNum}
                   type="button"
-                  onClick={() => setVocabScope(pNum)}
+                  onClick={() => {
+                    setVocabScope(pNum);
+                    setBatchSeed(0);
+                  }}
                   className={`min-h-[36px] rounded-xl border px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
                     vocabScope === pNum
                       ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-2xs'
                       : 'border-slate-200 bg-white text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Part {pNum} (25)
+                  Part {pNum}
                 </button>
               ))}
             </div>
+
+            {/* Rich Subtopic Filter Bar (Counters, Safety/KYT/GHS, Equipment, Care Marks, Units, Docs, Warehouses, Ops) */}
+            <div
+              role="group"
+              aria-label="Filter vocabulary by subtopic"
+              className="mt-2 flex items-center gap-1.5 overflow-x-auto border-t border-slate-100 pt-2.5 pb-0.5"
+            >
+              {VOCAB_SUBTOPICS.map((sub) => {
+                const active = vocabSubtopic === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => {
+                      playSfx('click');
+                      setVocabSubtopic(sub.id);
+                      setBatchSeed(0);
+                    }}
+                    className={`min-h-[34px] rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
+                      active
+                        ? 'border-blue-300 bg-gradient-to-b from-blue-50 to-indigo-50/70 text-blue-700 shadow-2xs'
+                        : 'border-slate-200/80 bg-white text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {sub.label}
+                  </button>
+                );
+              })}
+            </div>
           </section>
 
-          {currentVocab && (
+          {currentVocab ? (
             <>
               <section className="surface-card rounded-2xl p-6 sm:p-8">
                 <div className="flex items-center justify-between gap-3 text-xs font-medium text-slate-500">
@@ -592,12 +696,23 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                   <span>
                     Part {currentVocab.partNumber} · {currentVocab.category}
                   </span>
-                  {learnedVocabIds.includes(currentVocab.id) && (
-                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
-                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>Learned</span>
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {learnedVocabIds.includes(currentVocab.id) && (
+                      <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
+                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Learned</span>
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => speakJapanese(currentVocab.jp)}
+                      aria-label="Pronounce vocabulary word"
+                      className="inline-flex min-h-[34px] items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      <Volume2 className="h-3.5 w-3.5 text-blue-600" aria-hidden="true" />
+                      <span>Listen</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="my-6 text-center">
@@ -617,12 +732,22 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                         {currentVocab.sinhala}
                       </p>
                       <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3.5 text-left">
-                        <p className="font-jp text-sm font-semibold leading-[2.0] text-slate-900 sm:text-base">
-                          <FuriganaText
-                            text={currentVocab.exampleJp}
-                            showFurigana={showFurigana}
-                          />
-                        </p>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-jp text-sm font-semibold leading-[2.0] text-slate-900 sm:text-base">
+                            <FuriganaText
+                              text={currentVocab.exampleJp}
+                              showFurigana={showFurigana}
+                            />
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => speakJapanese(currentVocab.exampleJp)}
+                            aria-label="Listen to example sentence"
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700"
+                          >
+                            <Volume2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                        </div>
                         <p className="mt-1 text-xs italic text-slate-500">
                           {currentVocab.exampleRomaji}
                         </p>
@@ -634,7 +759,10 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                   ) : (
                     <button
                       type="button"
-                      onClick={() => setVocabRevealed(true)}
+                      onClick={() => {
+                        playSfx('flip');
+                        setVocabRevealed(true);
+                      }}
                       className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-700"
                     >
                       <Eye className="h-4 w-4" aria-hidden="true" />
@@ -648,6 +776,7 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                 <button
                   type="button"
                   onClick={() => {
+                    playSfx('complete');
                     onMarkVocabReviewed(
                       currentVocab.id,
                       `${currentVocab.romaji} (Part ${currentVocab.partNumber})`,
@@ -670,7 +799,10 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={handlePrevVocab}
+                    onClick={() => {
+                      playSfx('click');
+                      handlePrevVocab();
+                    }}
                     className="surface-card-interactive inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 active:scale-[0.99]"
                   >
                     <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -679,7 +811,10 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
 
                   <button
                     type="button"
-                    onClick={handleNextVocab}
+                    onClick={() => {
+                      playSfx('click');
+                      handleNextVocab();
+                    }}
                     className="btn-primary-premium inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold"
                   >
                     <span>Skip / Next</span>
@@ -688,6 +823,21 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                 </div>
               </div>
             </>
+          ) : (
+            <div className="surface-card rounded-2xl p-6 text-center text-xs text-slate-600">
+              No vocabulary entries match this combination. Switch to{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setVocabSubtopic('all');
+                  setVocabScope('daily25');
+                }}
+                className="font-semibold text-blue-600 underline"
+              >
+                All Topics
+              </button>
+              .
+            </div>
           )}
         </div>
       )}

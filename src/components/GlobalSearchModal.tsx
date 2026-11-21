@@ -103,9 +103,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
     const matches: SearchResultItem[] = [];
 
     for (const part of parts) {
+      const displayPartTitle = part.english_title ?? stripFurigana(part.title);
       const cleanNotes = stripMarkdown(part.notes_markdown || '');
       const searchableNotes = extractSearchableText(part.notes_markdown || '');
-      const titleMatch = extractSearchableText(part.title)
+      const titleMatch = extractSearchableText(
+        `${part.title} ${part.english_title ?? ''}`,
+      )
         .toLowerCase()
         .includes(q);
       const rawLines = (part.notes_markdown || '').split(/\n+/);
@@ -125,7 +128,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           id: `note-${part.part_number}`,
           kind: 'notes',
           partNumber: part.part_number,
-          title: `Part ${part.part_number}: ${stripFurigana(part.title)}`,
+          title: `Part ${part.part_number}: ${displayPartTitle}`,
           subtitle: `Markdown Study Notes · ${part.source_pdf}`,
           snippet: extractSnippet(cleanMatchingLine || cleanNotes, query.trim()),
         });
@@ -145,7 +148,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             partNumber: part.part_number,
             cardIndex: cardIdx,
             title: stripFurigana(card.question),
-            subtitle: `Flashcard #${cardIdx + 1} · Part ${part.part_number}: ${stripFurigana(part.title)}`,
+            subtitle: `Flashcard #${cardIdx + 1} · Part ${part.part_number}: ${displayPartTitle}`,
             snippet: extractSnippet(stripFurigana(card.answer), query.trim()),
           });
         }

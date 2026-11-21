@@ -245,6 +245,8 @@ export const QuizTab: React.FC<QuizTabProps> = ({
     Record<string, number>
   >({});
   const [practiceElapsed, setPracticeElapsed] = useState(0);
+  const [practicePage, setPracticePage] = useState(1);
+  const PRACTICE_PAGE_SIZE = 20;
 
   const paperBundles = useMemo<Record<PaperSetNumber, CbtPaperSetBundle>>(() => {
     const map = {} as Record<PaperSetNumber, CbtPaperSetBundle>;
@@ -479,6 +481,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
     setPracticeTopic(topic);
     setPracticeAnswers({});
     setPracticeElapsed(0);
+    setPracticePage(1);
     setView('practice');
     window.scrollTo({top: 0, behavior: 'smooth'});
   };
@@ -542,7 +545,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-2.5">
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="font-bold text-slate-900">
-                Paper {examSession.paperSet}
+                Paper {String(examSession.paperSet).padStart(2, '0')}
               </span>
               <span className="text-slate-300" aria-hidden="true">
                 ·
@@ -1044,7 +1047,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                 )}
               </div>
               <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-slate-900">
-                Paper {attempt.paperSet} Result:{' '}
+                Paper {String(attempt.paperSet).padStart(2, '0')} Result:{' '}
                 <span className="font-mono-tabular">
                   {attempt.totalCorrect} / {attempt.totalQuestions} ({totalPct}
                   %)
@@ -1348,6 +1351,20 @@ export const QuizTab: React.FC<QuizTabProps> = ({
       0,
       practiceBudgetSeconds - practiceElapsed,
     );
+    const totalPracticePages = Math.max(
+      1,
+      Math.ceil(practiceQuestions.length / PRACTICE_PAGE_SIZE),
+    );
+    const safePracticePage = Math.min(practicePage, totalPracticePages);
+    const practicePageStart = (safePracticePage - 1) * PRACTICE_PAGE_SIZE;
+    const practicePageEnd = Math.min(
+      practiceQuestions.length,
+      practicePageStart + PRACTICE_PAGE_SIZE,
+    );
+    const pagedPracticeQuestions = practiceQuestions.slice(
+      practicePageStart,
+      practicePageEnd,
+    );
 
     return (
       <div className="space-y-4">
@@ -1430,8 +1447,45 @@ export const QuizTab: React.FC<QuizTabProps> = ({
           </div>
         </div>
 
+        {totalPracticePages > 1 && (
+          <div className="surface-card flex flex-wrap items-center justify-between gap-2 rounded-2xl px-4 py-2.5 text-xs">
+            <span className="font-mono-tabular font-semibold text-slate-600">
+              Showing {practicePageStart + 1}–{practicePageEnd} of{' '}
+              {practiceQuestions.length} questions · Page {safePracticePage} /{' '}
+              {totalPracticePages}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={safePracticePage <= 1}
+                onClick={() => {
+                  setPracticePage((p) => Math.max(1, p - 1));
+                  window.scrollTo({top: 0, behavior: 'smooth'});
+                }}
+                className="inline-flex min-h-[34px] items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1 font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Prev {PRACTICE_PAGE_SIZE}</span>
+              </button>
+              <button
+                type="button"
+                disabled={safePracticePage >= totalPracticePages}
+                onClick={() => {
+                  setPracticePage((p) => Math.min(totalPracticePages, p + 1));
+                  window.scrollTo({top: 0, behavior: 'smooth'});
+                }}
+                className="inline-flex min-h-[34px] items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1 font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <span>Next {PRACTICE_PAGE_SIZE}</span>
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
-          {practiceQuestions.map((q, idx) => {
+          {pagedPracticeQuestions.map((q, idx) => {
+            const globalQuestionNumber = practicePageStart + idx + 1;
             const picked = practiceAnswers[q.id];
             const isAnswered = picked !== undefined;
             const isCorrect = picked === q.correct_index;
@@ -1443,7 +1497,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
                   <span className="font-mono-tabular font-bold text-blue-700">
-                    Q{idx + 1} / {practiceQuestions.length}
+                    Q{globalQuestionNumber} / {practiceQuestions.length}
                   </span>
                   <span>
                     {q.section === 'academic' ? 'Academic' : 'Practical'} ·{' '}
@@ -1551,6 +1605,41 @@ export const QuizTab: React.FC<QuizTabProps> = ({
             );
           })}
         </div>
+
+        {totalPracticePages > 1 && (
+          <div className="surface-card flex flex-wrap items-center justify-between gap-2 rounded-2xl px-4 py-3 text-xs">
+            <span className="font-mono-tabular font-semibold text-slate-600">
+              Page {safePracticePage} of {totalPracticePages} ({practicePageStart + 1}
+              –{practicePageEnd} / {practiceQuestions.length})
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={safePracticePage <= 1}
+                onClick={() => {
+                  setPracticePage((p) => Math.max(1, p - 1));
+                  window.scrollTo({top: 0, behavior: 'smooth'});
+                }}
+                className="inline-flex min-h-[38px] items-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Previous Page</span>
+              </button>
+              <button
+                type="button"
+                disabled={safePracticePage >= totalPracticePages}
+                onClick={() => {
+                  setPracticePage((p) => Math.min(totalPracticePages, p + 1));
+                  window.scrollTo({top: 0, behavior: 'smooth'});
+                }}
+                className="btn-primary-premium inline-flex min-h-[38px] items-center gap-1 rounded-xl px-3.5 py-1.5 font-semibold disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <span>Next Page</span>
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {renderZoomLightbox()}
       </div>
@@ -1867,7 +1956,7 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                 >
                   <div>
                     <p className="font-bold text-slate-900">
-                      Paper {item.paperSet} ·{' '}
+                      Paper {String(item.paperSet).padStart(2, '0')} ·{' '}
                       {item.mode === 'full'
                         ? 'Full CBT (50 Qs)'
                         : item.mode === 'academic'

@@ -744,6 +744,7 @@ export function useStudyProgress(userId: UserId | null) {
     saveProgressForUser(userId, fresh);
     try {
       localStorage.removeItem(`smart_study_celebrated_v1_${userId}`);
+      localStorage.removeItem(`smart_study_selected_paper_v1_${userId}`);
     } catch {
       // Ignore storage error
     }

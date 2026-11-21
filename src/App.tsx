@@ -22,6 +22,7 @@ import manifestData from './data/manifest.json';
 import {DashboardTab} from './components/DashboardTab';
 import {EmptyStudyState} from './components/EmptyStudyState';
 import {FlashcardsTab} from './components/FlashcardsTab';
+import {stripFurigana} from './components/FuriganaText';
 import {GlobalSearchModal} from './components/GlobalSearchModal';
 import {LibraryTab} from './components/LibraryTab';
 import {LoginScreen} from './components/LoginScreen';
@@ -590,7 +591,8 @@ export default function App() {
                           key={part.part_number}
                           value={String(part.part_number)}
                         >
-                          Part {part.part_number}: {part.title}
+                          Part {part.part_number}:{' '}
+                          {part.english_title ?? stripFurigana(part.title)}
                         </option>
                       ))}
                     </select>
@@ -671,7 +673,8 @@ export default function App() {
                           key={part.part_number}
                           value={String(part.part_number)}
                         >
-                          Part {part.part_number}: {part.title}
+                          Part {part.part_number}:{' '}
+                          {part.english_title ?? stripFurigana(part.title)}
                         </option>
                       ))}
                     </select>

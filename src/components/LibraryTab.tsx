@@ -1,5 +1,7 @@
 import React, {useMemo, useState} from 'react';
 import {BookOpen, FileUp, Layers, Search, ClipboardList} from 'lucide-react';
+import {stripFurigana} from './FuriganaText';
+import {getAllCbtQuestions} from '../utils/cbtExam';
 import type {ActiveTab, StudyPart} from '../types/study';
 
 interface LibraryTabProps {
@@ -16,11 +18,19 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
   onUploadPdf,
 }) => {
   const [query, setQuery] = useState('');
+  const cbtCountByPart = useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const q of getAllCbtQuestions(parts)) {
+      counts.set(q.partNumber, (counts.get(q.partNumber) ?? 0) + 1);
+    }
+    return counts;
+  }, [parts]);
+
   const visibleParts = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return parts;
     return parts.filter((part) =>
-      `part ${part.part_number} ${part.title} ${part.source_pdf}`
+      `part ${part.part_number} ${stripFurigana(part.title)} ${part.english_title ?? ''} ${part.source_pdf}`
         .toLowerCase()
         .includes(normalized),
     );
@@ -65,17 +75,20 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {visibleParts.map((part) => (
+          {visibleParts.map((part) => {
+            const totalPartQuestions =
+              cbtCountByPart.get(part.part_number) ?? part.quiz.length;
+            return (
             <article key={part.part_number} className="surface-card rounded-2xl p-4">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium text-slate-500">
                 <span className="font-mono-tabular font-semibold text-blue-600">Part {part.part_number}</span>
                 <span aria-hidden="true">·</span>
                 <span className="font-mono-tabular">{part.flashcards.length} cards</span>
                 <span aria-hidden="true">·</span>
-                <span className="font-mono-tabular">{part.quiz.length} questions</span>
+                <span className="font-mono-tabular">{totalPartQuestions} questions</span>
               </div>
               <h2 className="mt-2 text-sm font-semibold leading-relaxed text-slate-900">
-                {part.english_title ?? part.title}
+                {part.english_title ?? stripFurigana(part.title)}
               </h2>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <button type="button" onClick={() => onSelectPartAndTab(part.part_number, 'notes')} className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:bg-blue-50">
@@ -89,7 +102,8 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
                 </button>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
       <button type="button" onClick={onOpenSearch} className="w-full py-2 text-xs font-semibold text-blue-600 hover:text-blue-700">

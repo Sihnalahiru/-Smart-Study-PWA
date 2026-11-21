@@ -52,8 +52,16 @@ export function computeTrophyBadges(
   const modF = byCode.get('F');
 
   const part1Notes = progress.readPartNumbers.includes(1);
-  const part1Quiz = progress.completedQuizParts.includes(1);
-  const part1Pct = (part1Notes ? 50 : 0) + (part1Quiz ? 50 : 0);
+  const part1Quiz =
+    progress.completedQuizParts.includes(1) ||
+    Boolean(modA && modA.quizTotal > 0 && modA.quizDone >= modA.quizTotal) ||
+    (progress.cbtExamHistory ?? []).some((e) => e.passedOverall);
+  const part1QuizRatio = part1Quiz
+    ? 1
+    : modA && modA.quizTotal > 0
+      ? Math.min(1, modA.quizDone / modA.quizTotal)
+      : 0;
+  const part1Pct = (part1Notes ? 50 : 0) + Math.round(part1QuizRatio * 50);
 
   const coreNodes = [modA, modB, modC, modD, modE, modF].filter(
     (n): n is NonNullable<typeof n> => Boolean(n),

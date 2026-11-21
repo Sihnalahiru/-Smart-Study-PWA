@@ -147,12 +147,12 @@ export function computeSyllabusNodes(
     }
 
     const notesRead = progress.readPartNumbers.includes(def.partNumber);
-    const validCardIds = def.flashcardIndices
-      .filter((idx) => idx < part.flashcards.length)
-      .map((idx) => `part-${def.partNumber}-fc-${idx}`);
-    const validQuizIds = def.quizIndices
-      .filter((idx) => idx < part.quiz.length)
-      .map((idx) => `part-${def.partNumber}-q-${idx}`);
+    const validCardIds = part.flashcards.map(
+      (fc, idx) => fc.id ?? `part-${def.partNumber}-fc-${idx}`,
+    );
+    const validQuizIds = part.quiz.map(
+      (q, idx) => q.id ?? `part-${def.partNumber}-q-${idx}`,
+    );
 
     const cardsDone = validCardIds.filter((id) =>
       progress.reviewedFlashcardIds.includes(id),
@@ -191,10 +191,10 @@ export function computeSyllabusNodes(
     const code = String.fromCharCode(71 + idx);
     const notesRead = progress.readPartNumbers.includes(part.part_number);
     const cardIds = part.flashcards.map(
-      (_, cIdx) => `part-${part.part_number}-fc-${cIdx}`,
+      (fc, cIdx) => fc.id ?? `part-${part.part_number}-fc-${cIdx}`,
     );
     const quizIds = part.quiz.map(
-      (_, qIdx) => `part-${part.part_number}-q-${qIdx}`,
+      (q, qIdx) => q.id ?? `part-${part.part_number}-q-${qIdx}`,
     );
 
     const cardsDone = cardIds.filter((id) =>

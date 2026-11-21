@@ -8,23 +8,28 @@ interface FuriganaTextProps {
 
 const RUBY_PATTERN =
   /\{([^{}|]+)\|([^{}|]+)\}|<ruby>([^<]+)<rt>([^<]+)<\/rt><\/ruby>/g;
+const BR_TAG_PATTERN = /<br\s*\/?>/gi;
 
 export function stripFurigana(text: string): string {
-  return text.replace(RUBY_PATTERN, (_m, k1, _r1, k2) => k1 ?? k2 ?? '');
+  return text
+    .replace(RUBY_PATTERN, (_m, k1, _r1, k2) => k1 ?? k2 ?? '')
+    .replace(BR_TAG_PATTERN, ' ');
 }
 
 export function extractSearchableText(text: string): string {
   // Preserves both kanji and furigana reading so searching either matches
-  return text.replace(
-    RUBY_PATTERN,
-    (_m, k1, r1, k2, r2) => `${k1 ?? k2 ?? ''} ${r1 ?? r2 ?? ''}`,
-  );
+  return text
+    .replace(
+      RUBY_PATTERN,
+      (_m, k1, r1, k2, r2) => `${k1 ?? k2 ?? ''} ${r1 ?? r2 ?? ''}`,
+    )
+    .replace(BR_TAG_PATTERN, ' ');
 }
 
-export function parseFuriganaNodes(
+function parseSingleLineFurigana(
   input: string,
-  showFurigana = true,
-  keyPrefix = 'fg',
+  showFurigana: boolean,
+  keyPrefix: string,
 ): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -67,6 +72,27 @@ export function parseFuriganaNodes(
   }
 
   return nodes;
+}
+
+export function parseFuriganaNodes(
+  input: string,
+  showFurigana = true,
+  keyPrefix = 'fg',
+): React.ReactNode[] {
+  if (!BR_TAG_PATTERN.test(input)) {
+    return parseSingleLineFurigana(input, showFurigana, keyPrefix);
+  }
+  const segments = input.split(BR_TAG_PATTERN);
+  const out: React.ReactNode[] = [];
+  segments.forEach((seg, segIdx) => {
+    if (segIdx > 0) {
+      out.push(<br key={`${keyPrefix}-br-${segIdx}`} />);
+    }
+    if (seg.length > 0) {
+      out.push(...parseSingleLineFurigana(seg, showFurigana, `${keyPrefix}-s${segIdx}`));
+    }
+  });
+  return out;
 }
 
 export function renderChildrenWithFurigana(

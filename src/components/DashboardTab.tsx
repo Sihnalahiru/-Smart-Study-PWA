@@ -200,17 +200,37 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
     (sum, p) => sum + p.flashcards.length,
     0,
   );
-  const totalExamBankQuestions = useMemo(
-    () => getAllCbtQuestions(allParts).length,
+  const allCbtQuestions = useMemo(
+    () => getAllCbtQuestions(allParts),
     [allParts],
   );
-  const quizAccuracy =
-    progress.attemptedQuizIds.length > 0
+  const totalExamBankQuestions = allCbtQuestions.length;
+  const cbtCountByPart = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const q of allCbtQuestions) {
+      map.set(q.partNumber, (map.get(q.partNumber) ?? 0) + 1);
+    }
+    return map;
+  }, [allCbtQuestions]);
+
+  const quizAccuracy = useMemo(() => {
+    const statValues = Object.values(progress.quizQuestionStats ?? {});
+    const statAttempts = statValues.reduce((sum, s) => sum + s.attempts, 0);
+    const statCorrect = statValues.reduce((sum, s) => sum + s.correct, 0);
+    if (statAttempts > 0) {
+      return Math.round((statCorrect / statAttempts) * 100);
+    }
+    return progress.attemptedQuizIds.length > 0
       ? Math.round(
           (progress.correctQuizIds.length / progress.attemptedQuizIds.length) *
             100,
         )
       : 0;
+  }, [
+    progress.quizQuestionStats,
+    progress.attemptedQuizIds.length,
+    progress.correctQuizIds.length,
+  ]);
   const examCoveragePct =
     totalExamBankQuestions > 0
       ? Math.round(
@@ -598,7 +618,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                       </span>
                       <span aria-hidden="true">·</span>
                       <span className="font-mono-tabular">
-                        {part.quiz.length} questions
+                        {cbtCountByPart.get(part.part_number) ?? part.quiz.length}{' '}
+                        questions
                       </span>
                       {isRead && (
                         <>

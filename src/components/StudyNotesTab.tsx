@@ -285,11 +285,26 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                         {renderChildrenWithFurigana(children, showFurigana)}
                       </h4>
                     ),
-                    p: ({children}) => (
-                      <p className="leading-[2.15] text-slate-800">
-                        {renderChildrenWithFurigana(children, showFurigana)}
-                      </p>
-                    ),
+                    p: ({node, children}) => {
+                      const hasStandaloneImage = Boolean(
+                        node?.children?.some(
+                          (child) =>
+                            child.type === 'element' && child.tagName === 'img',
+                        ),
+                      );
+                      if (hasStandaloneImage) {
+                        return (
+                          <div className="my-2">
+                            {renderChildrenWithFurigana(children, showFurigana)}
+                          </div>
+                        );
+                      }
+                      return (
+                        <p className="leading-[2.15] text-slate-800">
+                          {renderChildrenWithFurigana(children, showFurigana)}
+                        </p>
+                      );
+                    },
                     ul: ({children}) => (
                       <ul className="my-3.5 list-disc space-y-2.5 pl-5 text-slate-800">
                         {children}
@@ -311,7 +326,7 @@ export const StudyNotesTab: React.FC<StudyNotesTabProps> = ({
                       </strong>
                     ),
                     blockquote: ({children}) => (
-                      <blockquote className="my-3.5 rounded-xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-sm leading-[1.9] text-slate-700">
+                      <blockquote className="my-2.5 rounded-xl border border-slate-200/80 border-l-[3px] border-l-blue-400/80 bg-slate-50/85 px-4 py-2.5 text-[13.5px] leading-[1.9] text-slate-700 sm:text-sm">
                         {renderChildrenWithFurigana(children, showFurigana)}
                       </blockquote>
                     ),

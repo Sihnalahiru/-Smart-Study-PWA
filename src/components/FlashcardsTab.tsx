@@ -30,23 +30,51 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
   onMarkFlashcardMastered,
   focusCard,
 }) => {
-  const orderedCards = useMemo<IndexedFlashcard[]>(() => {
+  const allPartCards = useMemo<IndexedFlashcard[]>(() => {
     return parts.flatMap((part) =>
       part.flashcards.map((fc, idx) => ({
         ...fc,
         id: fc.id ?? `part-${part.part_number}-fc-${idx}`,
         partNumber: part.part_number,
-        partTitle: part.title,
+        partTitle: part.english_title ?? part.title,
         originalIndexInPart: idx,
       })),
     );
   }, [parts]);
 
+  const [deckFilter, setDeckFilter] = useState<'all' | 'vocab' | 'visual'>(
+    'all',
+  );
   const [isShuffled, setIsShuffled] = useState(false);
   const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showFurigana, setShowFurigana] = useState(true);
+
+  const vocabCount = useMemo(
+    () => allPartCards.filter((c) => c.id.includes('-fc-vocab-')).length,
+    [allPartCards],
+  );
+  const visualCount = useMemo(
+    () => allPartCards.filter((c) => Boolean(c.image)).length,
+    [allPartCards],
+  );
+
+  const orderedCards = useMemo<IndexedFlashcard[]>(() => {
+    if (deckFilter === 'vocab') {
+      return allPartCards.filter((c) => c.id.includes('-fc-vocab-'));
+    }
+    if (deckFilter === 'visual') {
+      return allPartCards.filter((c) => Boolean(c.image));
+    }
+    return allPartCards;
+  }, [allPartCards, deckFilter]);
+
+  useEffect(() => {
+    if (focusCard) {
+      setDeckFilter('all');
+    }
+  }, [focusCard]);
 
   useEffect(() => {
     setIsShuffled(false);
@@ -137,10 +165,19 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
 
   if (total === 0 || !currentCard) {
     return (
-      <div className="surface-card rounded-2xl p-8 text-center">
+      <div className="surface-card space-y-3 rounded-2xl p-8 text-center">
         <p className="text-sm text-slate-600">
-          No flashcards available in the selected part.
+          No flashcards available for the selected filter.
         </p>
+        {deckFilter !== 'all' && (
+          <button
+            type="button"
+            onClick={() => setDeckFilter('all')}
+            className="btn-primary-premium inline-flex min-h-[38px] items-center rounded-xl px-4 py-1.5 text-xs font-semibold"
+          >
+            Show All Cards ({allPartCards.length})
+          </button>
+        )}
       </div>
     );
   }
@@ -220,6 +257,57 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
         </div>
       </div>
 
+      {/* Compact Deck Mode Selector */}
+      <div
+        role="tablist"
+        aria-label="Flashcard deck filter"
+        className="flex flex-wrap items-center gap-1.5"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={deckFilter === 'all'}
+          onClick={() => setDeckFilter('all')}
+          className={`min-h-[34px] rounded-xl border px-3 py-1 text-xs font-semibold transition-all ${
+            deckFilter === 'all'
+              ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-2xs'
+              : 'border-slate-200/90 bg-white text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          All Cards ({allPartCards.length})
+        </button>
+        {vocabCount > 0 && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={deckFilter === 'vocab'}
+            onClick={() => setDeckFilter('vocab')}
+            className={`min-h-[34px] rounded-xl border px-3 py-1 text-xs font-semibold transition-all ${
+              deckFilter === 'vocab'
+                ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-2xs'
+                : 'border-slate-200/90 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            Vocabulary ({vocabCount})
+          </button>
+        )}
+        {visualCount > 0 && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={deckFilter === 'visual'}
+            onClick={() => setDeckFilter('visual')}
+            className={`min-h-[34px] rounded-xl border px-3 py-1 text-xs font-semibold transition-all ${
+              deckFilter === 'visual'
+                ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-2xs'
+                : 'border-slate-200/90 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            Visual ({visualCount})
+          </button>
+        )}
+      </div>
+
       <div
         className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80 ring-1 ring-slate-200/60"
         role="progressbar"
@@ -249,7 +337,11 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
             <div className="surface-card backface-hidden absolute inset-0 flex flex-col justify-between rounded-2xl p-5 sm:p-7">
               <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
                 <span className="tracking-wide text-blue-600">
-                  {currentCard.image ? 'Visual Flashcard' : 'Question'}
+                  {currentCard.image
+                    ? 'Visual Flashcard'
+                    : currentCard.id.includes('-fc-vocab-')
+                      ? 'Vocabulary'
+                      : 'Question'}
                 </span>
                 <span className="truncate">{currentCard.partTitle}</span>
               </div>

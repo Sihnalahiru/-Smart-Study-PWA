@@ -5,6 +5,7 @@ import {
   BookMarked,
   CheckCircle2,
   Eye,
+  Headphones,
   Languages,
   Layers,
   RefreshCw,
@@ -12,6 +13,7 @@ import {
   Shuffle,
   Sparkles,
   Volume2,
+  XCircle,
 } from 'lucide-react';
 import {FuriganaText} from './FuriganaText';
 import {
@@ -25,7 +27,7 @@ import {
 import {playSfx, speakJapanese} from '../utils/soundEffects';
 import type {FlashcardItem, StudyPart, VocabItem} from '../types/study';
 
-export type FlashcardViewMode = 'cards' | 'vocab';
+export type FlashcardViewMode = 'cards' | 'vocab' | 'listening';
 
 interface FlashcardsTabProps {
   parts: StudyPart[];
@@ -45,6 +47,15 @@ interface IndexedFlashcard extends FlashcardItem {
   partNumber: number;
   partTitle: string;
   originalIndexInPart: number;
+}
+
+function shuffleItems<T>(list: T[]): T[] {
+  const arr = [...list];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 function renderMultilineTrilingual(
@@ -257,6 +268,33 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
     setVocabIndex((prev) => (prev - 1 >= 0 ? prev - 1 : vocabDeck.length - 1));
   }, [vocabDeck.length]);
 
+  // --- Japanese Audio Listening Dictation Drill State ---
+  const [listenDeck, setListenDeck] = useState<VocabItem[]>(() =>
+    shuffleItems(WAREHOUSE_VOCABULARY),
+  );
+  const [listenIdx, setListenIdx] = useState(0);
+  const [listenPickedId, setListenPickedId] = useState<string | null>(null);
+  const [listenScore, setListenScore] = useState({correct: 0, total: 0});
+  const [speechRate, setSpeechRate] = useState<0.75 | 0.9>(0.9);
+
+  const currentListenItem = listenDeck[listenIdx % listenDeck.length];
+
+  const listenOptions = useMemo<VocabItem[]>(() => {
+    if (!currentListenItem) return [];
+    const pool = WAREHOUSE_VOCABULARY.filter(
+      (v) =>
+        v.id !== currentListenItem.id && v.sinhala !== currentListenItem.sinhala,
+    );
+    const distractors = shuffleItems(pool).slice(0, 3);
+    return shuffleItems([currentListenItem, ...distractors]);
+  }, [currentListenItem]);
+
+  useEffect(() => {
+    if (mode === 'listening' && currentListenItem) {
+      speakJapanese(currentListenItem.jp, speechRate);
+    }
+  }, [mode, listenIdx, currentListenItem, speechRate]);
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -279,7 +317,7 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
           e.preventDefault();
           setIsFlipped((prev) => !prev);
         }
-      } else {
+      } else if (mode === 'vocab') {
         if (e.key === 'ArrowRight') {
           e.preventDefault();
           handleNextVocab();
@@ -304,26 +342,26 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* Mode Switcher Bar: Study Flashcards vs Daily 25 Vocab Sprint */}
+      {/* Mode Switcher Bar: Study Cards vs Daily 25 Vocab vs Audio Listening Drill */}
       <div className="surface-glass flex flex-wrap items-center justify-between gap-2.5 rounded-2xl p-2 sm:px-4 sm:py-2.5">
         <div
           role="tablist"
           aria-label="Flashcard Study Mode"
-          className="grid flex-1 grid-cols-2 gap-1.5 sm:max-w-md"
+          className="grid flex-1 grid-cols-3 gap-1.5 sm:max-w-xl"
         >
           <button
             type="button"
             role="tab"
             aria-selected={mode === 'cards'}
             onClick={() => setMode('cards')}
-            className={`inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap ${
+            className={`inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap ${
               mode === 'cards'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-white/80 text-slate-600 hover:bg-white hover:text-slate-900'
             }`}
           >
             <Layers className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            <span>Study Cards ({total})</span>
+            <span>Cards ({total})</span>
           </button>
 
           <button
@@ -331,7 +369,7 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
             role="tab"
             aria-selected={mode === 'vocab'}
             onClick={() => setMode('vocab')}
-            className={`inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap ${
+            className={`inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap ${
               mode === 'vocab'
                 ? 'bg-amber-600 text-white shadow-xs'
                 : 'bg-white/80 text-slate-600 hover:bg-white hover:text-slate-900'
@@ -339,8 +377,26 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
           >
             <BookMarked className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>
-              Daily 25 Vocab ({dailyVocabReviewedIds.length}/{vocabDailyTarget})
+              Vocab ({dailyVocabReviewedIds.length}/{vocabDailyTarget})
             </span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'listening'}
+            onClick={() => {
+              playSfx('click');
+              setMode('listening');
+            }}
+            className={`inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap ${
+              mode === 'listening'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-white/80 text-slate-600 hover:bg-white hover:text-slate-900'
+            }`}
+          >
+            <Headphones className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>Audio Quiz</span>
           </button>
         </div>
 
@@ -452,7 +508,6 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                     isFlipped ? 'rotate-y-180' : ''
                   }`}
                 >
-                  {/* Front Face */}
                   <div className="surface-card backface-hidden absolute inset-0 flex flex-col justify-between rounded-2xl p-6 sm:p-8">
                     <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
                       <span className="tracking-wide text-blue-600">Question</span>
@@ -485,7 +540,6 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                     </div>
                   </div>
 
-                  {/* Back Face */}
                   <div className="surface-hero backface-hidden rotate-y-180 absolute inset-0 flex flex-col justify-between rounded-2xl p-6 text-white sm:p-8">
                     <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-400">
                       <span className="text-amber-300">Answer</span>
@@ -567,15 +621,15 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
             </div>
           </>
         )
-      ) : (
+      ) : mode === 'vocab' ? (
         /* Unlimited Auto-Renewing Daily Vocab Sprint */
         <div className="space-y-4">
-          {/* Daily 25 Target Progress Card */}
           <section className="surface-card rounded-2xl p-4 sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-sm font-bold text-slate-900 sm:text-base">
-                  Unlimited Daily {vocabDailyTarget}-Word Sprint · Batch #{batchSeed + 1}
+                  Unlimited Daily {vocabDailyTarget}-Word Sprint · Batch #
+                  {batchSeed + 1}
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-500">
                   <span className="font-mono-tabular font-semibold text-amber-700">
@@ -592,7 +646,10 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
               <div className="flex flex-wrap items-center gap-2">
                 {dailyVocabComplete && (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700">
-                    <Sparkles className="h-4 w-4 text-amber-500" aria-hidden="true" />
+                    <Sparkles
+                      className="h-4 w-4 text-amber-500"
+                      aria-hidden="true"
+                    />
                     <span>Daily 25 Target Complete</span>
                   </span>
                 )}
@@ -621,7 +678,6 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
               />
             </div>
 
-            {/* Scope Filters (Today Deck vs Parts 1-6) */}
             <div className="mt-3.5 flex items-center gap-1.5 overflow-x-auto pb-1">
               <button
                 type="button"
@@ -656,7 +712,6 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
               ))}
             </div>
 
-            {/* Rich Subtopic Filter Bar (Counters, Safety/KYT/GHS, Equipment, Care Marks, Units, Docs, Warehouses, Ops) */}
             <div
               role="group"
               aria-label="Filter vocabulary by subtopic"
@@ -699,7 +754,10 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                   <div className="flex items-center gap-2">
                     {learnedVocabIds.includes(currentVocab.id) && (
                       <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
-                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        <CheckCircle2
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
                         <span>Learned</span>
                       </span>
                     )}
@@ -709,7 +767,10 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                       aria-label="Pronounce vocabulary word"
                       className="inline-flex min-h-[34px] items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
                     >
-                      <Volume2 className="h-3.5 w-3.5 text-blue-600" aria-hidden="true" />
+                      <Volume2
+                        className="h-3.5 w-3.5 text-blue-600"
+                        aria-hidden="true"
+                      />
                       <span>Listen</span>
                     </button>
                   </div>
@@ -741,7 +802,9 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                           </p>
                           <button
                             type="button"
-                            onClick={() => speakJapanese(currentVocab.exampleJp)}
+                            onClick={() =>
+                              speakJapanese(currentVocab.exampleJp)
+                            }
                             aria-label="Listen to example sentence"
                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700"
                           >
@@ -823,23 +886,144 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({
                 </div>
               </div>
             </>
-          ) : (
-            <div className="surface-card rounded-2xl p-6 text-center text-xs text-slate-600">
-              No vocabulary entries match this combination. Switch to{' '}
+          ) : null}
+        </div>
+      ) : (
+        /* ==================== JAPANESE AUDIO LISTENING DICTATION DRILL ==================== */
+        currentListenItem && (
+          <section className="surface-card space-y-5 rounded-2xl p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <Headphones
+                  className="h-4 w-4 text-indigo-600"
+                  aria-hidden="true"
+                />
+                <span className="font-bold text-slate-900">
+                  Japanese Audio Listening Quiz ({WAREHOUSE_VOCABULARY.length}{' '}
+                  Terms)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono-tabular font-semibold text-emerald-700">
+                  Score: {listenScore.correct}/{listenScore.total}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSpeechRate((r) => (r === 0.9 ? 0.75 : 0.9))
+                  }
+                  className="font-mono-tabular rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Speed: {speechRate === 0.9 ? 'Normal' : 'Slow 0.75x'}
+                </button>
+              </div>
+            </div>
+
+            {/* Blind Audio Player Box */}
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-indigo-200/80 bg-gradient-to-b from-indigo-50/70 to-white p-6 text-center">
+              <p className="text-xs font-medium text-slate-500">
+                Listen carefully and select the matching Sinhala meaning:
+              </p>
+              <button
+                type="button"
+                onClick={() => speakJapanese(currentListenItem.jp, speechRate)}
+                className="btn-primary-premium mt-3.5 inline-flex min-h-[50px] items-center gap-2.5 rounded-2xl px-6 py-3 text-sm font-bold shadow-sm"
+              >
+                <Volume2 className="h-5 w-5" aria-hidden="true" />
+                <span>Play Japanese Term</span>
+              </button>
+
+              {listenPickedId !== null && (
+                <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+                  <p className="font-jp text-lg font-bold text-slate-900">
+                    <FuriganaText
+                      text={currentListenItem.jp}
+                      showFurigana={showFurigana}
+                    />
+                  </p>
+                  <p className="text-xs italic text-slate-500">
+                    {currentListenItem.romaji} · Part{' '}
+                    {currentListenItem.partNumber}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 4 Sinhala Meaning Choices */}
+            <div className="space-y-2.5">
+              {listenOptions.map((opt) => {
+                const answered = listenPickedId !== null;
+                const isCorrect = opt.id === currentListenItem.id;
+                const isPicked = opt.id === listenPickedId;
+
+                let cls =
+                  'border-slate-200 bg-white text-slate-900 hover:border-indigo-300 hover:bg-indigo-50/40';
+                if (answered) {
+                  if (isCorrect) {
+                    cls = 'border-emerald-400 bg-emerald-50 text-emerald-950';
+                  } else if (isPicked) {
+                    cls = 'border-rose-400 bg-rose-50 text-rose-950';
+                  } else {
+                    cls = 'border-slate-200/60 bg-slate-50 opacity-65';
+                  }
+                }
+
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    disabled={answered}
+                    onClick={() => {
+                      setListenPickedId(opt.id);
+                      const ok = opt.id === currentListenItem.id;
+                      playSfx(ok ? 'correct' : 'wrong');
+                      setListenScore((s) => ({
+                        correct: s.correct + (ok ? 1 : 0),
+                        total: s.total + 1,
+                      }));
+                      if (ok) {
+                        onMarkVocabReviewed(
+                          currentListenItem.id,
+                          `Audio: ${currentListenItem.romaji}`,
+                        );
+                      }
+                    }}
+                    className={`flex min-h-[50px] w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-xs font-semibold transition-all sm:text-sm ${cls}`}
+                  >
+                    <span>{opt.sinhala}</span>
+                    {answered && isCorrect && (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                    )}
+                    {answered && isPicked && !isCorrect && (
+                      <XCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {listenPickedId !== null && (
               <button
                 type="button"
                 onClick={() => {
-                  setVocabSubtopic('all');
-                  setVocabScope('daily25');
+                  playSfx('click');
+                  setListenPickedId(null);
+                  setListenIdx((i) => {
+                    const next = i + 1;
+                    if (next % listenDeck.length === 0) {
+                      setListenDeck(shuffleItems(WAREHOUSE_VOCABULARY));
+                    }
+                    return next;
+                  });
                 }}
-                className="font-semibold text-blue-600 underline"
+                className="btn-primary-premium inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold"
               >
-                All Topics
+                <span>Next Audio Word</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </button>
-              .
-            </div>
-          )}
-        </div>
+            )}
+          </section>
+        )
       )}
     </div>
   );

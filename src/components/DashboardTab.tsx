@@ -12,6 +12,7 @@ import {
   Library,
   Maximize2,
   RotateCcw,
+  ShieldAlert,
   ShieldCheck,
   Target,
   TrendingUp,
@@ -45,6 +46,7 @@ import {
   formatStudyDuration,
 } from './DailyStudyPlanModal';
 import {StudyRoadmap} from './StudyRoadmap';
+import {SymbolBlitzModal} from './SymbolBlitzModal';
 import {TrophyCase} from './TrophyCase';
 
 interface DashboardTabProps {
@@ -134,6 +136,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   const [confettiBurstKey, setConfettiBurstKey] = useState(0);
   const [celebrationNotice, setCelebrationNotice] =
     useState<CelebrationNotice | null>(null);
+  const [symbolBlitzOpen, setSymbolBlitzOpen] = useState(false);
 
   const levelInfo = getLevelInfo(progress.xp);
   const streakBadge = getStreakBadge(progress.streakDays);
@@ -598,6 +601,38 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       </section>
 
+      {/* 60-Second Care Marks & GHS Symbol Blitz Card */}
+      <section className="surface-card rounded-2xl p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-rose-200/80 bg-gradient-to-br from-rose-50 to-amber-50 text-rose-700">
+              <ShieldAlert className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold tracking-tight text-slate-900">
+                Care Marks (11) &amp; GHS Hazard (9) Symbol Blitz
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                60-second visual speed-match game for all 20 SSW safety &amp;
+                cargo pictograms
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              playSfx('click');
+              setSymbolBlitzOpen(true);
+            }}
+            className="btn-primary-premium inline-flex min-h-[42px] items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold whitespace-nowrap shrink-0"
+          >
+            <ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Play 60s Symbol Blitz</span>
+          </button>
+        </div>
+      </section>
+
       {/* 3-Hour Hard-Working Daily Study Timer & Routine Card */}
       <section className="surface-card rounded-2xl p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -657,7 +692,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
               <p className="mt-0.5 text-xs text-slate-500">
                 Today&apos;s shifts:{' '}
                 <strong className="font-mono-tabular text-indigo-700">
-                  {progress.daily.alphabetSessionsToday ?? 0}/{DAILY_ALPHABET_SESSIONS_TARGET}
+                  {progress.daily.alphabetSessionsToday ?? 0}/
+                  {DAILY_ALPHABET_SESSIONS_TARGET}
                 </strong>{' '}
                 · Total shifts:{' '}
                 <strong className="font-mono-tabular text-slate-700">
@@ -682,13 +718,17 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 
         <div className="mt-4 grid grid-cols-3 gap-2.5 border-t border-slate-200/70 pt-3.5">
           <div className="rounded-xl border border-slate-200/70 bg-slate-50/70 p-2.5">
-            <p className="text-[11px] font-medium text-slate-500">Kana Accuracy</p>
+            <p className="text-[11px] font-medium text-slate-500">
+              Kana Accuracy
+            </p>
             <p className="font-mono-tabular mt-0.5 text-base font-bold text-slate-900">
               {progress.alphabetTotalAttempts > 0 ? `${alphabetAccuracy}%` : '—'}
             </p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-slate-50/70 p-2.5">
-            <p className="text-[11px] font-medium text-slate-500">Kana Mastered</p>
+            <p className="text-[11px] font-medium text-slate-500">
+              Kana Mastered
+            </p>
             <p className="font-mono-tabular mt-0.5 text-base font-bold text-slate-900">
               {progress.masteredKanaIds.length}
               <span className="text-xs font-medium text-slate-400">
@@ -822,7 +862,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
               Focused Exam Quiz
             </h3>
             <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
-              Test all {totalQuizQuestions} study note topics in distraction-free Focus Mode.
+              Test all {totalQuizQuestions} study note topics in distraction-free
+              Focus Mode.
             </p>
           </div>
         </button>
@@ -840,7 +881,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
               Open Study Library
             </h3>
             <p className="mt-0.5 text-xs leading-relaxed text-slate-600">
-              Browse all {allParts.length} textbook docks, 116 figures &amp; diagrams, and {totalQuizQuestions} CBT questions.
+              Browse all {allParts.length} textbook docks, 116 figures &amp;
+              diagrams, and {totalQuizQuestions} CBT questions.
             </p>
           </div>
         </button>
@@ -890,6 +932,11 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </ul>
         )}
       </section>
+
+      <SymbolBlitzModal
+        isOpen={symbolBlitzOpen}
+        onClose={() => setSymbolBlitzOpen(false)}
+      />
     </div>
   );
 };

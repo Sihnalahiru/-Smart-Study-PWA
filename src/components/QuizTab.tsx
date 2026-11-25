@@ -1284,4 +1284,221 @@ export const QuizTab: React.FC<QuizTabProps> = ({
                     </div>
 
                     {q.image && (
-                      <div className="mt
+                      <div className="mt-3">
+                        <QuestionFigureCard
+                          image={q.imageMeta ?? q.image}
+                          fallbackAlt={q.imageAlt}
+                          showFurigana={showFurigana}
+                          revealCaption={isAnswered}
+                          variant={
+                            q.section === 'practical' ? 'prominent' : 'side'
+                          }
+                          onZoom={(src, alt) => setZoomedFigure({src, alt})}
+                        />
+                      </div>
+                    )}
+
+                    <h3 className="mt-3 text-base font-semibold leading-[2.15] tracking-tight text-slate-900">
+                      <FuriganaText
+                        text={q.question}
+                        showFurigana={showFurigana}
+                      />
+                    </h3>
+
+                    <div className="mt-4 space-y-2.5">
+                      {q.options.map((option, optIdx) => {
+                        const isThisCorrect = optIdx === q.correct_index;
+                        const isThisSelected = optIdx === selectedIdx;
+
+                        let containerClasses =
+                          'border-slate-200/90 bg-gradient-to-b from-white to-slate-50/50 text-slate-800 hover:border-blue-300/90 hover:from-white hover:to-blue-50/30';
+                        let letterClasses =
+                          'border-slate-200/90 bg-slate-50 text-slate-600';
+                        let statusLabel: React.ReactNode = null;
+
+                        if (isAnswered) {
+                          if (isThisCorrect) {
+                            containerClasses =
+                              'border-emerald-400 bg-gradient-to-r from-emerald-50/90 to-teal-50/60 text-emerald-950 shadow-2xs';
+                            letterClasses =
+                              'border-emerald-600 bg-emerald-600 text-white';
+                            statusLabel = (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 whitespace-nowrap shrink-0">
+                                <CheckCircle2
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                                <span>
+                                  <FuriganaText
+                                    text="{正解|せいかい}"
+                                    showFurigana={showFurigana}
+                                  />
+                                </span>
+                              </span>
+                            );
+                          } else if (isThisSelected) {
+                            containerClasses =
+                              'border-red-400 bg-gradient-to-r from-red-50/90 to-rose-50/60 text-red-950';
+                            letterClasses =
+                              'border-red-600 bg-red-600 text-white';
+                            statusLabel = (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 whitespace-nowrap shrink-0">
+                                <XCircle
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                                <span>
+                                  <FuriganaText
+                                    text="{不正解|ふせいかい}"
+                                    showFurigana={showFurigana}
+                                  />
+                                </span>
+                              </span>
+                            );
+                          } else {
+                            containerClasses =
+                              'border-slate-200/70 bg-slate-50/40 text-slate-500 opacity-70';
+                            letterClasses =
+                              'border-slate-200 bg-slate-100 text-slate-400';
+                          }
+                        }
+
+                        return (
+                          <button
+                            key={optIdx}
+                            type="button"
+                            disabled={isAnswered}
+                            onClick={() => handleSelectOption(q, optIdx)}
+                            className={`flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${containerClasses} ${
+                              isAnswered ? 'cursor-default' : 'cursor-pointer'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <span
+                                className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-xs font-bold ${letterClasses}`}
+                              >
+                                {OPTION_LETTERS[optIdx] ?? optIdx + 1}
+                              </span>
+                              <span className="leading-[2.05] font-medium">
+                                <FuriganaText
+                                  text={option}
+                                  showFurigana={showFurigana}
+                                />
+                              </span>
+                            </div>
+                            {statusLabel}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {isAnswered && (
+                      <div
+                        className={`mt-4 rounded-xl border p-4 text-sm leading-[2.05] ${
+                          isUserCorrect
+                            ? 'border-emerald-200/80 bg-gradient-to-br from-emerald-50/75 to-teal-50/40 text-emerald-950'
+                            : 'border-slate-200/80 bg-gradient-to-b from-slate-50 to-slate-100/50 text-slate-800'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-bold text-slate-900">
+                            <FuriganaText
+                              text={
+                                isUserCorrect
+                                  ? clearedInSessionIds.includes(q.id)
+                                    ? '{正解|せいかい} (+40 XP · {弱点克服|じゃくてんこくふく}!) ・ {解説|かいせつ}'
+                                    : '{正解|せいかい} (+25 XP) ・ {解説|かいせつ}'
+                                  : '{解説|かいせつ} ({間違|まちが}いリストに{追加|ついか})'
+                              }
+                              showFurigana={showFurigana}
+                            />
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => speakJapanese(q.explanation)}
+                            aria-label="Listen to explanation"
+                            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-blue-700"
+                          >
+                            <Volume2
+                              className="h-3.5 w-3.5"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        </div>
+                        <p className="mt-1">
+                          <FuriganaText
+                            text={q.explanation}
+                            showFurigana={showFurigana}
+                          />
+                        </p>
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+
+              {visibleLimit < visibleQuestions.length && (
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playSfx('click');
+                      setVisibleLimit((prev) => prev + PRACTICE_PAGE_SIZE);
+                    }}
+                    className="btn-primary-premium inline-flex min-h-[46px] items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold sm:text-sm"
+                  >
+                    <span>
+                      Load Next{' '}
+                      {Math.min(
+                        PRACTICE_PAGE_SIZE,
+                        visibleQuestions.length - visibleLimit,
+                      )}{' '}
+                      Questions ({displayedQuestions.length} /{' '}
+                      {visibleQuestions.length})
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Fullscreen Zoom Modal for Exam Figure Questions */}
+      {zoomedFigure && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Exam Figure Zoom"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 p-4 backdrop-blur-md"
+          onClick={() => setZoomedFigure(null)}
+        >
+          <div
+            className="relative max-h-[88vh] max-w-2xl overflow-auto rounded-2xl border border-white/15 bg-white p-3 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setZoomedFigure(null)}
+              aria-label="Close image zoom"
+              className="absolute top-2.5 right-2.5 flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/80 text-white hover:bg-slate-900"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <img
+              src={zoomedFigure.src}
+              alt={zoomedFigure.alt}
+              className="mx-auto max-h-[75vh] w-auto max-w-full rounded-xl object-contain"
+            />
+            <p className="mt-2 text-center text-xs font-medium text-slate-600">
+              <FuriganaText
+                text={zoomedFigure.alt}
+                showFurigana={showFurigana}
+              />
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
